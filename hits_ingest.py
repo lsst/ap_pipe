@@ -23,9 +23,10 @@ The command line equivalent given the variables below is:
 $ ingestImagesDecam.py repodir datafiles --filetype raw --mode link
 '''
 
-repodir = 'ingested/' #'../decam_hits/repo/'
-#datadir = 'HiTS/Blind15A_38/' #'../decam_hits/data/'
-datadir = sys.argv[1]
+# edit directory names as desired below
+repodir = '../ingested/' # on lsst-dev
+#repodir = 'ingested/' # on laptop
+datadir = sys.argv[1] # or '/lsst7/mrawls/HiTS/Blind15A_38/' on lsst-dev or 'data/' on laptop
 datafiles = glob(datadir + '*.fits.fz')
 
 # first, need to make a text file that handles the mapper, per the obs_decam github README
