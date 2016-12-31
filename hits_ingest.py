@@ -34,24 +34,29 @@ f = open(repodir+'_mapper', 'w')
 print('lsst.obs.decam.DecamMapper', file=f)
 f.close()
 
-# next, create the arguments you'd usually put on the command line after 'ingestImagesDecam.py'
-# (extend the list with all the filenames as the last set of arguments)
-args = [repodir, '--filetype', 'raw', '--mode', 'link']
-args.extend(datafiles)
+if doIngest == True:
+    print('Ingesting raw images...')
+    # create the arguments you'd usually put on the command line after 'ingestImagesDecam.py'
+    # (extend the list with all the filenames as the last set of arguments)
+    args = [repodir, '--filetype', 'raw', '--mode', 'link']
+    args.extend(datafiles)
 
-# set up the decam ingest task so it can take arguments ('name' says which file in obs_decam/config to use)
-argumentParser = ingest.DecamIngestArgumentParser(name='ingest')
+    # set up the decam ingest task so it can take arguments ('name' says which file in obs_decam/config to use)
+    argumentParser = ingest.DecamIngestArgumentParser(name='ingest')
 
-# create an instance of ingest configuration
-config = IngestConfig()
-config.parse.retarget(DecamParseTask) # this is from line 2 of obs_decam/config/ingest.py 
+    # create an instance of ingest configuration
+    config = IngestConfig()
+    config.parse.retarget(DecamParseTask) # this is from line 2 of obs_decam/config/ingest.py 
 
-# create an instance of the decam ingest task
-ingestTask = ingest.DecamIngestTask(config=config)
+    # create an instance of the decam ingest task
+    ingestTask = ingest.DecamIngestTask(config=config)
 
-# feed everything to the argument parser
-parsedCmd = argumentParser.parse_args(config=config, args=args)
+    # feed everything to the argument parser
+    parsedCmd = argumentParser.parse_args(config=config, args=args)
 
-# finally, run the ingestTask
-ingestTask.run(parsedCmd)
+    # finally, run the ingestTask
+    ingestTask.run(parsedCmd)
+    
+    print('Images from {0} are now ingested in {1}'.format(datadir, repodir))
+
 
