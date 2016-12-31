@@ -19,13 +19,21 @@ Usage: $ python hits_ingest.py 'path/to/datadir/'
 
 Result: repodir will be populated with **links** to the files in datadir, organized by date
 
-The command line equivalent given the variables below is:
-$ ingestImagesDecam.py repodir datafiles --filetype raw --mode link
-'''
+The command line equivalent with doIngest = True given the variables below is:
+$ ingestImagesDecam.py repodir --filetype raw --mode link datafiles 
 
-# edit directory names as desired below
-repodir = '../ingested/' # on lsst-dev
-#repodir = 'ingested/' # on laptop
+And with doIngestCalibs = True, it is (should be?):
+$ ingestCalibs.py repodir --calib calibrepodir --calibType defect --validity 999 datafiles
+'''
+doIngest = True
+doIngestCalibs = False # doesn't work yet, see below
+
+## edit directory names for ingested data repos here ##
+#repodir = '../ingested/' # on lsst-dev
+#calibrepodir = '../calibingested/' # on lsst-dev
+repodir = 'ingested/' # on laptop
+calibrepodir = 'calibingested/' # on laptop
+
 datadir = sys.argv[1] # or '/lsst7/mrawls/HiTS/Blind15A_38/' on lsst-dev or 'data/' on laptop
 datafiles = glob(datadir + '*.fits.fz')
 
@@ -59,4 +67,22 @@ if doIngest == True:
     
     print('Images from {0} are now ingested in {1}'.format(datadir, repodir))
 
+# follow a similar process to ingest calibration products if the doIngestCalibs flag is set to True
+# WORK IN PROGRESS! TODO:
+# - get the command-line task to work on its own
+# - get this script to work in the same way
+# - find a reasonable way to ingest all the calibration products (bias, flat, defect, etc.)
+if doIngestCalibs == True:
+    print('Ingesting calibration products...')
+    args = [repodir, '--calib', calibrepodir, '--calibType', 'defect', '--validity', '999']
+    args.extend(datafiles)
+    argumentParser = ingest.DecamIngestArgumentParser(name='ingestCalibs')
+    config = IngestConfig()
+    config.parse.retarget(ingestCalibs.DecamCalibsParseTask)
+    #ingestTask = ingest.DecamIngestTask(config=config)
+    ingestTask = ingestCalibs.DecamCalibsParseTask(config=config, name='ingestCalibs')
+    parsedCmd = argumentParser.parse_args(config=config, args=args)
+    ## ^^ this fails because lsst.pipe.tasks.ingest.RegisterConfig has no attribute detector(??)
+    ingestTask.run(parsedCmd)
+    print('Calibrations from {0} for {1} are now ingested in {2}'.format(datadir, repodir, calibrepodir))
 
