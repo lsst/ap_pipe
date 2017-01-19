@@ -1,8 +1,8 @@
 from __future__ import print_function
-import numpy as np
-import matplotlib.pyplot as plt
-#from astropy.io import fits
-from lsst.utils import getPackageDir
+# import numpy as np
+# import matplotlib.pyplot as plt
+# from astropy.io import fits
+# from lsst.utils import getPackageDir
 from lsst.obs.decam import ingest, ingestCalibs
 from lsst.pipe.tasks.ingest import IngestConfig
 from glob import glob
@@ -11,50 +11,54 @@ from lsst.obs.decam.ingest import DecamParseTask
 '''
 Little script to ingest some raw decam images
 
-You have to specify two things:
-1. repodir, an empty directory where you want the nicely organized and ingested images to live
-2. datadir, a directory where some '*.fits.fz' images currently live
+You have to specify two directory names:
+1. repo, an empty directory the nicely organized and ingested images will go
+2. data, a directory where some '*.fits.fz' images currently live
 
 Usage: $ python hits_ingest.py 'path/to/datadir/'
 
-Result: repodir will be populated with **links** to the files in datadir, organized by date
+Result: repo populated with *links* to files in datadir, organized by date
 
 The command line equivalent with doIngest = True given the variables below is:
-$ ingestImagesDecam.py repodir --filetype raw --mode link datafiles 
+$ ingestImagesDecam.py repo --filetype raw --mode link datafiles
 
 And with doIngestCalibs = True, it is (should be?):
-$ ingestCalibs.py repodir --calib calibrepodir --calibType defect --validity 999 datafiles
+$ ingestCalibs.py repo --calib calibrepo --calibType defect 
+                       --validity 999 datafiles
 '''
 doIngest = True
-doIngestCalibs = False # doesn't work yet, see below
+doIngestCalibs = False  # doesn't work yet, see below
 
-## edit directory names for ingested data repos here ##
-#repodir = '../ingested/' # on lsst-dev
-#calibrepodir = '../calibingested/' # on lsst-dev
-repodir = 'ingested/' # on laptop
-calibrepodir = 'calibingested/' # on laptop
+# ~~ edit directory names for ingested data repos here ~~ #
+# repo = '../ingested/'  # on lsst-dev
+# calibrepo = '../calibingested/' # on lsst-dev
+repo = 'ingested/'  # on laptop
+calibrepo = 'calibingested/'  # on laptop
 
-datadir = sys.argv[1] # or '/lsst7/mrawls/HiTS/Blind15A_38/' on lsst-dev or 'data/' on laptop
+datadir = sys.argv[1]  # '/lsst7/mrawls/HiTS/Blind15A_38/' on lsst-dev
+                       # 'data/' on laptop
 datafiles = glob(datadir + '*.fits.fz')
 
-# first, need to make a text file that handles the mapper, per the obs_decam github README
-f = open(repodir+'_mapper', 'w')
+# make a text file that handles the mapper, per the obs_decam github README
+f = open(repo+'_mapper', 'w')
 print('lsst.obs.decam.DecamMapper', file=f)
 f.close()
 
-if doIngest == True:
+if doIngest:
     print('Ingesting raw images...')
-    # create the arguments you'd usually put on the command line after 'ingestImagesDecam.py'
+    # save arguments you'd put on the command line after 'ingestImagesDecam.py'
     # (extend the list with all the filenames as the last set of arguments)
-    args = [repodir, '--filetype', 'raw', '--mode', 'link']
+    args = [repo, '--filetype', 'raw', '--mode', 'link']
     args.extend(datafiles)
 
-    # set up the decam ingest task so it can take arguments ('name' says which file in obs_decam/config to use)
+    # set up the decam ingest task so it can take arguments
+    # ('name' says which file in obs_decam/config to use)
     argumentParser = ingest.DecamIngestArgumentParser(name='ingest')
 
     # create an instance of ingest configuration
+    # the retarget command is from line 2 of obs_decam/config/ingest.py
     config = IngestConfig()
-    config.parse.retarget(DecamParseTask) # this is from line 2 of obs_decam/config/ingest.py 
+    config.parse.retarget(DecamParseTask)  
 
     # create an instance of the decam ingest task
     ingestTask = ingest.DecamIngestTask(config=config)
@@ -64,25 +68,28 @@ if doIngest == True:
 
     # finally, run the ingestTask
     ingestTask.run(parsedCmd)
-    
-    print('Images from {0} are now ingested in {1}'.format(datadir, repodir))
 
-# follow a similar process to ingest calibration products if the doIngestCalibs flag is set to True
-# WORK IN PROGRESS! TODO:
+    print('Images from {0} are now ingested in {1}'.format(datadir, repo))
+
+# follow a similar process to ingest calibrations for doIngestCalibs = True
+# ~ WORK IN PROGRESS!!! ~
+# TODO:
 # - get the command-line task to work on its own
 # - get this script to work in the same way
-# - find a reasonable way to ingest all the calibration products (bias, flat, defect, etc.)
-if doIngestCalibs == True:
+# - find a way to ingest all calibration products (bias, flat, defect, etc.)
+if doIngestCalibs:
     print('Ingesting calibration products...')
-    args = [repodir, '--calib', calibrepodir, '--calibType', 'defect', '--validity', '999']
+    args = [repo, '--calib', calibrepo, '--calibType', 'defect', 
+            '--validity', '999']
     args.extend(datafiles)
     argumentParser = ingest.DecamIngestArgumentParser(name='ingestCalibs')
     config = IngestConfig()
     config.parse.retarget(ingestCalibs.DecamCalibsParseTask)
-    #ingestTask = ingest.DecamIngestTask(config=config)
-    ingestTask = ingestCalibs.DecamCalibsParseTask(config=config, name='ingestCalibs')
+    # ingestTask = ingest.DecamIngestTask(config=config)
+    ingestTask = ingestCalibs.DecamCalibsParseTask(config=config, 
+                                                   name='ingestCalibs')
     parsedCmd = argumentParser.parse_args(config=config, args=args)
-    ## ^^ this fails because lsst.pipe.tasks.ingest.RegisterConfig has no attribute detector(??)
+    # ^^ FAIL lsst.pipe.tasks.ingest.RegisterConfig has no attribute detector ?
     ingestTask.run(parsedCmd)
-    print('Calibrations from {0} for {1} are now ingested in {2}'.format(datadir, repodir, calibrepodir))
-
+    print('Calibrations from {0} for {1} are now ingested in {2}'
+                                    .format(datadir, repo, calibrepo))
