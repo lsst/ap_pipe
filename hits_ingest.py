@@ -5,6 +5,8 @@ from __future__ import print_function
 # from lsst.utils import getPackageDir
 from lsst.obs.decam import ingest, ingestCalibs
 from lsst.pipe.tasks.ingest import IngestConfig
+from lsst.pipe.tasks.ingestCalibs import IngestCalibsConfig
+from lsst.pipe.tasks.ingestCalibs import IngestCalibsTask
 from glob import glob
 import sys
 from lsst.obs.decam.ingest import DecamParseTask
@@ -23,11 +25,10 @@ The command line equivalent with doIngest = True given the variables below is:
 $ ingestImagesDecam.py repo --filetype raw --mode link datafiles
 
 And with doIngestCalibs = True, it is (should be?):
-$ ingestCalibs.py repo --calib calibrepo --calibType defect 
-                       --validity 999 datafiles
+$ ingestCalibs.py repo --calib calibrepo --validity 999 datafiles
 '''
-doIngest = True
-doIngestCalibs = False  # doesn't work yet, see below
+doIngest = False
+doIngestCalibs = True  # doesn't work yet, see below
 
 # ~~ edit directory names for ingested data repos here ~~ #
 # repo = '../ingested/'  # on lsst-dev
@@ -79,15 +80,13 @@ if doIngest:
 # - find a way to ingest all calibration products (bias, flat, defect, etc.)
 if doIngestCalibs:
     print('Ingesting calibration products...')
-    args = [repo, '--calib', calibrepo, '--calibType', 'defect', 
-            '--validity', '999']
+    args = [repo, '--calib', calibrepo, '--validity', '999', '--dry-run']
     args.extend(datafiles)
     argumentParser = ingest.DecamIngestArgumentParser(name='ingestCalibs')
-    config = IngestConfig()
+    config = IngestCalibsConfig()
     config.parse.retarget(ingestCalibs.DecamCalibsParseTask)
     # ingestTask = ingest.DecamIngestTask(config=config)
-    ingestTask = ingestCalibs.DecamCalibsParseTask(config=config, 
-                                                   name='ingestCalibs')
+    ingestTask = IngestCalibsTask(config=config, name='ingestCalibs')
     parsedCmd = argumentParser.parse_args(config=config, args=args)
     # ^^ FAIL lsst.pipe.tasks.ingest.RegisterConfig has no attribute detector ?
     ingestTask.run(parsedCmd)
