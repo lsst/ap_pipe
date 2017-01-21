@@ -3,10 +3,11 @@ from __future__ import print_function
 # import matplotlib.pyplot as plt
 # from astropy.io import fits
 # from lsst.utils import getPackageDir
-from lsst.obs.decam import ingest, ingestCalibs
+from lsst.obs.decam import ingest
+from lsst.obs.decam import ingestCalibs
 from lsst.pipe.tasks.ingest import IngestConfig
-from lsst.pipe.tasks.ingestCalibs import IngestCalibsConfig
-from lsst.pipe.tasks.ingestCalibs import IngestCalibsTask
+from lsst.pipe.tasks.ingestCalibs import IngestCalibsConfig, IngestCalibsTask
+from lsst.pipe.tasks.ingestCalibs import IngestCalibsArgumentParser
 from glob import glob
 import sys
 from lsst.obs.decam.ingest import DecamParseTask
@@ -24,20 +25,19 @@ Result: repo populated with *links* to files in datadir, organized by date
 The command line equivalent with doIngest = True given the variables below is:
 $ ingestImagesDecam.py repo --filetype raw --mode link datafiles
 
-And with doIngestCalibs = True, it is (should be?):
+And with doIngestCalibs = True, it is:
 $ ingestCalibs.py repo --calib calibrepo --validity 999 datafiles
 '''
 doIngest = False
-doIngestCalibs = True  # doesn't work yet, see below
+doIngestCalibs = True
 
 # ~~ edit directory names for ingested data repos here ~~ #
-# repo = '../ingested/'  # on lsst-dev
-# calibrepo = '../calibingested/' # on lsst-dev
-repo = 'ingested/'  # on laptop
-calibrepo = 'calibingested/'  # on laptop
+repo = 'ingested/'
+calibrepo = 'calibingested/'
 
 datadir = sys.argv[1]  # '/lsst7/mrawls/HiTS/Blind15A_38/' on lsst-dev
                        # 'data/' on laptop
+                       # or, if doIngestCalibs, needs to be the dir of calibs
 datafiles = glob(datadir + '*.fits.fz')
 
 # make a text file that handles the mapper, per the obs_decam github README
@@ -75,20 +75,18 @@ if doIngest:
 # follow a similar process to ingest calibrations for doIngestCalibs = True
 # ~ WORK IN PROGRESS!!! ~
 # TODO:
-# - get the command-line task to work on its own
-# - get this script to work in the same way
-# - find a way to ingest all calibration products (bias, flat, defect, etc.)
+# - find a way to filter out what it thinks are "duplicate" calibration files
+# - sqlite3.IntegrityError: UNIQUE constraint failed: bias.filter, bias.ccdnum, bias.calibDate
 if doIngestCalibs:
     print('Ingesting calibration products...')
-    args = [repo, '--calib', calibrepo, '--validity', '999', '--dry-run']
+    args = [repo, '--calib', calibrepo, '--validity', '999']
     args.extend(datafiles)
-    argumentParser = ingest.DecamIngestArgumentParser(name='ingestCalibs')
+    argumentParser = IngestCalibsArgumentParser(name='ingestCalibs')
     config = IngestCalibsConfig()
     config.parse.retarget(ingestCalibs.DecamCalibsParseTask)
-    # ingestTask = ingest.DecamIngestTask(config=config)
     ingestTask = IngestCalibsTask(config=config, name='ingestCalibs')
+    #import pdb; pdb.set_trace()
     parsedCmd = argumentParser.parse_args(config=config, args=args)
-    # ^^ FAIL lsst.pipe.tasks.ingest.RegisterConfig has no attribute detector ?
     ingestTask.run(parsedCmd)
     print('Calibrations from {0} for {1} are now ingested in {2}'
                                     .format(datadir, repo, calibrepo))
