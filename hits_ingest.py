@@ -1,50 +1,59 @@
 from __future__ import print_function
-# import numpy as np
-# import matplotlib.pyplot as plt
-# from astropy.io import fits
-# from lsst.utils import getPackageDir
 from lsst.obs.decam import ingest
 from lsst.obs.decam import ingestCalibs
+from lsst.obs.decam.ingest import DecamParseTask
 from lsst.pipe.tasks.ingest import IngestConfig
 from lsst.pipe.tasks.ingestCalibs import IngestCalibsConfig, IngestCalibsTask
 from lsst.pipe.tasks.ingestCalibs import IngestCalibsArgumentParser
 from glob import glob
 import sys
 import sqlite3
-from lsst.obs.decam.ingest import DecamParseTask
 '''
 Little script to ingest some raw decam images
 
-You have to specify two directory names:
-1. repo, an empty directory the nicely organized and ingested images will go
-2. data, a directory where some '*.fits.fz' images currently live
+PREPARATION
+Make the following empty directories and name them as desired below
+1. repo, where the ingested images and registry will go
+2. calibrepo, where the calibration product registry will go
 
-Usage: $ python hits_ingest.py 'path/to/datadir/'
+USAGE
+$ python hits_ingest.py 'path/to/datadir/'
+or
+$ python hits_ingest.py 'path/to/datadir/justsomefiles*.fits.fz'
+(the quotes around the datadir string are important!)
 
-Result: repo populated with *links* to files in datadir, organized by date
+OUTPUT
+if doIngest: repo populated with *links* to files in datadir, organized by date
+             sqlite3 database registry of ingested images also created in repo
+if doIngestCalibs: sqlite3 database registry of ingested calibration products
+                   created in calibrepo
 
-The command line equivalent with doIngest = True given the variables below is:
-$ ingestImagesDecam.py repo --filetype raw --mode link datafiles
-
-And with doIngestCalibs = True, it is:
-$ ingestCalibs.py repo --calib calibrepo --validity 999 datafiles
+BASH EQUIVALENT
+if doIngest:
+    $ ingestImagesDecam.py repo --filetype raw --mode link datafiles
+if doIngestCalibs:
+    $ ingestCalibs.py repo --calib calibrepo --validity 999 datafiles
 '''
-doIngest = False
-doIngestCalibs = True
-
-# ~~ edit directory names for ingested data repos here ~~ #
+# edit values below as desired
+doIngest = True
+doIngestCalibs = False
 repo = 'ingested/'
 calibrepo = 'calibingested/'
+# edit values above as desired
 
-datadir = sys.argv[1]  # '/lsst7/mrawls/HiTS/Blind15A_38/' on lsst-dev
-                       # 'data/' on laptop
-                       # or, if doIngestCalibs, needs to be the dir of calibs
-                       # e.g., '/lsst7/mrawls/HiTS/MasterCals/c4d*.fits.fz'
-                       # PUTTING REGEXPS IN QUOTES MATTERS !!
-if '*' or '?' in datadir:
-    datafiles = glob(datadir)
-else:
+if doIngest and doIngestCalibs:
+    raise RuntimeError('Cannot doIngest and doIngestCalibs simultaneously')
+elif not doIngest and not doIngestCalibs:
+    raise RuntimeError('Nothing to do; doIngest AND doIngestCalibs are False')
+
+datadir = sys.argv[1]  # '/lsst7/mrawls/HiTS/<dirname>' on lsst-dev
+                       # 'data/' or 'MasterCals/' on laptop
+                       # (if doIngestCalibs, datadir must be the dir of calibs)
+                       # can also use a regex, e.g., 'data/c4d_15*.fz'
+if datadir[-1] == '/':
     datafiles = glob(datadir + '*.fits.fz')
+else:
+    datafiles = glob(datadir)
 
 # make a text file that handles the mapper, per the obs_decam github README
 f = open(repo+'_mapper', 'w')
