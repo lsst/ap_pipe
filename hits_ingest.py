@@ -10,6 +10,7 @@ from lsst.pipe.tasks.ingestCalibs import IngestCalibsConfig, IngestCalibsTask
 from lsst.pipe.tasks.ingestCalibs import IngestCalibsArgumentParser
 from glob import glob
 import sys
+import sqlite3
 from lsst.obs.decam.ingest import DecamParseTask
 '''
 Little script to ingest some raw decam images
@@ -38,7 +39,12 @@ calibrepo = 'calibingested/'
 datadir = sys.argv[1]  # '/lsst7/mrawls/HiTS/Blind15A_38/' on lsst-dev
                        # 'data/' on laptop
                        # or, if doIngestCalibs, needs to be the dir of calibs
-datafiles = glob(datadir + '*.fits.fz')
+                       # e.g., '/lsst7/mrawls/HiTS/MasterCals/c4d*.fits.fz'
+                       # PUTTING REGEXPS IN QUOTES MATTERS !!
+if '*' or '?' in datadir:
+    datafiles = glob(datadir)
+else:
+    datafiles = glob(datadir + '*.fits.fz')
 
 # make a text file that handles the mapper, per the obs_decam github README
 f = open(repo+'_mapper', 'w')
@@ -70,13 +76,10 @@ if doIngest:
     # finally, run the ingestTask
     ingestTask.run(parsedCmd)
 
-    print('Images from {0} are now ingested in {1}'.format(datadir, repo))
+    print('Images are now ingested in {0}'.format(repo))
 
 # follow a similar process to ingest calibrations for doIngestCalibs = True
-# ~ WORK IN PROGRESS!!! ~
-# TODO:
-# - find a way to filter out what it thinks are "duplicate" calibration files
-# - sqlite3.IntegrityError: UNIQUE constraint failed: bias.filter, bias.ccdnum, bias.calibDate
+# catch the common sqlite3.IntegrityError and print some useful information
 if doIngestCalibs:
     print('Ingesting calibration products...')
     args = [repo, '--calib', calibrepo, '--validity', '999']
@@ -85,8 +88,19 @@ if doIngestCalibs:
     config = IngestCalibsConfig()
     config.parse.retarget(ingestCalibs.DecamCalibsParseTask)
     ingestTask = IngestCalibsTask(config=config, name='ingestCalibs')
-    #import pdb; pdb.set_trace()
     parsedCmd = argumentParser.parse_args(config=config, args=args)
-    ingestTask.run(parsedCmd)
-    print('Calibrations from {0} for {1} are now ingested in {2}'
-                                    .format(datadir, repo, calibrepo))
+    try:
+        ingestTask.run(parsedCmd)
+    except sqlite3.IntegrityError as detail:
+        print('~~~ !!! ~~~')
+        print('sqlite3.IntegrityError: ', detail)
+        print('(sqlite3 doesn\'t think all the calibration files are unique)')
+        print('If this isn\'t your first time ingesting these calibration')
+        print('  files, move or delete the existing database and try again.')
+        print('If this is your first time ingesting these calibration files,')
+        print('  make sure you only use image or wtmap MasterCals, not both.')
+        print('~~~ !!! ~~~')
+    else:
+        print('Success!')
+        print('Calibrations corresponding to {0} are now ingested in {1}' \
+                                                    .format(repo, calibrepo))
