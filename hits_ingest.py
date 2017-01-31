@@ -7,6 +7,7 @@ from lsst.pipe.tasks.ingestCalibs import IngestCalibsConfig, IngestCalibsTask
 from lsst.pipe.tasks.ingestCalibs import IngestCalibsArgumentParser
 from lsst.pipe.tasks.processCcd import ProcessCcdTask
 from lsst.pipe.base import ArgumentParser
+from lsst.utils import getPackageDir
 from glob import glob
 import sys
 import sqlite3
@@ -65,17 +66,17 @@ if ((doIngest and doIngestCalibs) or (doIngest and doProcessCcd) or
 elif not doIngest and not doIngestCalibs and not doProcessCcd:
     raise RuntimeError('Nothing to do, every task is set to False')
 
-try:
+if len(sys.argv) < 2:
+    datadir = None
+    datafiles = None
+    print('WARNING: no data directory specified.')
+    print('(This is OK if you are just running ProcessCcd.)')
+else:
     datadir = sys.argv[1]  # '/lsst7/mrawls/HiTS/<dirname>' on lsst-dev
                        # 'data/' or 'MasterCals/' on laptop
                        # (if doIngestCalibs, datadir must be the dir of calibs)
-                       # can also use a regex, e.g., 'data/c4d_15*.fz'
-except:
-    datadir = None
-    print('WARNING: no data directory specified.')
-    print('(This is OK if you are just running ProcessCcd.)')
-else:    
-    if datadir[-1] == '/':
+                       # can also use a regex, e.g., 'data/c4d_15*.fz'   
+    if os.path.isdir(datadir):
         datafiles = glob(datadir + '*.fits.fz')
     else:
         datafiles = glob(datadir)
@@ -147,7 +148,9 @@ if doIngestCalibs:
 # images and calibration products
 if doProcessCcd:
     print('Running ProcessCcd...')
-    OBS_DECAM_DIR = os.getenv('OBS_DECAM_DIR')
+    OBS_DECAM_DIR = getPackageDir('obs_decam')  # os.getenv('OBS_DECAM_DIR')
+    # TODO: once DM-5466 is complete, the chdir should be removed and the
+    #       relative '../' path nonsense in args should be removed too
     os.chdir(calibrepo)
     args = ['../' + repo, '--id', 'visit=' + visit, 'ccdnum=' + ccdnum, 
             '--output', '../' + outputrepo, 
@@ -158,7 +161,4 @@ if doProcessCcd:
     # This is SO MUCH EASIER than parsing the args in the above two cases!!
     ProcessCcdTask.parseAndRun(args=args, doReturnResults=True)
 
-    
-            
-    
     
