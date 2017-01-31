@@ -24,18 +24,29 @@ $ python hits_ingest.py 'path/to/datadir/'
 or
 $ python hits_ingest.py 'path/to/datadir/justsomefiles*.fits.fz'
 (the quotes around the datadir string are important!)
+or
+$ python hits_ingest.py
+(if you don't want to give it an argument because you're running processCcd)
 
 OUTPUT
 if doIngest: repo populated with *links* to files in datadir, organized by date
              sqlite3 database registry of ingested images also created in repo
 if doIngestCalibs: sqlite3 database registry of ingested calibration products
                    created in calibrepo
+if doProcessCcd: outputrepo/visit populated with subdirectories containing the
+                 usual post-ISR data (bkgd, calexp, icExp, icSrc, postISR)
 
 BASH EQUIVALENT
 if doIngest:
     $ ingestImagesDecam.py repo --filetype raw --mode link datafiles
 if doIngestCalibs:
     $ ingestCalibs.py repo --calib calibrepo --validity 999 datafiles
+if doProcessCcd:
+    $ cd calibrepo
+    $ processCcd.py ../repo --id visit=visit ccdnum=ccdnum 
+            --output ../outputrepo -C $OBS_DECAM_DIR/config/processCcdCpIsr.py
+            --config calibrate.doAstrometry=False calibrate.doPhotoCal=False
+            --no-versions
 '''
 # edit values below as desired
 doIngest = False
@@ -103,8 +114,12 @@ if doIngest:
 
 # follow a similar process to ingest calibrations for doIngestCalibs = True
 # catch the common sqlite3.IntegrityError and print some useful information
+# NOTE: I chose to ingest the 'defect' calibration products separately on
+#       the command line by specifying a different directory and adding the
+#       argument --calibType defect. In the future, this should be done
+#       here alongside ingesting the biases and flats.
 if doIngestCalibs:
-    print('Ingesting calibration products...')
+    print('Ingesting calibration products...')  # just biases and flats for now
     args = [repo, '--calib', calibrepo, '--validity', '999']
     args.extend(datafiles)
     argumentParser = IngestCalibsArgumentParser(name='ingestCalibs')
