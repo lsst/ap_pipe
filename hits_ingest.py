@@ -6,7 +6,6 @@ from lsst.pipe.tasks.ingest import IngestConfig
 from lsst.pipe.tasks.ingestCalibs import IngestCalibsConfig, IngestCalibsTask
 from lsst.pipe.tasks.ingestCalibs import IngestCalibsArgumentParser
 from lsst.pipe.tasks.processCcd import ProcessCcdTask
-from lsst.pipe.base import ArgumentParser
 from lsst.utils import getPackageDir
 from glob import glob
 import sys
@@ -32,8 +31,15 @@ $ python hits_ingest.py
 OUTPUT
 if doIngest: repo populated with *links* to files in datadir, organized by date
              sqlite3 database registry of ingested images also created in repo
-if doIngestCalibs: sqlite3 database registry of ingested calibration products
+if doIngestCalibs: calibrepo populated with *links* to files in datadir,
+                   organized by date (bias/zero and flat images only)
+                   sqlite3 database registry of ingested calibration products
                    created in calibrepo
+        **NOTE: this does not ingest any defects or fringes!**
+        You must do this manually... e.g.,
+        $ cd calibrepo
+        $ ingestCalibs.py ../repo --calib . --calibType defect --validity 999
+          ../HiTS/MasterCals/defects/2014-12-05/*fits
 if doProcessCcd: outputrepo/visit populated with subdirectories containing the
                  usual post-ISR data (bkgd, calexp, icExp, icSrc, postISR)
 
@@ -41,13 +47,14 @@ BASH EQUIVALENT
 if doIngest:
     $ ingestImagesDecam.py repo --filetype raw --mode link datafiles
 if doIngestCalibs:
-    $ ingestCalibs.py repo --calib calibrepo --validity 999 datafiles
+    $ ingestCalibs.py repo --calib calibrepo --mode=link --validity 999 datafiles
 if doProcessCcd:
     $ cd calibrepo
-    $ processCcd.py ../repo --id visit=visit ccdnum=ccdnum 
-            --output ../outputrepo -C $OBS_DECAM_DIR/config/processCcdCpIsr.py
+    $ processCcd.py repo --id visit=visit ccdnum=ccdnum
+            --output outputrepo --calib calibrepo
+            -C $OBS_DECAM_DIR/config/processCcdCpIsr.py
             --config calibrate.doAstrometry=False calibrate.doPhotoCal=False
-            --no-versions
+            --no-versions --clobber-config
 '''
 # edit values below as desired
 doIngest = False
@@ -60,8 +67,8 @@ calibrepo = 'calibingested/'
 outputrepo = 'processed/'
 # edit values above as desired
 
-if ((doIngest and doIngestCalibs) or (doIngest and doProcessCcd) or 
-    (doIngestCalibs and doProcessCcd)):
+if ((doIngest and doIngestCalibs) or (doIngest and doProcessCcd) or
+   (doIngestCalibs and doProcessCcd)):
     raise RuntimeError('You can only have one task True at a time')
 elif not doIngest and not doIngestCalibs and not doProcessCcd:
     raise RuntimeError('Nothing to do, every task is set to False')
@@ -72,10 +79,10 @@ if len(sys.argv) < 2:
     print('WARNING: no data directory specified.')
     print('(This is OK if you are just running ProcessCcd.)')
 else:
-    datadir = sys.argv[1]  # '/lsst7/mrawls/HiTS/<dirname>' on lsst-dev
-                       # 'data/' or 'MasterCals/' on laptop
-                       # (if doIngestCalibs, datadir must be the dir of calibs)
-                       # can also use a regex, e.g., 'data/c4d_15*.fz'   
+    datadir = sys.argv[1]
+    # ingest: 'HiTS/Blind15A_XX/' on lsstdev:/project/mrawls/prototype_ap
+    # ingestCalibs: 'HiTS/MasterCals/' on lsstdev:/project/mrawls/prototype_ap
+    # (note you can also use a regex, e.g., 'data/c4d_15*.fz')
     if os.path.isdir(datadir):
         datafiles = glob(datadir + '*.fits.fz')
     else:
@@ -100,7 +107,7 @@ if doIngest:
     # create an instance of ingest configuration
     # the retarget command is from line 2 of obs_decam/config/ingest.py
     config = IngestConfig()
-    config.parse.retarget(DecamParseTask)  
+    config.parse.retarget(DecamParseTask)
 
     # create an instance of the decam ingest task
     ingestTask = ingest.DecamIngestTask(config=config)
@@ -141,17 +148,13 @@ if doIngestCalibs:
         print('~~~ !!! ~~~')
     else:
         print('Success!')
-        print('Calibrations corresponding to {0} are now ingested in {1}' \
-                                                    .format(repo, calibrepo))
+        print('Calibrations corresponding to {0} are now ingested in {1}'.format(repo, calibrepo))
 
 # the final step is to run processCcd to do ISR by combining the ingested
 # images and calibration products
 if doProcessCcd:
     print('Running ProcessCcd...')
     OBS_DECAM_DIR = getPackageDir('obs_decam')  # os.getenv('OBS_DECAM_DIR')
-    # TODO: once DM-5466 is complete, the chdir should be removed and the
-    #       relative '../' path nonsense in args should be removed too
-    os.chdir(calibrepo)
     args = ['../' + repo, '--id', 'visit=' + visit, 'ccdnum=' + ccdnum, 
             '--output', '../' + outputrepo, 
             '-C', OBS_DECAM_DIR + '/config/processCcdCpIsr.py',
