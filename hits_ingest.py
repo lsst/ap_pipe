@@ -60,11 +60,13 @@ if doProcessCcd:
 doIngest = False
 doIngestCalibs = False
 doProcessCcd = True
-visit = '410877' # used for ProcessCcd only
-ccdnum = '25'    # used for ProcessCcd only
-repo = 'ingested/'
-calibrepo = 'calibingested/'
-outputrepo = 'processed/'
+#visit = '421604'  # 15A40
+#visit = '412263'  # 15A39
+visit = '410877'  # 15A38  # visit is used for ProcessCcd only
+ccdnum = '1..61'         # ccdnum is used for ProcessCcd only; 1-62 is '1..61'
+repo = 'ingested_15A38/'
+calibrepo = 'calibingested_15A38/'
+outputrepo = 'processed_15A38/'
 # edit values above as desired
 
 if ((doIngest and doIngestCalibs) or (doIngest and doProcessCcd) or
@@ -128,7 +130,7 @@ if doIngest:
 #       here alongside ingesting the biases and flats.
 if doIngestCalibs:
     print('Ingesting calibration products...')  # just biases and flats for now
-    args = [repo, '--calib', calibrepo, '--validity', '999']
+    args = [repo, '--calib', calibrepo, '--mode', 'link', '--validity', '999']
     args.extend(datafiles)
     argumentParser = IngestCalibsArgumentParser(name='ingestCalibs')
     config = IngestCalibsConfig()
@@ -155,13 +157,12 @@ if doIngestCalibs:
 if doProcessCcd:
     print('Running ProcessCcd...')
     OBS_DECAM_DIR = getPackageDir('obs_decam')  # os.getenv('OBS_DECAM_DIR')
-    args = ['../' + repo, '--id', 'visit=' + visit, 'ccdnum=' + ccdnum, 
-            '--output', '../' + outputrepo, 
+    args = [repo, '--id', 'visit=' + visit, 'ccdnum=' + ccdnum,
+            '--output', outputrepo,
+            '--calib', calibrepo,
             '-C', OBS_DECAM_DIR + '/config/processCcdCpIsr.py',
             '--config', 'calibrate.doAstrometry=False',
             'calibrate.doPhotoCal=False',
-            '--no-versions']
+            '--no-versions', '--clobber-config']
     # This is SO MUCH EASIER than parsing the args in the above two cases!!
     ProcessCcdTask.parseAndRun(args=args, doReturnResults=True)
-
-    
