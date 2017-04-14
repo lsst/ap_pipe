@@ -8,94 +8,85 @@ from lsst.pipe.tasks.ingestCalibs import IngestCalibsArgumentParser
 from lsst.pipe.tasks.processCcd import ProcessCcdTask
 from lsst.utils import getPackageDir
 from glob import glob
-import sys
 import sqlite3
 import os
+import argparse
 '''
 Little script to ingest some raw decam images
 
-PREPARATION
-Make the following empty directories and name them as desired below
-1. repo, where the ingested images and registry will go
-2. calibrepo, where the calibration product registry will go
-
 USAGE
-$ python hits_ingest.py 'path/to/datadir/'
+$ python hits_ingest.py ingest -f path/to/rawimages/
+(will use all files in the directory named *.fz if no files are specified)
 or
-$ python hits_ingest.py 'path/to/datadir/justsomefiles*.fits.fz'
-(the quotes around the datadir string are important!)
+$ python hits_ingest.py ingestCalibs -f path/to/calibrations/somefiles*.fits.fz
 or
-$ python hits_ingest.py
-(if you don't want to give it an argument because you're running processCcd)
+$ python hits_ingest.py processCcd
 
 OUTPUT
-if doIngest: repo populated with *links* to files in datadir, organized by date
-             sqlite3 database registry of ingested images also created in repo
-if doIngestCalibs: calibrepo populated with *links* to files in datadir,
-                   organized by date (bias/zero and flat images only)
-                   sqlite3 database registry of ingested calibration products
-                   created in calibrepo
+ingest: repo populated with *links* to files in datadir, organized by date
+        sqlite3 database registry of ingested images also created in repo
+ingestCalibs: calibrepo populated with *links* to files in datadir, 
+              organized by date (bias/zero and flat images only)
+              sqlite3 database registry of ingested calibration products
+              created in calibrepo
         **NOTE: this does not ingest any defects or fringes!**
         You must do this manually... e.g.,
         $ cd calibrepo
-        $ ingestCalibs.py ../repo --calib . --calibType defect --validity 999
+        $ ingestCalibs.py ../repo --calib . --calibType defect --validity 999 
           ../HiTS/MasterCals/defects/2014-12-05/*fits
-if doProcessCcd: outputrepo/visit populated with subdirectories containing the
-                 usual post-ISR data (bkgd, calexp, icExp, icSrc, postISR)
+processCcd: outputrepo/visit populated with subdirectories containing the
+            usual post-ISR data (bkgd, calexp, icExp, icSrc, postISR)
 
-BASH EQUIVALENT
-if doIngest:
+BASH EQUIVALENTS
+ingest:
     $ ingestImagesDecam.py repo --filetype raw --mode link datafiles
-if doIngestCalibs:
+ingestCalibs:
     $ ingestCalibs.py repo --calib calibrepo --mode=link --validity 999 datafiles
-if doProcessCcd:
+processCcd:
     $ cd calibrepo
-    $ processCcd.py repo --id visit=visit ccdnum=ccdnum
+    $ processCcd.py repo --id visit=visit ccdnum=ccdnum 
             --output outputrepo --calib calibrepo
             -C $OBS_DECAM_DIR/config/processCcdCpIsr.py
             --config calibrate.doAstrometry=False calibrate.doPhotoCal=False
             --no-versions --clobber-config
 '''
 # edit values below as desired
-doIngest = False
-doIngestCalibs = False
-doProcessCcd = True
-#visit = '421604'  # 15A40
-#visit = '412263'  # 15A39
-visit = '410877'  # 15A38  # visit is used for ProcessCcd only
-ccdnum = '1..61'         # ccdnum is used for ProcessCcd only; 1-62 is '1..61'
-repo = 'ingested_15A38/'
-calibrepo = 'calibingested_15A38/'
-outputrepo = 'processed_15A38/'
+#visit = '421604' #15A40
+#visit = '412263' #15A39
+visit = '410877' #15A38  # visit is used for ProcessCcd only
+ccdnum = '5..8'         # ccdnum is used for ProcessCcd only; 1-62 exist
+repo = 'test_ingested/'
+calibrepo = 'test_calibingested/'
+outputrepo = 'test_processed/'
 # edit values above as desired
 
-if ((doIngest and doIngestCalibs) or (doIngest and doProcessCcd) or
-   (doIngestCalibs and doProcessCcd)):
-    raise RuntimeError('You can only have one task True at a time')
-elif not doIngest and not doIngestCalibs and not doProcessCcd:
-    raise RuntimeError('Nothing to do, every task is set to False')
-
-if len(sys.argv) < 2:
+# parse command line arguments with argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('task', help='Which task you would like to run', 
+    choices=['ingest', 'ingestCalibs', 'processCcd'])
+parser.add_argument('-f', '--files', help='Input files or directory')
+args = parser.parse_args()
+if (args.task == 'ingest' or args.task == 'ingestCalibs') and not args.files:
+    raise ArgumentError('-f is required to ingest images or calibrations.')
+if args.files == None:
     datadir = None
     datafiles = None
-    print('WARNING: no data directory specified.')
-    print('(This is OK if you are just running ProcessCcd.)')
 else:
-    datadir = sys.argv[1]
+    datadir = args.files
     # ingest: 'HiTS/Blind15A_XX/' on lsstdev:/project/mrawls/prototype_ap
     # ingestCalibs: 'HiTS/MasterCals/' on lsstdev:/project/mrawls/prototype_ap
-    # (note you can also use a regex, e.g., 'data/c4d_15*.fz')
     if os.path.isdir(datadir):
-        datafiles = glob(datadir + '*.fits.fz')
+        datafiles = glob(datadir + '*.fz')
     else:
         datafiles = glob(datadir)
 
-# make a text file that handles the mapper, per the obs_decam github README
-f = open(repo+'_mapper', 'w')
-print('lsst.obs.decam.DecamMapper', file=f)
-f.close()
-
-if doIngest:
+if args.task == 'ingest':
+    if not os.path.isdir(repo):
+        os.mkdir(repo)
+    # make a text file that handles the mapper, per the obs_decam github README
+    f = open(repo+'_mapper', 'w')
+    print('lsst.obs.decam.DecamMapper', file=f)
+    f.close()
     print('Ingesting raw images...')
     # save arguments you'd put on the command line after 'ingestImagesDecam.py'
     # (extend the list with all the filenames as the last set of arguments)
@@ -124,11 +115,9 @@ if doIngest:
 
 # follow a similar process to ingest calibrations for doIngestCalibs = True
 # catch the common sqlite3.IntegrityError and print some useful information
-# NOTE: I chose to ingest the 'defect' calibration products separately on
-#       the command line by specifying a different directory and adding the
-#       argument --calibType defect. In the future, this should be done
-#       here alongside ingesting the biases and flats.
-if doIngestCalibs:
+elif args.task == 'ingestCalibs':
+    if not os.path.isdir(calibrepo):
+        os.mkdir(calibrepo)
     print('Ingesting calibration products...')  # just biases and flats for now
     args = [repo, '--calib', calibrepo, '--mode', 'link', '--validity', '999']
     args.extend(datafiles)
@@ -154,7 +143,9 @@ if doIngestCalibs:
 
 # the final step is to run processCcd to do ISR by combining the ingested
 # images and calibration products
-if doProcessCcd:
+elif args.task == 'processCcd':
+    if not os.path.isdir(processed):
+        os.mkdir(processed)
     print('Running ProcessCcd...')
     OBS_DECAM_DIR = getPackageDir('obs_decam')  # os.getenv('OBS_DECAM_DIR')
     args = [repo, '--id', 'visit=' + visit, 'ccdnum=' + ccdnum,
@@ -164,5 +155,4 @@ if doProcessCcd:
             '--config', 'calibrate.doAstrometry=False',
             'calibrate.doPhotoCal=False',
             '--no-versions', '--clobber-config']
-    # This is SO MUCH EASIER than parsing the args in the above two cases!!
     ProcessCcdTask.parseAndRun(args=args, doReturnResults=True)
