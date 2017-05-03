@@ -5,14 +5,17 @@ from lsst.obs.decam.ingest import DecamParseTask
 from lsst.pipe.tasks.ingest import IngestConfig
 from lsst.pipe.tasks.ingestCalibs import IngestCalibsConfig, IngestCalibsTask
 from lsst.pipe.tasks.ingestCalibs import IngestCalibsArgumentParser
-from lsst.pipe.tasks.processCcd import ProcessCcdTask
+from lsst.pipe.tasks.processCcd import ProcessCcdTask, ProcessCcdConfig
+from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask
 from lsst.utils import getPackageDir
+from lsst.ip.diffim.getTemplate import GetCalexpAsTemplateTask
+from lsst.pipe.tasks.imageDifference import ImageDifferenceConfig, ImageDifferenceTask
 from glob import glob
 import sqlite3
 import os
 import argparse
 '''
-Little script to ingest some raw decam images
+This script processes raw decam images from ingestion --> difference imaging!
 
 USAGE
 $ python hits_ingest.py ingest -f path/to/rawimages/
@@ -21,20 +24,22 @@ or
 $ python hits_ingest.py ingestCalibs -f path/to/calibrations/somefiles*.fits.fz
 or
 $ python hits_ingest.py processCcd
+or
+$ python hits_ingest.py diffIm
 
 OUTPUT
 ingest: repo populated with *links* to files in datadir, organized by date
         sqlite3 database registry of ingested images also created in repo
-ingestCalibs: calibrepo populated with *links* to files in datadir, 
+ingestCalibs: calibrepo populated with *links* to files in datadir,
               organized by date (bias/zero and flat images only)
               sqlite3 database registry of ingested calibration products
               created in calibrepo
         **NOTE: this does not ingest any defects or fringes!**
         You must do this manually... e.g.,
         $ cd calibrepo
-        $ ingestCalibs.py ../repo --calib . --calibType defect --validity 999 
+        $ ingestCalibs.py ../repo --calib . --calibType defect --validity 999
           ../HiTS/MasterCals/defects/2014-12-05/*fits
-processCcd: outputrepo/visit populated with subdirectories containing the
+processCcd: processedrepo/visit populated with subdirectories containing the
             usual post-ISR data (bkgd, calexp, icExp, icSrc, postISR)
 
 BASH EQUIVALENTS
@@ -44,31 +49,40 @@ ingestCalibs:
     $ ingestCalibs.py repo --calib calibrepo --mode=link --validity 999 datafiles
 processCcd:
     $ cd calibrepo
-    $ processCcd.py repo --id visit=visit ccdnum=ccdnum 
-            --output outputrepo --calib calibrepo
+    $ processCcd.py repo --id visit=visit ccdnum=ccdnum
+            --output processedrepo --calib calibrepo
             -C $OBS_DECAM_DIR/config/processCcdCpIsr.py
-            --config calibrate.doAstrometry=False calibrate.doPhotoCal=False
-            --no-versions --clobber-config
+            -C processccd_config.py
+            --config calibrate.doAstrometry=True calibrate.doPhotoCal=True
+    ** note that to run from bash, 'processccd_config.py' must exist
+diffIm:
+    $ imageDifference.py processedrepo --id visit=diffimvisit ccdnum=ccdnum
+            --templateId visit=templatevisit --output diffimrepo
+            -C diffim_config.py
+    ** note that to run from bash, 'diffim_config.py' must exist
 '''
-# edit values below as desired
-#visit = '421604' #15A40
-#visit = '412263' #15A39
-visit = '410877' #15A38  # visit is used for ProcessCcd only
-ccdnum = '5..8'         # ccdnum is used for ProcessCcd only; 1-62 exist
-repo = 'test_ingested/'
-calibrepo = 'test_calibingested/'
-outputrepo = 'test_processed/'
-# edit values above as desired
+# ~~  edit values below as desired  ~~ #
+visit = '410927^411033'#^411067^411267^411317^411367^411418^411468^411669^ \
+#         411719^411770^411820^411870^412072^412262^412319^412516^412566^ \
+#         412616^412666^412716^413647^413692^415326^415376^419800^421602'  # 15A38 g filter
+templatevisit = '410927'  # only used for diffIm
+diffimvisit = visit[7::]  # exclude templatevisit from the visit string
+ccdnum = '1..62'  # note visit and ccdnum info are not used during ingestion
+repo = 'ingested_15A38/'
+calibrepo = 'calibingested_15A38/'
+processedrepo = 'processed_15A38/'
+diffimrepo = 'diffim_15A38_g/'
+# ~~ edit values above as desired  ~~ #
 
 # parse command line arguments with argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('task', help='Which task you would like to run', 
-    choices=['ingest', 'ingestCalibs', 'processCcd'])
+parser.add_argument('task', help='Which task you would like to run',
+                    choices=['ingest', 'ingestCalibs', 'processCcd', 'diffIm'])
 parser.add_argument('-f', '--files', help='Input files or directory')
 args = parser.parse_args()
 if (args.task == 'ingest' or args.task == 'ingestCalibs') and not args.files:
-    raise ArgumentError('-f is required to ingest images or calibrations.')
-if args.files == None:
+    raise IOError('-f is required to ingest images or calibrations.')
+if args.files is None:
     datadir = None
     datafiles = None
 else:
@@ -141,18 +155,43 @@ elif args.task == 'ingestCalibs':
         print('Success!')
         print('Calibrations corresponding to {0} are now ingested in {1}'.format(repo, calibrepo))
 
-# the final step is to run processCcd to do ISR by combining the ingested
+# the next step is to run processCcd to do ISR by combining the ingested
 # images and calibration products
+# astrometry and photometric calibration is also done by processCcd
 elif args.task == 'processCcd':
-    if not os.path.isdir(processed):
-        os.mkdir(processed)
+    if not os.path.isdir(processedrepo):
+        os.mkdir(processedrepo)
     print('Running ProcessCcd...')
     OBS_DECAM_DIR = getPackageDir('obs_decam')  # os.getenv('OBS_DECAM_DIR')
+    config = ProcessCcdConfig()
+    # Astrometry retarget party
+    for refObjLoader in (config.calibrate.astromRefObjLoader,
+                         config.calibrate.photoRefObjLoader,
+                         config.charImage.refObjLoader,):
+        refObjLoader.retarget(LoadIndexedReferenceObjectsTask)
+        refObjLoader.ref_dataset_name = 'pan-starrs'  # options are gaia, pan-starrs, sdss
+        refObjLoader.filterMap = {"g": "g",  # 'phot_g_mean_mag' is gaia-specific
+                                  "r": "r",  # all of 'g,r,i,z,y' are options for pan-starrs
+                                  "VR": "g"}
     args = [repo, '--id', 'visit=' + visit, 'ccdnum=' + ccdnum,
-            '--output', outputrepo,
+            '--output', processedrepo,
             '--calib', calibrepo,
             '-C', OBS_DECAM_DIR + '/config/processCcdCpIsr.py',
-            '--config', 'calibrate.doAstrometry=False',
-            'calibrate.doPhotoCal=False',
-            '--no-versions', '--clobber-config']
-    ProcessCcdTask.parseAndRun(args=args, doReturnResults=True)
+            '--config', 'calibrate.doAstrometry=True',
+            'calibrate.doPhotoCal=True']
+    ProcessCcdTask.parseAndRun(args=args, config=config, doReturnResults=True)
+
+# finally, we do difference imaging with a template
+elif args.task == 'diffIm':
+    if not os.path.isdir(diffimrepo):
+        os.mkdir(diffimrepo)
+    print('Running ImageDifference...')
+    config = ImageDifferenceConfig()
+    config.getTemplate.retarget(GetCalexpAsTemplateTask)
+    # config.doMeasurement = True
+    # config.doPreConvolve = False
+    config.detection.thresholdValue = 5.0
+    config.doDecorrelation = True
+    args = [processedrepo, '--id', 'visit=' + diffimvisit, 'ccdnum=' + ccdnum,
+            '--templateId', 'visit=' + templatevisit, '--output', diffimrepo]
+    ImageDifferenceTask.parseAndRun(args=args, config=config, doReturnResults=True)
