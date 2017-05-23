@@ -14,6 +14,7 @@ from glob import glob
 import sqlite3
 import os
 import argparse
+import textwrap
 '''
 Process raw decam images with MasterCals from ingestion --> difference imaging
 
@@ -23,7 +24,7 @@ $ python hits_ingest.py ingestCalibs -f path/to/calibrations/somefiles*.fits.fz
 $ python hits_ingest.py processCcd
 $ python hits_ingest.py diffIm
 
-A typical workflow will run these four tasks in order. The user must set 
+A typical workflow will run these four tasks in order. The user must set
 repo, calibrepo, processedrepo, diffimrepo, visits, and ccdnum in the code.
 '''
 
@@ -52,7 +53,7 @@ def main():
 
     # Parse command line arguments with argparse
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
-                                     description='''
+                                     description=textwrap.dedent('''
     Process raw decam images with MasterCals from ingestion --> difference imaging
 
     USAGE:
@@ -61,13 +62,13 @@ def main():
     $ python hits_ingest.py processCcd
     $ python hits_ingest.py diffIm
 
-    A typical workflow will run these four tasks in order. The user must set 
+    A typical workflow will run these four tasks in order. The user must set
     repo, calibrepo, processedrepo, diffimrepo, visits, and ccdnum in the code.
-                                     ''')
+                                     '''))
     parser.add_argument('task', choices=['ingest', 'ingestCalibs', 'processCcd', 'diffIm'],
-                        help='''
+                        help=textwrap.dedent('''
     Which of four tasks you would like to run.
-    
+
     ingest - Ingest raw DECam images into a repository with a
     corresponding registry.
     USAGE:
@@ -78,8 +79,8 @@ def main():
     RESULT:
     repo populated with *links* to files in datadir, organized by date
     sqlite3 database registry of ingested images also created in repo
-    
-    ingestCalibs - Ingest DECam MasterCal biases and flats into a calibration 
+
+    ingestCalibs - Ingest DECam MasterCal biases and flats into a calibration
     repository with a corresponding registry.
     Darks (and fringes, if applicable) must be ingested manually! e.g.,
     $ cd calibrepo
@@ -94,8 +95,8 @@ def main():
     organized by date (bias/zero and flat images only)
     sqlite3 database registry of ingested calibration products
     created in calibrepo
-            
-    processCcd - Perform ISR with ingested images and calibrations 
+
+    processCcd - Perform ISR with ingested images and calibrations
     via processCcd.
     For successful difference imaging in the next step, astrometry and
     photometric calibration must also be done by processCcd.
@@ -127,8 +128,8 @@ def main():
     RESULT:
     processedrepo/visit populated with subdirectories containing the
     usual post-ISR data (bkgd, calexp, icExp, icSrc, postISR).
-    
-    diffIm - Do difference imaging with a visit as a template and 
+
+    diffIm - Do difference imaging with a visit as a template and
     one or more as science.
     USAGE:
     $ python hits_ingest.py diffIm
@@ -144,8 +145,8 @@ def main():
     RESULT:
     diffimrepo/deepDiff/v+sciencevisit populated with difference images
     and catalogs of detected sources (diaSrc, diffexp, and metadata files)
-                        ''')
-    parser.add_argument('-f', '--files', 
+                        '''))
+    parser.add_argument('-f', '--files',
                         help='Input files or directory for ingest or ingestCalibs.')
     args = parser.parse_args()
     if (args.task == 'ingest' or args.task == 'ingestCalibs') and not args.files:
@@ -269,7 +270,7 @@ def doProcessCcd(repo, calibrepo, processedrepo, visit, ccdnum):
 
     For successful difference imaging in the next step, astrometry and
     photometric calibration must also be done by processCcd.
-    
+
     These steps need a reference catalog. The catalog used here is pan-starrs,
     which lives on lsst-dev at /datasets/refcats/htm/ps1_pv3_3pi_20170110/
     This catalog must exist in repo/ref_cats, e.g.,
