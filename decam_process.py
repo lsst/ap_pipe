@@ -23,15 +23,15 @@ $ python hits_ingest.py ingestCalibs -f path/to/calibrations/somefiles*.fits.fz
 $ python hits_ingest.py processCcd
 $ python hits_ingest.py diffIm
 
-A typical workflow will run these four tasks in order. More details about the
-required arguments, bash command equivalents, and result of each task is given
-in each function defined below.
+A typical workflow will run these four tasks in order. The user must set 
+repo, calibrepo, processedrepo, diffimrepo, visits, and ccdnum in the code.
 '''
 
 
 def main():
     '''
-    Set input parameters (repos, visits, ccdnums) and run the requested task
+    Set input parameters (repos, visits, ccdnums), parse command-line args,
+    and run the requested task.
     '''
 
     # ~~  edit values below as desired  ~~ #
@@ -49,6 +49,116 @@ def main():
     visit = '^'.join(str(v) for v in visits)
     templatevisit = str(visits[0])
     sciencevisit = '^'.join(str(v) for v in visits[1:])
+
+    # Parse command line arguments with argparse
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
+                                     description='''
+    Process raw decam images with MasterCals from ingestion --> difference imaging
+
+    USAGE:
+    $ python hits_ingest.py ingest -f path/to/rawimages/
+    $ python hits_ingest.py ingestCalibs -f path/to/calibrations/somefiles*.fits.fz
+    $ python hits_ingest.py processCcd
+    $ python hits_ingest.py diffIm
+
+    A typical workflow will run these four tasks in order. The user must set 
+    repo, calibrepo, processedrepo, diffimrepo, visits, and ccdnum in the code.
+                                     ''')
+    parser.add_argument('task', choices=['ingest', 'ingestCalibs', 'processCcd', 'diffIm'],
+                        help='''
+    Which of four tasks you would like to run.
+    
+    ingest - Ingest raw DECam images into a repository with a
+    corresponding registry.
+    USAGE:
+    $ python hits_ingest.py ingest -f path/to/rawimages/
+    (will use all files in the directory named *.fz if no files are specified)
+    BASH EQUIVALENT:
+    $ ingestImagesDecam.py repo --filetype raw --mode link datafiles
+    RESULT:
+    repo populated with *links* to files in datadir, organized by date
+    sqlite3 database registry of ingested images also created in repo
+    
+    ingestCalibs - Ingest DECam MasterCal biases and flats into a calibration 
+    repository with a corresponding registry.
+    Darks (and fringes, if applicable) must be ingested manually! e.g.,
+    $ cd calibrepo
+    $ ingestCalibs.py ../repo --calib . --calibType defect --validity 999
+          ../HiTS/MasterCals/defects/2014-12-05/*fits
+    USAGE:
+    $ python hits_ingest.py ingestCalibs -f path/to/calibrations/somefiles*.fits.fz
+    BASH EQUIVALENT:
+    $ ingestCalibs.py repo --calib calibrepo --mode=link --validity 999 datafiles
+    RESULT:
+    calibrepo populated with *links* to files in datadir,
+    organized by date (bias/zero and flat images only)
+    sqlite3 database registry of ingested calibration products
+    created in calibrepo
+            
+    processCcd - Perform ISR with ingested images and calibrations 
+    via processCcd.
+    For successful difference imaging in the next step, astrometry and
+    photometric calibration must also be done by processCcd.
+    These steps need a reference catalog. The catalog used here is pan-starrs,
+    which lives on lsst-dev at /datasets/refcats/htm/ps1_pv3_3pi_20170110/
+    This catalog must exist in repo/ref_cats, e.g.,
+    $ ln -s /datasets/refcats/htm/ps1_pv3_3pi_20170110/ /path/to/repo/ref_cats
+    For more information, see RFC-257, DM-8232, and
+    https://community.lsst.org/t/creating-and-using-new-style-reference-catalogs
+    USAGE:
+    $ python hits_ingest.py processCcd
+    BASH EQUIVALENT:
+    $ processCcd.py repo --id visit=visit ccdnum=ccdnum
+            --output processedrepo --calib calibrepo
+            -C $OBS_DECAM_DIR/config/processCcdCpIsr.py
+            -C processccd_config.py
+            --config calibrate.doAstrometry=True calibrate.doPhotoCal=True
+    ** to run from bash, 'processccd_config.py' must exist and contain, e.g.,
+        from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask
+        for refObjLoader in (config.calibrate.astromRefObjLoader,
+                            config.calibrate.photoRefObjLoader,
+                            config.charImage.refObjLoader,
+                            ):
+        refObjLoader.retarget(LoadIndexedReferenceObjectsTask)
+        refObjLoader.ref_dataset_name = 'pan-starrs'
+        refObjLoader.filterMap = {"g": "g",
+                                  "r": "r",
+                                  "VR": "g"}
+    RESULT:
+    processedrepo/visit populated with subdirectories containing the
+    usual post-ISR data (bkgd, calexp, icExp, icSrc, postISR).
+    
+    diffIm - Do difference imaging with a visit as a template and 
+    one or more as science.
+    USAGE:
+    $ python hits_ingest.py diffIm
+    BASH EQUIVALENT:
+    $ imageDifference.py processedrepo --id visit=sciencevisit ccdnum=ccdnum
+            --templateId visit=templatevisit --output diffimrepo
+            -C diffim_config.py
+    ** to run from bash, 'diffim_config.py' must exist and contain, e.g.,
+        from lsst.ip.diffim.getTemplate import GetCalexpAsTemplateTask
+        config.getTemplate.retarget(GetCalexpAsTemplateTask)
+        config.detection.thresholdValue=5.0
+        config.doDecorrelation=True
+    RESULT:
+    diffimrepo/deepDiff/v+sciencevisit populated with difference images
+    and catalogs of detected sources (diaSrc, diffexp, and metadata files)
+                        ''')
+    parser.add_argument('-f', '--files', 
+                        help='Input files or directory for ingest or ingestCalibs.')
+    args = parser.parse_args()
+    if (args.task == 'ingest' or args.task == 'ingestCalibs') and not args.files:
+        raise IOError('-f is required to ingest images or calibrations.')
+    if args.files is None:
+        datadir = None
+        datafiles = None
+    else:
+        datadir = args.files
+        if os.path.isdir(datadir):
+            datafiles = glob(os.path.join(datadir, '*.fz'))
+        else:
+            datafiles = glob(datadir)
 
     # Run whichever task has been requested
     if args.task == 'ingest':
@@ -109,6 +219,11 @@ def doIngestCalibs(repo, calibrepo, datafiles):
     '''
     Ingest DECam MasterCal biases and flats into a calibration repository with a corresponding registry
 
+    Darks (and fringes, if applicable) must be ingested manually! e.g.,
+    $ cd calibrepo
+    $ ingestCalibs.py ../repo --calib . --calibType defect --validity 999
+          ../HiTS/MasterCals/defects/2014-12-05/*fits
+
     USAGE:
     $ python hits_ingest.py ingestCalibs -f path/to/calibrations/somefiles*.fits.fz
 
@@ -120,13 +235,6 @@ def doIngestCalibs(repo, calibrepo, datafiles):
     organized by date (bias/zero and flat images only)
     sqlite3 database registry of ingested calibration products
     created in calibrepo
-
-    Darks (and fringes, if applicable) must be ingested manually! e.g.,
-    $ cd calibrepo
-    $ ingestCalibs.py ../repo --calib . --calibType defect --validity 999
-          ../HiTS/MasterCals/defects/2014-12-05/*fits
-
-    This function also catches a common sqlite3 error and prints useful info
     '''
     if not os.path.isdir(calibrepo):
         os.mkdir(calibrepo)
@@ -161,6 +269,13 @@ def doProcessCcd(repo, calibrepo, processedrepo, visit, ccdnum):
 
     For successful difference imaging in the next step, astrometry and
     photometric calibration must also be done by processCcd.
+    
+    These steps need a reference catalog. The catalog used here is pan-starrs,
+    which lives on lsst-dev at /datasets/refcats/htm/ps1_pv3_3pi_20170110/
+    This catalog must exist in repo/ref_cats, e.g.,
+    $ ln -s /datasets/refcats/htm/ps1_pv3_3pi_20170110/ /path/to/repo/ref_cats
+    For more information, see RFC-257, DM-8232, and
+    https://community.lsst.org/t/creating-and-using-new-style-reference-catalogs
 
     USAGE:
     $ python hits_ingest.py processCcd
@@ -246,21 +361,4 @@ def doDiffIm(processedrepo, sciencevisit, ccdnum, templatevisit, diffimrepo):
 
 
 if __name__ == '__main__':
-    # parse command line arguments with argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('task', help='Which task you would like to run',
-                        choices=['ingest', 'ingestCalibs', 'processCcd', 'diffIm'])
-    parser.add_argument('-f', '--files', help='Input files or directory')
-    args = parser.parse_args()
-    if (args.task == 'ingest' or args.task == 'ingestCalibs') and not args.files:
-        raise IOError('-f is required to ingest images or calibrations.')
-    if args.files is None:
-        datadir = None
-        datafiles = None
-    else:
-        datadir = args.files
-        if os.path.isdir(datadir):
-            datafiles = glob(os.path.join(datadir, '*.fz'))
-        else:
-            datafiles = glob(datadir)
     main()
