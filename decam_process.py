@@ -19,10 +19,10 @@ import textwrap
 Process raw decam images with MasterCals from ingestion --> difference imaging
 
 USAGE:
-$ python hits_ingest.py ingest -f path/to/rawimages/
-$ python hits_ingest.py ingestCalibs -f path/to/calibrations/somefiles*.fits.fz
-$ python hits_ingest.py processCcd
-$ python hits_ingest.py diffIm
+$ python decam_process.py ingest -f path/to/rawimages
+$ python decam_process.py ingestCalibs -f path/to/biasesandflats -d /path/to/defects
+$ python decam_process.py processCcd
+$ python decam_process.py diffIm
 
 A typical workflow will run these four tasks in order. The user must set
 repo, calibrepo, processedrepo, diffimrepo, visits, and ccdnum in the code.
@@ -37,7 +37,8 @@ def main():
 
     # ~~  edit values below as desired  ~~ #
     repo = 'ingested_15A38/'  # used by ingest, ingestCalibs, processCcd
-    calibrepo = 'calibingested_15A38/'  # used by ingestCalibs, processCcd
+    calibrepo = 'calibtest/'
+    #calibrepo = 'calibingested_15A38/'  # used by ingestCalibs, processCcd
     processedrepo = 'processed_15A38/'  # used by processCcd, diffIm
     diffimrepo = 'diffim_15A38_g/'  # used by diffIm
     visits = [410927, 411033]  # used by processCcd, diffIm
@@ -57,10 +58,10 @@ def main():
     Process raw decam images with MasterCals from ingestion --> difference imaging
 
     USAGE:
-    $ python hits_ingest.py ingest -f path/to/rawimages/
-    $ python hits_ingest.py ingestCalibs -f path/to/calibrations/somefiles*.fits.fz
-    $ python hits_ingest.py processCcd
-    $ python hits_ingest.py diffIm
+    $ python decam_process.py ingest -f path/to/rawimages
+    $ python decam_process.py ingestCalibs -f path/to/biasesandflats -d /path/to/defects
+    $ python decam_process.py processCcd
+    $ python decam_process.py diffIm
 
     A typical workflow will run these four tasks in order. The user must set
     repo, calibrepo, processedrepo, diffimrepo, visits, and ccdnum in the code.
@@ -72,29 +73,29 @@ def main():
     ingest - Ingest raw DECam images into a repository with a
     corresponding registry.
     USAGE:
-    $ python hits_ingest.py ingest -f path/to/rawimages/
+    $ python hits_ingest.py ingest -f path/to/rawimages
     (will use all files in the directory named *.fz if no files are specified)
     BASH EQUIVALENT:
     $ ingestImagesDecam.py repo --filetype raw --mode link datafiles
     RESULT:
-    repo populated with *links* to files in datadir, organized by date
+    repo populated with *links* to datafiles, organized by date
     sqlite3 database registry of ingested images also created in repo
 
     ingestCalibs - Ingest DECam MasterCal biases and flats into a calibration
     repository with a corresponding registry.
-    Darks (and fringes, if applicable) must be ingested manually! e.g.,
-    $ cd calibrepo
-    $ ingestCalibs.py ../repo --calib . --calibType defect --validity 999
-          ../HiTS/MasterCals/defects/2014-12-05/*fits
+    Also ingest DECam defects into the calib registry.
     USAGE:
-    $ python hits_ingest.py ingestCalibs -f path/to/calibrations/somefiles*.fits.fz
+    $ python hits_ingest.py ingestCalibs -f path/to/biasesandflats -d /path/to/defects
     BASH EQUIVALENT:
-    $ ingestCalibs.py repo --calib calibrepo --mode=link --validity 999 datafiles
+    $ ingestCalibs.py repo --calib calibrepo --mode=link --validity 999 calibdatafiles
+    $ cd calibrepo
+    $ ingestCalibs.py ../repo --calib . --mode=skip --calibType defect --validity 999 ../defectfiles
+    $ cd ..
     RESULT:
-    calibrepo populated with *links* to files in datadir,
-    organized by date (bias/zero and flat images only)
+    calibrepo populated with *links* to calibdatafiles (biases and flats),
+    organized by date
     sqlite3 database registry of ingested calibration products
-    created in calibrepo
+    created in calibrepo containing biases, flats, and defects
 
     processCcd - Perform ISR with ingested images and calibrations
     via processCcd.
@@ -147,25 +148,39 @@ def main():
     and catalogs of detected sources (diaSrc, diffexp, and metadata files)
                         '''))
     parser.add_argument('-f', '--files',
-                        help='Input files or directory for ingest or ingestCalibs.')
+                        help='Input files or directory used by ingest or ingestCalibs.')
+    parser.add_argument('-d', '--defects',
+                        help='Input files or directory for defect images used by ingestCalibs.')
     args = parser.parse_args()
     if (args.task == 'ingest' or args.task == 'ingestCalibs') and not args.files:
         raise IOError('-f is required to ingest images or calibrations.')
+    if (args.task == 'ingestCalibs') and not args.defects:
+        raise IOError('-d is required with ingestCalibs so defects are ingested alongside biases and flats.')
     if args.files is None:
         datadir = None
         datafiles = None
     else:
         datadir = args.files
         if os.path.isdir(datadir):
-            datafiles = glob(os.path.join(datadir, '*.fz'))
-        else:
+            datafiles = glob(os.path.join(datadir, '*.fz'))  # should be generalized to fz or fits
+        else:  # this doesn't seem to work properly...
             datafiles = glob(datadir)
+    if args.defects is None:
+        defectdir = None
+        defectfiles = None
+    else:
+        defectdir = args.defects
+        if os.path.isdir(defectdir):
+            defectfiles = glob(os.path.join(defectdir, '*.fits'))  # should be generalized to fz or fits
+        else:  # this doesn't seem to work properly...
+            defectfiles = glob(defectdir)
 
     # Run whichever task has been requested
     if args.task == 'ingest':
         doIngest(repo, datafiles)
     elif args.task == 'ingestCalibs':
-        doIngestCalibs(repo, calibrepo, datafiles)
+        calibdatafiles = datafiles
+        doIngestCalibs(repo, calibrepo, calibdatafiles, defectfiles)
     elif args.task == 'processCcd':
         doProcessCcd(repo, calibrepo, processedrepo, visit, ccdnum)
     elif args.task == 'diffIm':
@@ -179,14 +194,14 @@ def doIngest(repo, datafiles):
     Ingest raw DECam images into a repository with a corresponding registry
 
     USAGE:
-    $ python hits_ingest.py ingest -f path/to/rawimages/
+    $ python hits_ingest.py ingest -f path/to/rawimages
     (will use all files in the directory named *.fz if no files are specified)
 
     BASH EQUIVALENT:
     $ ingestImagesDecam.py repo --filetype raw --mode link datafiles
 
     RESULT:
-    repo populated with *links* to files in datadir, organized by date
+    repo populated with *links* to datafiles, organized by date
     sqlite3 database registry of ingested images also created in repo
     '''
     if not os.path.isdir(repo):
@@ -216,32 +231,31 @@ def doIngest(repo, datafiles):
     return
 
 
-def doIngestCalibs(repo, calibrepo, datafiles):
+def doIngestCalibs(repo, calibrepo, calibdatafiles, defectfiles):
     '''
-    Ingest DECam MasterCal biases and flats into a calibration repository with a corresponding registry
-
-    Darks (and fringes, if applicable) must be ingested manually! e.g.,
-    $ cd calibrepo
-    $ ingestCalibs.py ../repo --calib . --calibType defect --validity 999
-          ../HiTS/MasterCals/defects/2014-12-05/*fits
+    Ingest DECam MasterCal biases and flats into a calibration repository with a corresponding registry.
+    Also ingest DECam defects into the calib registry.
 
     USAGE:
-    $ python hits_ingest.py ingestCalibs -f path/to/calibrations/somefiles*.fits.fz
+    $ python hits_ingest.py ingestCalibs -f path/to/biasesandflats -d path/to/defects
 
     BASH EQUIVALENT:
-    $ ingestCalibs.py repo --calib calibrepo --mode=link --validity 999 datafiles
+    $ ingestCalibs.py repo --calib calibrepo --mode=link --validity 999 calibdatafiles
+    $ cd calibrepo
+    $ ingestCalibs.py ../repo --calib . --mode=skip --calibType defect --validity 999 ../defectfiles
+    $ cd ..
 
     RESULT:
-    calibrepo populated with *links* to files in datadir,
-    organized by date (bias/zero and flat images only)
-    sqlite3 database registry of ingested calibration products
-    created in calibrepo
+    calibrepo populated with *links* to calibdatafiles,
+    organized by date (bias and flat images only)
+    sqlite3 database registry of ingested calibration products (bias, flat, 
+    and defect images) created in calibrepo
     '''
     if not os.path.isdir(calibrepo):
         os.mkdir(calibrepo)
-    print('Ingesting calibration products...')  # NOTE: just biases and flats
+    print('Ingesting flats and biases...')
     args = [repo, '--calib', calibrepo, '--mode', 'link', '--validity', '999']
-    args.extend(datafiles)
+    args.extend(calibdatafiles)
     argumentParser = IngestCalibsArgumentParser(name='ingestCalibs')
     config = IngestCalibsConfig()
     config.parse.retarget(ingestCalibs.DecamCalibsParseTask)
@@ -261,6 +275,19 @@ def doIngestCalibs(repo, calibrepo, datafiles):
     else:
         print('Success!')
         print('Calibrations corresponding to {0} are now ingested in {1}'.format(repo, calibrepo))
+    print('Ingesting defects...')
+    os.chdir(calibrepo)
+    defectargs = ['../' + repo, '--calib', '.', '--calibType', 'defect', 
+                  '--mode', 'skip', '--validity', '999']
+    defectfiles = ['../' + file for file in defectfiles]
+    defectargs.extend(defectfiles)
+    defectargumentParser = IngestCalibsArgumentParser(name='ingestCalibs')
+    defectconfig = IngestCalibsConfig()
+    defectconfig.parse.retarget(ingestCalibs.DecamCalibsParseTask)
+    defectIngestTask = IngestCalibsTask(config=defectconfig, name='ingestCalibs')
+    defectParsedCmd = defectargumentParser.parse_args(config=defectconfig, args=defectargs)
+    defectIngestTask.run(defectParsedCmd)
+    os.chdir('..')
     return
 
 
