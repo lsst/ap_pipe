@@ -1,5 +1,10 @@
-#decam_hits
+# decam_hits
 
-A place to work on scripts that use the LSST Stack to run the Alert Production pipeline on some data from HiTS.
+This package contains the Prototype AP Pipeline and will eventually be 
+renamed `ap_pipe`.
 
-This will eventually become a package in the lsst stack called validate_ap.
+At present, the main script is `decam_process.py`, which allows a
+user to run a portion of the AP Pipeline on data from the DECam HiTS survey.
+
+For more detailed documentation, including a tutorial, 
+please see [DMTN-039](https://dmtn-039.lsst.io).
