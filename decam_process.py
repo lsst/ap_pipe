@@ -196,30 +196,21 @@ def doIngestCalibs(repo, calibrepo, calibdatafiles, defectfiles):
         flatBiasIngest(repo, calibrepo, calibdatafiles)
         defectIngest(repo, calibrepo, defectfiles)
     elif os.path.exists(os.path.join(calibrepo, 'cpBIAS')):
+        print('Flats and biases were previously ingested, skipping...')
         defectIngest(repo, calibrepo, defectfiles)
     else:
         flatBiasIngest(repo, calibrepo, calibdatafiles)
-        defectIngest(repo, calibrepo, defectfiles) 
+        defectIngest(repo, calibrepo, defectfiles)
 
     return
 
 
-def doProcessCcd(repo, calibrepo, processedrepo, visit, ccdnum):
+def doProcessCcd(repo, calibrepo, processedrepo, visit, ccdnum, ref_cats):
     '''
     Perform ISR with ingested images and calibrations via processCcd
 
     For successful difference imaging in the next step, astrometry and
     photometric calibration must also be done by processCcd.
-
-    This step needs a reference catalog. The catalog used here is pan-starrs,
-    which lives on lsst-dev at /datasets/refcats/htm/htm_baseline
-    For more information, see RFC-257, DM-8232, and
-    https://community.lsst.org/t/creating-and-using-new-style-reference-catalogs
-    
-    TODO: the current config assumes ref_cats is in the ingested image repo.
-    It should instead look in dataset_root.
-    I had to run this command after ingestion for doProcessCcd to work:
-    ln -s /datasets/refcats/htm/htm_baseline output_location/ingested/ref_cats
 
     BASH EQUIVALENT:
     $ processCcd.py repo --id visit=visit ccdnum=ccdnum
@@ -227,43 +218,56 @@ def doProcessCcd(repo, calibrepo, processedrepo, visit, ccdnum):
             -C $OBS_DECAM_DIR/config/processCcdCpIsr.py
             -C processccd_config.py
             --config calibrate.doAstrometry=True calibrate.doPhotoCal=True
-    ** to run from bash, 'processccd_config.py' must exist and contain, e.g.,
-        from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask
-        for refObjLoader in (config.calibrate.astromRefObjLoader,
-                            config.calibrate.photoRefObjLoader,
-                            config.charImage.refObjLoader,
-                            ):
-        refObjLoader.retarget(LoadIndexedReferenceObjectsTask)
-        refObjLoader.ref_dataset_name = 'pan-starrs'
-        refObjLoader.filterMap = {"g": "g",
-                                  "r": "r",
-                                  "VR": "g"}
+    ** to run from bash, 'processccd_config.py' must exist and contain
+       all of the refObjLoader information in the code below. repo must also
+       contain the ref_cats.
 
     RESULT:
     processedrepo/visit populated with subdirectories containing the
     usual post-ISR data (bkgd, calexp, icExp, icSrc, postISR).
     '''
-    if not os.path.isdir(processedrepo):
-        os.mkdir(processedrepo)
-    print('Running ProcessCcd...')
-    OBS_DECAM_DIR = getPackageDir('obs_decam')
-    config = ProcessCcdConfig()
-    # Astrometry retarget party
-    for refObjLoader in (config.calibrate.astromRefObjLoader,
-                         config.calibrate.photoRefObjLoader,
-                         config.charImage.refObjLoader,):
-        refObjLoader.retarget(LoadIndexedReferenceObjectsTask)
-        refObjLoader.ref_dataset_name = 'pan-starrs'  # options are gaia, pan-starrs, sdss
-        refObjLoader.filterMap = {"g": "g",  # 'phot_g_mean_mag' is gaia-specific
-                                  "r": "r",  # all of 'g,r,i,z,y' are options for pan-starrs
-                                  "VR": "g"}
-    args = [repo, '--id', 'visit=' + visit, 'ccdnum=' + ccdnum,
-            '--output', processedrepo,
-            '--calib', calibrepo,
-            '-C', OBS_DECAM_DIR + '/config/processCcdCpIsr.py',
-            '--config', 'calibrate.doAstrometry=True',
-            'calibrate.doPhotoCal=True']
-    ProcessCcdTask.parseAndRun(args=args, config=config)
+    if os.path.isdir(os.path.join(processedrepo, '0'+visit)):
+        print('ProcessCcd has already been run for visit {0}, skipping...'.format(visit))
+    else:
+        if not os.path.isdir(processedrepo):
+            os.mkdir(processedrepo)
+        print('Running ProcessCcd...')
+        OBS_DECAM_DIR = getPackageDir('obs_decam')
+        # Copy ref_cats files to repo
+        gaiatarball = os.path.join(ref_cats, 'gaia_HiTS_2015.tar.gz')
+        panstarrstarball = os.path.join(ref_cats, 'ps1_HiTS_2015.tar.gz')
+        tarfile.open(gaiatarball, 'r').extractall(os.path.join(repo, 'ref_cats', 'gaia'))
+        tarfile.open(panstarrstarball, 'r').extractall(os.path.join(repo, 'ref_cats', 'pan-starrs'))
+        config = ProcessCcdConfig()
+        # Use gaia for astrometry (phot_g_mean_mag is only available DR1 filter)
+        # Use pan-starrs for photometry (grizy filters)
+        for refObjLoader in (config.calibrate.astromRefObjLoader,
+                             config.calibrate.photoRefObjLoader,
+                             config.charImage.refObjLoader,):
+            refObjLoader.retarget(LoadIndexedReferenceObjectsTask)
+        config.calibrate.astromRefObjLoader.ref_dataset_name = 'gaia'
+        config.calibrate.astromRefObjLoader.filterMap = {'u': 'phot_g_mean_mag',
+                                                         'g': 'phot_g_mean_mag',
+                                                         'r': 'phot_g_mean_mag',
+                                                         'i': 'phot_g_mean_mag',
+                                                         'z': 'phot_g_mean_mag',
+                                                         'y': 'phot_g_mean_mag',
+                                                         'VR': 'phot_g_mean_mag'}
+        config.calibrate.photoRefObjLoader.ref_dataset_name = 'pan-starrs'
+        config.calibrate.photoRefObjLoader.filterMap = {'u': 'g',
+                                                        'g': 'g',
+                                                        'r': 'r',
+                                                        'i': 'i',
+                                                        'z': 'z',
+                                                        'y': 'y',
+                                                        'VR': 'g'}
+        args = [repo, '--id', 'visit=' + visit, 'ccdnum=' + ccdnum,
+                '--output', processedrepo,
+                '--calib', calibrepo,
+                '-C', OBS_DECAM_DIR + '/config/processCcdCpIsr.py',
+                '--config', 'calibrate.doAstrometry=True',
+                'calibrate.doPhotoCal=True']
+        ProcessCcdTask.parseAndRun(args=args, config=config)
     return
 
 
