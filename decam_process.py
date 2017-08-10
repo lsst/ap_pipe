@@ -195,15 +195,18 @@ def doIngest(repo, ref_cats, datafiles):
         The output repository location on disk where ingested raw images live.
     ref_cats: `str`
         A directory containing two .tar.gz files with LSST-formatted astrometric
-        and photometric reference catalog information, one from Gaia and one
-        from Pan-STARRS. These files must be called `gaia_HiTS_2015.tar.gz`
-        and `ps1_HiTS_2015.tar.gz`, respectively.
+        and photometric reference catalog information. The filenames are set below.
     datafiles: `list`
         A list of the filenames of each raw image file.
 
     BASH EQUIVALENT:
     $ ingestImagesDecam.py repo --filetype raw --mode link datafiles
     ** If run from bash, ref_cats must also be manually copied or symlinked to repo
+
+    Returns
+    -------
+    ingest_metadata: `PropertySet` or None
+        Metadata from the IngestTask for use by ap_verify
 
     RESULT:
     repo populated with *links* to datafiles, organized by date
@@ -213,42 +216,155 @@ def doIngest(repo, ref_cats, datafiles):
     This functions ingests *all* the images, not just the ones for the
     specified visits and/or filters. We may want to revisit this in the future.
     '''
+    # Names of tarballs containing astrometric and photometric reference catalog files
+    ASTROM_REFCAT_TAR = 'gaia_HiTS_2015.tar.gz'
+    PHOTOM_REFCAT_TAR = 'ps1_HiTS_2015.tar.gz'
+
+    # Names of reference catalog directories processCcd expects to find in repo
+    ASTROM_REFCAT_DIR = 'ref_cats/gaia'
+    PHOTOM_REFCAT_DIR = 'ref_cats/pan-starrs'
+
     if os.path.exists(os.path.join(repo, 'registry.sqlite3')):
         print('Raw images were previously ingested, skipping...')
+        return None
+
+    if not os.path.isdir(repo):
+        os.mkdir(repo)
+    # make a text file that handles the mapper, per the obs_decam github README
+    with open(os.path.join(repo, '_mapper'), 'w') as f:
+        print('lsst.obs.decam.DecamMapper', file=f)
+    print('Ingesting raw images...')
+    # save arguments you'd put on the command line after 'ingestImagesDecam.py'
+    # (extend the list with all the filenames as the last set of arguments)
+    args = [repo, '--filetype', 'raw', '--mode', 'link']
+    args.extend(datafiles)
+    # set up the decam ingest task so it can take arguments
+    # ('name' says which file in obs_decam/config to use)
+    argumentParser = ingest.DecamIngestArgumentParser(name='ingest')
+    # create an instance of ingest configuration
+    # the retarget command is from line 2 of obs_decam/config/ingest.py
+    config = IngestConfig()
+    config.parse.retarget(DecamParseTask)
+    # create an *instance* of the decam ingest task
+    ingestTask = ingest.DecamIngestTask(config=config)
+    # feed everything to the argument parser
+    parsedCmd = argumentParser.parse_args(config=config, args=args)
+    # finally, run the ingestTask
+    ingestTask.run(parsedCmd)
+    # Copy ref_cats files to repo (needed for doProcessCcd)
+    astrom_tarball = os.path.join(ref_cats, ASTROM_REFCAT_TAR)
+    photom_tarball = os.path.join(ref_cats, PHOTOM_REFCAT_TAR)
+    tarfile.open(astrom_tarball, 'r').extractall(os.path.join(repo, ASTROM_REFCAT_DIR))
+    tarfile.open(photom_tarball, 'r').extractall(os.path.join(repo, PHOTOM_REFCAT_DIR))
+    print('Images are now ingested in {0}'.format(repo))
+    ingest_metadata = ingestTask.getFullMetadata()
+    return ingest_metadata
+
+
+def flatBiasIngest(repo, calib_repo, calibdatafiles):
+    '''
+    Ingest DECam flats and biases (called by doIngestCalibs)
+
+    Parameters
+    ----------
+    repo: `str`
+        The output repository location on disk where ingested raw images live.
+    calib_repo: `str`
+        The output repository location on disk where ingested calibration images live.
+    calibdatafiles: `list`
+        A list of the filenames of each flat and bias image file.
+
+    Returns
+    -------
+    flatBias_metadata: `PropertySet` or None
+        Metadata from the IngestCalibTask (flats and biases) for use by ap_verify
+
+    BASH EQUIVALENT:
+    $ ingestCalibs.py repo --calib calib_repo --mode=link --validity 999 calibdatafiles
+    '''
+    print('Ingesting flats and biases...')
+    args = [repo, '--calib', calib_repo, '--mode', 'link', '--validity', '999']
+    args.extend(calibdatafiles)
+    argumentParser = IngestCalibsArgumentParser(name='ingestCalibs')
+    config = IngestCalibsConfig()
+    config.parse.retarget(ingestCalibs.DecamCalibsParseTask)
+    calibIngestTask = IngestCalibsTask(config=config, name='ingestCalibs')
+    parsedCmd = argumentParser.parse_args(config=config, args=args)
+    try:
+        calibIngestTask.run(parsedCmd)
+    except sqlite3.IntegrityError as detail:
+        print('sqlite3.IntegrityError: ', detail)
+        print('(sqlite3 doesn\'t think all the calibration files are unique)')
+        flatBias_metadata = None
     else:
-        if not os.path.isdir(repo):
-            os.mkdir(repo)
-        # make a text file that handles the mapper, per the obs_decam github README
-        with open(os.path.join(repo, '_mapper'), 'w') as f:
-            print('lsst.obs.decam.DecamMapper', file=f)
-        print('Ingesting raw images...')
-        # save arguments you'd put on the command line after 'ingestImagesDecam.py'
-        # (extend the list with all the filenames as the last set of arguments)
-        args = [repo, '--filetype', 'raw', '--mode', 'link']
-        args.extend(datafiles)
-        # set up the decam ingest task so it can take arguments
-        # ('name' says which file in obs_decam/config to use)
-        argumentParser = ingest.DecamIngestArgumentParser(name='ingest')
-        # create an instance of ingest configuration
-        # the retarget command is from line 2 of obs_decam/config/ingest.py
-        config = IngestConfig()
-        config.parse.retarget(DecamParseTask)
-        # create an instance of the decam ingest task
-        ingestTask = ingest.DecamIngestTask(config=config)
-        # feed everything to the argument parser
-        parsedCmd = argumentParser.parse_args(config=config, args=args)
-        # finally, run the ingestTask
-        ingestTask.run(parsedCmd)
-        # Copy ref_cats files to repo (needed for doProcessCcd)
-        gaiatarball = os.path.join(ref_cats, 'gaia_HiTS_2015.tar.gz')
-        panstarrstarball = os.path.join(ref_cats, 'ps1_HiTS_2015.tar.gz')
-        tarfile.open(gaiatarball, 'r').extractall(os.path.join(repo, 'ref_cats', 'gaia'))
-        tarfile.open(panstarrstarball, 'r').extractall(os.path.join(repo, 'ref_cats', 'pan-starrs'))
-        print('Images are now ingested in {0}'.format(repo))
-    return
+        print('Success!')
+        print('Calibrations corresponding to {0} are now ingested in {1}'.format(repo, calib_repo))
+        flatBias_metadata = calibIngestTask.getFullMetadata()
+    return flatBias_metadata
 
 
-def doIngestCalibs(repo, calibrepo, calibdatafiles, defectfiles):
+def defectIngest(repo, calib_repo, defectfiles):
+    '''
+    Ingest DECam defect images (called by doIngestCalibs)
+
+    Parameters
+    ----------
+    repo: `str`
+        The output repository location on disk where ingested raw images live.
+    calib_repo: `str`
+        The output repository location on disk where ingested calibration images live.
+    defectfiles: `list`
+        A list of the filenames of each defect image file.
+        The first element in this list must be the name of a .tar.gz file
+        which contains all the compressed defect images.
+
+    Returns
+    -------
+    defect_metadata: `PropertySet` or None
+        Metadata from the IngestCalibTask (defects) for use by ap_verify
+
+    BASH EQUIVALENT:
+    $ cd calib_repo
+    $ ingestCalibs.py ../../repo --calib . --mode=skip --calibType defect --validity 999 defectfiles
+    $ cd ..
+
+    This function assumes very particular things about defect ingestion:
+    - They must live in a .tar.gz file in the same location on disk as the other calibs
+    - They will be ingested using ingestCalibs.py run from the calib_repo directory
+    - They will be manually uncompressed and saved in calib_repo/defects/<tarballname>/.
+    - They will be added to the calib registry, but not linked like the flats and biases
+    '''
+    os.chdir(calib_repo)
+    try:
+        os.mkdir('defects')
+    except OSError:
+        # most likely the defects directory already exists
+        if os.path.isdir('defects'):
+            print('Defects were previously ingested, skipping...')
+        else:
+            print('Defect ingestion failed because \'defects\' dir could not be created')
+        defect_metadata = None
+    else:
+        print('Ingesting defects...')
+        defectargs = ['../../' + repo, '--calib', '.', '--calibType', 'defect',
+                      '--mode', 'skip', '--validity', '999']
+        defect_tarball = defectfiles[0] + '.tar.gz'
+        tarfile.open(os.path.join('../../', defect_tarball), 'r').extractall('defects')
+        defectfiles = glob(os.path.join('defects', os.path.basename(defectfiles[0]), '*.fits'))
+        defectargs.extend(defectfiles)
+        defectArgumentParser = IngestCalibsArgumentParser(name='ingestCalibs')
+        defectConfig = IngestCalibsConfig()
+        defectConfig.parse.retarget(ingestCalibs.DecamCalibsParseTask)
+        DefectIngestTask = IngestCalibsTask(config=defectConfig, name='ingestCalibs')
+        defectParsedCmd = defectArgumentParser.parse_args(config=defectConfig, args=defectargs)
+        DefectIngestTask.run(defectParsedCmd)
+        defect_metadata = DefectIngestTask.getFullMetadata()
+    finally:
+        os.chdir('../..')
+    return defect_metadata
+
+
+def doIngestCalibs(repo, calib_repo, calibdatafiles, defectfiles):
     '''
     Ingest DECam MasterCal biases and flats into a calibration repository with a corresponding registry.
     Also ingest DECam defects into the calib registry.
@@ -257,7 +373,7 @@ def doIngestCalibs(repo, calibrepo, calibdatafiles, defectfiles):
     ----------
     repo: `str`
         The output repository location on disk where ingested raw images live.
-    calibrepo: `str`
+    calib_repo: `str`
         The output repository location on disk where ingested calibration images live.
     calibdatafiles: `list`
         A list of the filenames of each flat and bias image file.
@@ -266,115 +382,38 @@ def doIngestCalibs(repo, calibrepo, calibdatafiles, defectfiles):
             The first element in this list must be the name of a .tar.gz file
             which contains all the compressed defect images.
 
-    BASH EQUIVALENT:
-    $ ingestCalibs.py repo --calib calibrepo --mode=link --validity 999 calibdatafiles
-    $ cd calibrepo
-    $ ingestCalibs.py ../../repo --calib . --mode=skip --calibType defect --validity 999 defectfiles
-    $ cd ..
+    Returns
+    -------
+    flatBias_metadata: `PropertySet` or None
+        Metadata from the IngestCalibTask (flats and biases) for use by ap_verify
+    defect_metadata: `PropertySet` or None
+        Metadata from the IngestCalibTask (defects) for use by ap_verify
 
     RESULT:
-    calibrepo populated with *links* to calibdatafiles,
+    calib_repo populated with *links* to calibdatafiles,
     organized by date (bias and flat images only)
     sqlite3 database registry of ingested calibration products (bias, flat,
-    and defect images) created in calibrepo
+    and defect images) created in calib_repo
 
     NOTE:
     calib ingestion ingests *all* the calibs, not just the ones needed
     for the specified visits. We may want to revisit this in the future.
     '''
-
-    def flatBiasIngest(repo, calibrepo, calibdatafiles):
-        '''
-        Ingest DECam flats and biases
-    
-        Parameters
-        ----------
-        repo: `str`
-            The output repository location on disk where ingested raw images live.
-        calibrepo: `str`
-            The output repository location on disk where ingested calibration images live.
-        calibdatafiles: `list`
-            A list of the filenames of each flat and bias image file.
-    
-        '''
-        print('Ingesting flats and biases...')
-        args = [repo, '--calib', calibrepo, '--mode', 'link', '--validity', '999']
-        args.extend(calibdatafiles)
-        argumentParser = IngestCalibsArgumentParser(name='ingestCalibs')
-        config = IngestCalibsConfig()
-        config.parse.retarget(ingestCalibs.DecamCalibsParseTask)
-        ingestTask = IngestCalibsTask(config=config, name='ingestCalibs')
-        parsedCmd = argumentParser.parse_args(config=config, args=args)
-        try:
-            ingestTask.run(parsedCmd)
-        except sqlite3.IntegrityError as detail:
-            print('sqlite3.IntegrityError: ', detail)
-            print('(sqlite3 doesn\'t think all the calibration files are unique)')
-        else:
-            print('Success!')
-            print('Calibrations corresponding to {0} are now ingested in {1}'.format(repo, calibrepo))
-        return
-
-    def defectIngest(repo, calibrepo, defectfiles):
-        '''
-        Ingest DECam defect images
-    
-        Parameters
-        ----------
-        repo: `str`
-            The output repository location on disk where ingested raw images live.
-        calibrepo: `str`
-            The output repository location on disk where ingested calibration images live.
-        defectfiles: `list`
-            A list of the filenames of each defect image file.
-            The first element in this list must be the name of a .tar.gz file
-            which contains all the compressed defect images.
-
-        This function assumes very particular things about defect ingestion:
-        - They must live in a .tar.gz file in the same location on disk as the other calibs
-        - They will be ingested using ingestCalibs.py run from the calibrepo directory
-        - They will be manually uncompressed and saved in calibrepo/defects/<tarballname>/.
-        - They will be added to the calib registry, but not linked like the flats and biases
-        '''
-        os.chdir(calibrepo)
-        try:
-            os.mkdir('defects')
-        except OSError:
-            # defects directory already exists
-            print('Defects were previously ingested, skipping...')
-        else:
-            print('Ingesting defects...')
-            defectargs = ['../../' + repo, '--calib', '.', '--calibType', 'defect',
-                          '--mode', 'skip', '--validity', '999']
-            defecttarball = defectfiles[0] + '.tar.gz'
-            tarfile.open(os.path.join('../../', defecttarball), 'r').extractall('defects')
-            defectfiles = glob(os.path.join('defects', os.path.basename(defectfiles[0]), '*.fits'))
-            defectargs.extend(defectfiles)
-            defectargumentParser = IngestCalibsArgumentParser(name='ingestCalibs')
-            defectconfig = IngestCalibsConfig()
-            defectconfig.parse.retarget(ingestCalibs.DecamCalibsParseTask)
-            defectIngestTask = IngestCalibsTask(config=defectconfig, name='ingestCalibs')
-            defectParsedCmd = defectargumentParser.parse_args(config=defectconfig, args=defectargs)
-            defectIngestTask.run(defectParsedCmd)
-        finally:
-            os.chdir('../..')
-        return
-
-    if not os.path.isdir(calibrepo):
-        os.mkdir(calibrepo)
-        flatBiasIngest(repo, calibrepo, calibdatafiles)
-        defectIngest(repo, calibrepo, defectfiles)
-    elif os.path.exists(os.path.join(calibrepo, 'cpBIAS')):
+    if not os.path.isdir(calib_repo):
+        os.mkdir(calib_repo)
+        flatBias_metadata = flatBiasIngest(repo, calib_repo, calibdatafiles)
+        defect_metadata = defectIngest(repo, calib_repo, defectfiles)
+    elif os.path.exists(os.path.join(calib_repo, 'cpBIAS')):
         print('Flats and biases were previously ingested, skipping...')
-        defectIngest(repo, calibrepo, defectfiles)
+        flatBias_metadata = None
+        defect_metadata = defectIngest(repo, calib_repo, defectfiles)
     else:
-        flatBiasIngest(repo, calibrepo, calibdatafiles)
-        defectIngest(repo, calibrepo, defectfiles)
+        flatBias_metadata = flatBiasIngest(repo, calib_repo, calibdatafiles)
+        defect_metadata = defectIngest(repo, calib_repo, defectfiles)
+    return flatBias_metadata, defect_metadata
 
-    return
 
-
-def doProcessCcd(repo, calibrepo, processedrepo, visit, ccdnum):
+def doProcessCcd(repo, calib_repo, processed_repo, visit, ccdnum):
     '''
     Perform ISR with ingested images and calibrations via processCcd
 
@@ -382,9 +421,9 @@ def doProcessCcd(repo, calibrepo, processedrepo, visit, ccdnum):
     ----------
     repo: `str`
         The output repository location on disk where ingested raw images live.
-    calibrepo: `str`
+    calib_repo: `str`
         The output repository location on disk where ingested calibration images live.
-    processedrepo: `str`
+    processed_repo: `str`
         The output repository location on disk where processed raw images live.
     visit: `str`
         One or more DECam visit numbers, e.g., `54321`. Multiple visits may be
@@ -393,9 +432,14 @@ def doProcessCcd(repo, calibrepo, processedrepo, visit, ccdnum):
         One or more DECam CCDs (`1` through `62` are allowed). Setting
         ccdnum='1..62' will process all of the CCDs.
 
+    Returns
+    -------
+    process_metadata: `PropertySet` or None
+        Metadata from the ProcessCcdTask for use by ap_verify
+
     BASH EQUIVALENT:
     $ processCcd.py repo --id visit=visit ccdnum=ccdnum
-            --output processedrepo --calib calibrepo
+            --output processed_repo --calib calib_repo
             -C $OBS_DECAM_DIR/config/processCcdCpIsr.py
             -C processccd_config.py
             --config calibrate.doAstrometry=True calibrate.doPhotoCal=True
@@ -404,56 +448,59 @@ def doProcessCcd(repo, calibrepo, processedrepo, visit, ccdnum):
        already contain the ref_cats (this is done during doIngest).
 
     RESULT:
-    processedrepo/visit populated with subdirectories containing the
+    processed_repo/visit populated with subdirectories containing the
     usual post-ISR data (bkgd, calexp, icExp, icSrc, postISR).
+    By default, the configuration for astrometric reference catalogs uses Gaia
+    and the configuration for photometry reference catalogs uses Pan-STARRS.
     '''
-    if os.path.isdir(os.path.join(processedrepo, '0'+visit)):
+    if os.path.isdir(os.path.join(processed_repo, '0'+visit)):
         print('ProcessCcd has already been run for visit {0}, skipping...'.format(visit))
-    else:
-        if not os.path.isdir(processedrepo):
-            os.mkdir(processedrepo)
-        print('Running ProcessCcd...')
-        OBS_DECAM_DIR = getPackageDir('obs_decam')
-        config = ProcessCcdConfig()
-        # Use gaia for astrometry (phot_g_mean_mag is only available DR1 filter)
-        # Use pan-starrs for photometry (grizy filters)
-        for refObjLoader in (config.calibrate.astromRefObjLoader,
-                             config.calibrate.photoRefObjLoader,
-                             config.charImage.refObjLoader,):
-            refObjLoader.retarget(LoadIndexedReferenceObjectsTask)
-        config.calibrate.astromRefObjLoader.ref_dataset_name = 'gaia'
-        config.calibrate.astromRefObjLoader.filterMap = {'u': 'phot_g_mean_mag',
-                                                         'g': 'phot_g_mean_mag',
-                                                         'r': 'phot_g_mean_mag',
-                                                         'i': 'phot_g_mean_mag',
-                                                         'z': 'phot_g_mean_mag',
-                                                         'y': 'phot_g_mean_mag',
-                                                         'VR': 'phot_g_mean_mag'}
-        config.calibrate.photoRefObjLoader.ref_dataset_name = 'pan-starrs'
-        config.calibrate.photoRefObjLoader.filterMap = {'u': 'g',
-                                                        'g': 'g',
-                                                        'r': 'r',
-                                                        'i': 'i',
-                                                        'z': 'z',
-                                                        'y': 'y',
-                                                        'VR': 'g'}
-        args = [repo, '--id', 'visit=' + visit, 'ccdnum=' + ccdnum,
-                '--output', processedrepo,
-                '--calib', calibrepo,
-                '-C', OBS_DECAM_DIR + '/config/processCcdCpIsr.py',
-                '--config', 'calibrate.doAstrometry=True',
-                'calibrate.doPhotoCal=True']
-        ProcessCcdTask.parseAndRun(args=args, config=config)
-    return
+        return None
+    if not os.path.isdir(processed_repo):
+        os.mkdir(processed_repo)
+    print('Running ProcessCcd...')
+    OBS_DECAM_DIR = getPackageDir('obs_decam')
+    config = ProcessCcdConfig()
+    # Use gaia for astrometry (phot_g_mean_mag is only available DR1 filter)
+    # Use pan-starrs for photometry (grizy filters)
+    for refObjLoader in (config.calibrate.astromRefObjLoader,
+                         config.calibrate.photoRefObjLoader,
+                         config.charImage.refObjLoader,):
+        refObjLoader.retarget(LoadIndexedReferenceObjectsTask)
+    config.calibrate.astromRefObjLoader.ref_dataset_name = 'gaia'
+    config.calibrate.astromRefObjLoader.filterMap = {'u': 'phot_g_mean_mag',
+                                                     'g': 'phot_g_mean_mag',
+                                                     'r': 'phot_g_mean_mag',
+                                                     'i': 'phot_g_mean_mag',
+                                                     'z': 'phot_g_mean_mag',
+                                                     'y': 'phot_g_mean_mag',
+                                                     'VR': 'phot_g_mean_mag'}
+    config.calibrate.photoRefObjLoader.ref_dataset_name = 'pan-starrs'
+    config.calibrate.photoRefObjLoader.filterMap = {'u': 'g',
+                                                    'g': 'g',
+                                                    'r': 'r',
+                                                    'i': 'i',
+                                                    'z': 'z',
+                                                    'y': 'y',
+                                                    'VR': 'g'}
+    args = [repo, '--id', 'visit=' + visit, 'ccdnum=' + ccdnum,
+            '--output', processed_repo,
+            '--calib', calib_repo,
+            '-C', OBS_DECAM_DIR + '/config/processCcdCpIsr.py',
+            '--config', 'calibrate.doAstrometry=True',
+            'calibrate.doPhotoCal=True']
+    process_result = ProcessCcdTask.parseAndRun(args=args, config=config, doReturnResults=True)
+    process_metadata = process_result.resultList[0].metadata
+    return process_metadata
 
 
-def doDiffIm(processedrepo, sciencevisit, ccdnum, templatevisit, diffimrepo):
+def doDiffIm(processed_repo, sciencevisit, ccdnum, templatevisit, diffim_repo):
     '''
     Do difference imaging with a visit as a template and one or more as science
-    
+
     Parameters
     ----------
-    processedrepo: `str`
+    processed_repo: `str`
         The output repository location on disk where processed raw images live.
     sciencevisit: `str`
         One or more DECam visit numbers, e.g., `54321`. Multiple visits may be
@@ -464,12 +511,17 @@ def doDiffIm(processedrepo, sciencevisit, ccdnum, templatevisit, diffimrepo):
     templatevisit: `str`
         The single DECam visit number which will be used as a template for
         difference imaging.
-    diffimrepo: `str`
+    diffim_repo: `str`
         The output repository location on disk where difference images live.
 
+    Returns
+    -------
+    diffim_metadata: `PropertySet` or None
+        Metadata from the ImageDifferenceTask for use by ap_verify
+
     BASH EQUIVALENT:
-    $ imageDifference.py processedrepo --id visit=sciencevisit ccdnum=ccdnum
-            --templateId visit=templatevisit --output diffimrepo
+    $ imageDifference.py processed_repo --id visit=sciencevisit ccdnum=ccdnum
+            --templateId visit=templatevisit --output diffim_repo
             -C diffim_config.py
     ** to run from bash, 'diffim_config.py' must exist and contain, e.g.,
         from lsst.ip.diffim.getTemplate import GetCalexpAsTemplateTask
@@ -478,25 +530,26 @@ def doDiffIm(processedrepo, sciencevisit, ccdnum, templatevisit, diffimrepo):
         config.doDecorrelation = True
 
     TODO: use coadds as templates by default, not another visit (DM-11422).
-    
+
     RESULT:
-    diffimrepo/deepDiff/v+sciencevisit populated with difference images
+    diffim_repo/deepDiff/v+sciencevisit populated with difference images
     and catalogs of detected sources (diaSrc, diffexp, and metadata files)
     '''
-    if os.path.exists(os.path.join(diffimrepo, 'deepDiff', 'v' + sciencevisit)):
+    if os.path.exists(os.path.join(diffim_repo, 'deepDiff', 'v' + sciencevisit)):
         print('DiffIm has already been run for visit {0}, skipping...'.format(sciencevisit))
-    else:
-        if not os.path.isdir(diffimrepo):
-            os.mkdir(diffimrepo)
-        print('Running ImageDifference...')
-        config = ImageDifferenceConfig()
-        config.getTemplate.retarget(GetCalexpAsTemplateTask)
-        config.detection.thresholdValue = 5.0
-        config.doDecorrelation = True
-        args = [processedrepo, '--id', 'visit=' + sciencevisit, 'ccdnum=' + ccdnum,
-                '--templateId', 'visit=' + templatevisit, '--output', diffimrepo]
-        ImageDifferenceTask.parseAndRun(args=args, config=config)
-    return
+        return None
+    if not os.path.isdir(diffim_repo):
+        os.mkdir(diffim_repo)
+    print('Running ImageDifference...')
+    config = ImageDifferenceConfig()
+    config.getTemplate.retarget(GetCalexpAsTemplateTask)
+    config.detection.thresholdValue = 5.0
+    config.doDecorrelation = True
+    args = [processed_repo, '--id', 'visit=' + sciencevisit, 'ccdnum=' + ccdnum,
+            '--templateId', 'visit=' + templatevisit, '--output', diffim_repo]
+    diffim_result = ImageDifferenceTask.parseAndRun(args=args, config=config, doReturnResults=True)
+    diffim_metadata = diffim_result.resultList[0].metadata
+    return diffim_metadata
 
 
 if __name__ == '__main__':
