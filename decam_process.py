@@ -1,4 +1,42 @@
+#
+# LSST Data Management System
+# Copyright 2017 LSST Corporation.
+#
+# This product includes software developed by the
+# LSST Project (http://www.lsst.org/).
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
+# see <http://www.lsstcorp.org/LegalNotices/>.
+#
+
+'''
+Process raw decam images with MasterCals from ingestion --> difference imaging
+
+TODO: Rename script and GitHub repo to ap_pipe (not decam_hits or decam_process).
+      This will be done in DM-11324.
+
+TODO: Update DMTN-039 to reflect the new user interface.
+      I'm postponing this until DM-11422 and/or DM-11390 are complete.
+'''
+
 from __future__ import print_function
+import os
+import argparse
+import textwrap
+import tarfile
+from glob import glob
+import sqlite3
 from lsst.obs.decam import ingest
 from lsst.obs.decam import ingestCalibs
 from lsst.obs.decam.ingest import DecamParseTask
@@ -10,35 +48,29 @@ from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask
 from lsst.utils import getPackageDir
 from lsst.ip.diffim.getTemplate import GetCalexpAsTemplateTask
 from lsst.pipe.tasks.imageDifference import ImageDifferenceConfig, ImageDifferenceTask
-from glob import glob
-import sqlite3
-import os
-import argparse
-import textwrap
-import tarfile
-'''
-Process raw decam images with MasterCals from ingestion --> difference imaging
-
-TODO: Rename script and GitHub repo to ap_pipe (not decam_hits or decam_process).
-      This will be done in DM-11324.
-
-USAGE:
-$ python decam_process.py -d dataset_root -o output_location -i "visit=12345, ccd=5"
-
-NOTE: -i flag is not implemented yet. For now, set the visit and ccd in main().
-
-TODO: Update DMTN-039 to reflect the new user interface.
-      I'm postponing this until DM-11422 and/or DM-11390 are complete.
-'''
 
 
-def main():
+def runPipelineAlone():
     '''
-    Parse command-line args and run the pipeline. NOT used by ap_verify.
+    Parse command-line arguments to run the pipeline. NOT used by ap_verify.
 
-    This main function is solely for the purpose of running ap_pipe alone,
-    from the command line, on a dataset intended for ap_verify. It is useful
-    for testing or standalone image processing independently from verification.
+    TODO (DM-11422): Implement the arguments that specify dataid info instead
+    of having hardwired values for visits and ccdnum.
+
+    Returns
+    -------
+    repolist: `list` containing four `str`
+        New repos that will be written to disk following ingestion, calib
+        ingestion, processing, and difference imaging, respectively
+        [repo, calib_repo, processed_repo, diffim_repo]
+    filelist: `list` containing four `str`
+        Files in dataset_root: raw images, flats and biases, and defects
+        [datafiles, calibdatafiles, defectfiles]
+    idlist: `list` containing four `str`
+        Data ID information needed to process
+        [visit, sciencevisit, templatevisit, ccdnum]
+    ref_cats: `str`
+        Path on disk of the reference catalogs
     '''
     # Parse command line arguments with argparse
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
@@ -52,55 +84,102 @@ def main():
                         help="Location on disk of dataset_root, which contains subdirectories of raw data, calibs, etc.")
     parser.add_argument('-o', '--output',
                         help="Location on disk where output repos will live.")
-    # TODO: implement this argument
+    # TODO: implement this argument. Part of DM-11422.
     # parser.add_argument('-i', '--id',
     #                    help="String containing visit and ccd information. Typically set as 'visit=12345, ccd=5'.")
     args = parser.parse_args()
 
+    # Names of directories containing data products in dataset_root
+    RAW_DIR = 'raw'
+    MASTERCAL_DIR = 'calib'
+    DEFECT_DIR = 'calib'
+    REFCATS_DIR = 'ref_cats'
+
+    # Name of defects tarball residing in DEFECT_DIR
+    DEFECT_TARBALL = 'defects_2014-12-05.tar.gz'
+
+    # Names of directories to be created in specified output location
+    INGESTED_DIR = 'ingested'
+    CALIBINGESTED_DIR = 'calibingested'
+    PROCESSED_DIR = 'processed'
+    DIFFIM_DIR = 'diffim'
+
     if not os.path.isdir(args.output):
         os.mkdir(args.output)
-    repo = os.path.join(args.output, 'ingested')
-    calibrepo = os.path.join(args.output, 'calibingested')
-    processedrepo = os.path.join(args.output, 'processed')
-    diffimrepo = os.path.join(args.output, 'diffim')
+    repo = os.path.join(args.output, INGESTED_DIR)
+    calib_repo = os.path.join(args.output, CALIBINGESTED_DIR)
+    processed_repo = os.path.join(args.output, PROCESSED_DIR)
+    diffim_repo = os.path.join(args.output, DIFFIM_DIR)
     types = ('*.fits', '*.fz')
     datafiles = []
     allcalibdatafiles = []
     for files in types:
-        datafiles.extend(glob(os.path.join(args.dataset, 'raw', files)))
-        allcalibdatafiles.extend(glob(os.path.join(args.dataset, 'calib', files)))
+        datafiles.extend(glob(os.path.join(args.dataset, RAW_DIR, files)))
+        allcalibdatafiles.extend(glob(os.path.join(args.dataset, MASTERCAL_DIR, files)))
 
     # Ignore wtmaps and illumcors
     calibdatafiles = []
+    filestoignore = ['fcw', 'zcw', 'ici']
     for file in allcalibdatafiles:
-        if ('fcw' not in file) and ('zcw' not in file) and ('ici' not in file):
+        if all(string not in file for string in filestoignore):
             calibdatafiles.append(file)
 
     # Retrieve defect filenames from tarball
-    # TODO: search for a single filename beginning with `defects` and ending in `.tar.gz`
-    #       rather than hardcoding the name of the tarball.
-    defectloc = os.path.join(args.dataset, 'calib')
-    defecttarfile = glob(os.path.join(defectloc, 'defects_2014-12-05.tar.gz'))[0]
-    defectfiles = tarfile.open(defecttarfile).getnames()
+    defectloc = os.path.join(args.dataset, DEFECT_DIR)
+    defect_tarfile_path = glob(os.path.join(defectloc, DEFECT_TARBALL))[0]
+    defectfiles = tarfile.open(defect_tarfile_path).getnames()
     defectfiles = [os.path.join(defectloc, file) for file in defectfiles]
 
     # Provide location of ref_cats directory containing gaia and pan-starrs tarballs
-    ref_cats = os.path.join(args.dataset, 'ref_cats')
+    ref_cats = os.path.join(args.dataset, REFCATS_DIR)
 
     # TEMPORARY HARDWIRED THINGS ARE TEMPORARY
-    # TODO: - use a coadd as a template instead of a visit (DM-11422)
-    #       - implement the --id argument and pull visit and ccdnum from there (default = all CCDs)
+    # TODO (DM-11422):
+    # - use a coadd as a template instead of a visit
+    # - implement the --id argument and pull visit and ccdnum from there (default = all CCDs)
     visit = '410985'  # one arbitrary g-band visit in Blind15A40
     templatevisit = '410929'  # another arbitrary g-band visit in Blind15A40
     ccdnum = '25'  # arbitrary single CCD for testing
     sciencevisit = visit  # for doDiffIm, for now
 
+    # Collect useful things to pass to main
+    repolist = [repo, calib_repo, processed_repo, diffim_repo]
+    filelist = [datafiles, calibdatafiles, defectfiles]
+    idlist = [visit, sciencevisit, templatevisit, ccdnum]
+
+    return repolist, filelist, idlist, ref_cats
+
+
+def main():
+    '''
+    Run each step of the pipeline. NOT used by ap_verify.
+
+    This main function is solely for the purpose of running ap_pipe alone,
+    from the command line, on a dataset intended for ap_verify. It is useful
+    for testing or standalone image processing independently from verification.
+    '''
+    repolist, filelist, idlist, ref_cats = runPipelineAlone()
+
+    repo = repolist[0]
+    calib_repo = repolist[1]
+    processed_repo = repolist[2]
+    diffim_repo = repolist[3]
+
+    datafiles = filelist[0]
+    calibdatafiles = filelist[1]
+    defectfiles = filelist[2]
+
+    visit = idlist[0]
+    sciencevisit = idlist[1]
+    templatevisit = idlist[2]
+    ccdnum = idlist[3]
+
     # Run all the tasks in order
     doIngest(repo, ref_cats, datafiles)
-    doIngestCalibs(repo, calibrepo, calibdatafiles, defectfiles)
-    doProcessCcd(repo, calibrepo, processedrepo, visit, ccdnum)
-    doProcessCcd(repo, calibrepo, processedrepo, templatevisit, ccdnum, ref_cats)  # temporary
-    doDiffIm(processedrepo, sciencevisit, ccdnum, templatevisit, diffimrepo)
+    doIngestCalibs(repo, calib_repo, calibdatafiles, defectfiles)
+    doProcessCcd(repo, calib_repo, processed_repo, visit, ccdnum)
+    doProcessCcd(repo, calib_repo, processed_repo, templatevisit, ccdnum)  # temporary
+    doDiffIm(processed_repo, sciencevisit, ccdnum, templatevisit, diffim_repo)
     print('Prototype AP Pipeline run complete.')
 
     return
