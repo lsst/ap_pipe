@@ -23,9 +23,6 @@
 '''
 Process raw decam images with MasterCals from ingestion --> difference imaging
 
-TODO: Rename script and GitHub repo to ap_pipe (not decam_hits or decam_process).
-      This will be done in DM-11324.
-
 TODO: Update DMTN-039 to reflect the new user interface.
       I'm postponing this until DM-11422 and/or DM-11390 are complete.
 '''
@@ -78,7 +75,7 @@ def runPipelineAlone():
     Process raw decam images with MasterCals from ingestion --> difference imaging
 
     USAGE:
-    $ python decam_process.py -d dataset_root -o output_location -i "visit=12345, ccd=5"
+    $ python ap_pipe.py -d dataset_root -o output_location -i "visit=12345, ccd=5"
                                      '''))
     parser.add_argument('-d', '--dataset',
                         help="Location on disk of dataset_root, which contains subdirectories of raw data, calibs, etc.")
