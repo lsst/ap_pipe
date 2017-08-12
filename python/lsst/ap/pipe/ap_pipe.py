@@ -27,13 +27,17 @@ TODO: Update DMTN-039 to reflect the new user interface.
       I'm postponing this until DM-11422 and/or DM-11390 are complete.
 '''
 
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
+
+__all__ = ["doIngest", "doIngestCalibs", "doProcessCcd", "doDiffIm"]
+
 import os
 import argparse
 import textwrap
 import tarfile
 from glob import glob
 import sqlite3
+
 from lsst.obs.decam import ingest
 from lsst.obs.decam import ingestCalibs
 from lsst.obs.decam.ingest import DecamParseTask
