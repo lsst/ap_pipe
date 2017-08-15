@@ -29,7 +29,7 @@ TODO: Update DMTN-039 to reflect the new user interface.
 
 from __future__ import absolute_import, division, print_function
 
-__all__ = ["doIngest", "doIngestCalibs", "doProcessCcd", "doDiffIm"]
+__all__ = ['runPipelineAlone', 'doIngest', 'doIngestCalibs', 'doProcessCcd', 'doDiffIm']
 
 import os
 import argparse
@@ -51,7 +51,7 @@ from lsst.ip.diffim.getTemplate import GetCalexpAsTemplateTask
 from lsst.pipe.tasks.imageDifference import ImageDifferenceConfig, ImageDifferenceTask
 
 
-def runPipelineAlone():
+def parsePipelineArgs():
     '''
     Parse command-line arguments to run the pipeline. NOT used by ap_verify.
 
@@ -149,41 +149,6 @@ def runPipelineAlone():
     idlist = [visit, sciencevisit, templatevisit, ccdnum]
 
     return repolist, filelist, idlist, ref_cats
-
-
-def main():
-    '''
-    Run each step of the pipeline. NOT used by ap_verify.
-
-    This main function is solely for the purpose of running ap_pipe alone,
-    from the command line, on a dataset intended for ap_verify. It is useful
-    for testing or standalone image processing independently from verification.
-    '''
-    repolist, filelist, idlist, ref_cats = runPipelineAlone()
-
-    repo = repolist[0]
-    calib_repo = repolist[1]
-    processed_repo = repolist[2]
-    diffim_repo = repolist[3]
-
-    datafiles = filelist[0]
-    calibdatafiles = filelist[1]
-    defectfiles = filelist[2]
-
-    visit = idlist[0]
-    sciencevisit = idlist[1]
-    templatevisit = idlist[2]
-    ccdnum = idlist[3]
-
-    # Run all the tasks in order
-    doIngest(repo, ref_cats, datafiles)
-    doIngestCalibs(repo, calib_repo, calibdatafiles, defectfiles)
-    doProcessCcd(repo, calib_repo, processed_repo, visit, ccdnum)
-    doProcessCcd(repo, calib_repo, processed_repo, templatevisit, ccdnum)  # temporary
-    doDiffIm(processed_repo, sciencevisit, ccdnum, templatevisit, diffim_repo)
-    print('Prototype AP Pipeline run complete.')
-
-    return
 
 
 def doIngest(repo, ref_cats, datafiles):
@@ -553,5 +518,38 @@ def doDiffIm(processed_repo, sciencevisit, ccdnum, templatevisit, diffim_repo):
     return diffim_metadata
 
 
-if __name__ == '__main__':
-    main()
+def runPipelineAlone():
+    '''
+    Run each step of the pipeline. NOT used by ap_verify.
+
+    This function is solely for the purpose of running ap_pipe alone,
+    from the command line, on a dataset intended for ap_verify. It is useful
+    for testing or standalone image processing independently from verification.
+    '''
+    lsst.log.configure()
+    log = lsst.log.Log.getDefaultLogger()
+    repolist, filelist, idlist, ref_cats = parsePipelineArgs()
+
+    repo = repolist[0]
+    calib_repo = repolist[1]
+    processed_repo = repolist[2]
+    diffim_repo = repolist[3]
+
+    datafiles = filelist[0]
+    calibdatafiles = filelist[1]
+    defectfiles = filelist[2]
+
+    visit = idlist[0]
+    sciencevisit = idlist[1]
+    templatevisit = idlist[2]
+    ccdnum = idlist[3]
+
+    # Run all the tasks in order
+    doIngest(repo, ref_cats, datafiles)
+    doIngestCalibs(repo, calib_repo, calibdatafiles, defectfiles)
+    doProcessCcd(repo, calib_repo, processed_repo, visit, ccdnum)
+    doProcessCcd(repo, calib_repo, processed_repo, templatevisit, ccdnum)  # temporary
+    doDiffIm(processed_repo, sciencevisit, ccdnum, templatevisit, diffim_repo)
+    log.info('Prototype AP Pipeline run complete.')
+
+    return
