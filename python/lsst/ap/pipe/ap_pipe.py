@@ -38,6 +38,7 @@ import tarfile
 from glob import glob
 import sqlite3
 
+import lsst.log
 from lsst.obs.decam import ingest
 from lsst.obs.decam import ingestCalibs
 from lsst.obs.decam.ingest import DecamParseTask
@@ -73,6 +74,21 @@ def parsePipelineArgs():
     ref_cats: `str`
         Path on disk of the reference catalogs
     '''
+    # Names of directories containing data products in dataset_root
+    RAW_DIR = 'raw'
+    MASTERCAL_DIR = 'calib'
+    DEFECT_DIR = 'calib'
+    REFCATS_DIR = 'ref_cats'
+
+    # Name of defects tarball residing in DEFECT_DIR
+    DEFECT_TARBALL = 'defects_2014-12-05.tar.gz'
+
+    # Names of directories to be created in specified output location
+    INGESTED_DIR = 'ingested'
+    CALIBINGESTED_DIR = 'calibingested'
+    PROCESSED_DIR = 'processed'
+    DIFFIM_DIR = 'diffim'
+
     # Parse command line arguments with argparse
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
                                      description=textwrap.dedent('''
@@ -89,21 +105,6 @@ def parsePipelineArgs():
     # parser.add_argument('-i', '--id',
     #                    help="String containing visit and ccd information. Typically set as 'visit=12345, ccd=5'.")
     args = parser.parse_args()
-
-    # Names of directories containing data products in dataset_root
-    RAW_DIR = 'raw'
-    MASTERCAL_DIR = 'calib'
-    DEFECT_DIR = 'calib'
-    REFCATS_DIR = 'ref_cats'
-
-    # Name of defects tarball residing in DEFECT_DIR
-    DEFECT_TARBALL = 'defects_2014-12-05.tar.gz'
-
-    # Names of directories to be created in specified output location
-    INGESTED_DIR = 'ingested'
-    CALIBINGESTED_DIR = 'calibingested'
-    PROCESSED_DIR = 'processed'
-    DIFFIM_DIR = 'diffim'
 
     if not os.path.isdir(args.output):
         os.mkdir(args.output)
@@ -190,16 +191,17 @@ def doIngest(repo, ref_cats, datafiles):
     ASTROM_REFCAT_DIR = 'ref_cats/gaia'
     PHOTOM_REFCAT_DIR = 'ref_cats/pan-starrs'
 
+    lsst.log.configure()
+    log = lsst.log.Log.getLogger('ap.pipe.doIngest')
     if os.path.exists(os.path.join(repo, 'registry.sqlite3')):
-        print('Raw images were previously ingested, skipping...')
+        log.warn('Raw images were previously ingested, skipping...')
         return None
-
     if not os.path.isdir(repo):
         os.mkdir(repo)
     # make a text file that handles the mapper, per the obs_decam github README
     with open(os.path.join(repo, '_mapper'), 'w') as f:
         print('lsst.obs.decam.DecamMapper', file=f)
-    print('Ingesting raw images...')
+    log.info('Ingesting raw images...')
     # save arguments you'd put on the command line after 'ingestImagesDecam.py'
     # (extend the list with all the filenames as the last set of arguments)
     args = [repo, '--filetype', 'raw', '--mode', 'link']
@@ -222,7 +224,7 @@ def doIngest(repo, ref_cats, datafiles):
     photom_tarball = os.path.join(ref_cats, PHOTOM_REFCAT_TAR)
     tarfile.open(astrom_tarball, 'r').extractall(os.path.join(repo, ASTROM_REFCAT_DIR))
     tarfile.open(photom_tarball, 'r').extractall(os.path.join(repo, PHOTOM_REFCAT_DIR))
-    print('Images are now ingested in {0}'.format(repo))
+    log.info('Images are now ingested in {0}'.format(repo))
     ingest_metadata = ingestTask.getFullMetadata()
     return ingest_metadata
 
@@ -248,7 +250,9 @@ def flatBiasIngest(repo, calib_repo, calibdatafiles):
     BASH EQUIVALENT:
     $ ingestCalibs.py repo --calib calib_repo --mode=link --validity 999 calibdatafiles
     '''
-    print('Ingesting flats and biases...')
+    lsst.log.configure()
+    log = lsst.log.Log.getLogger('ap.pipe.flatBiasIngest')
+    log.info('Ingesting flats and biases...')
     args = [repo, '--calib', calib_repo, '--mode', 'link', '--validity', '999']
     args.extend(calibdatafiles)
     argumentParser = IngestCalibsArgumentParser(name='ingestCalibs')
@@ -259,12 +263,12 @@ def flatBiasIngest(repo, calib_repo, calibdatafiles):
     try:
         calibIngestTask.run(parsedCmd)
     except sqlite3.IntegrityError as detail:
-        print('sqlite3.IntegrityError: ', detail)
-        print('(sqlite3 doesn\'t think all the calibration files are unique)')
+        log.error('sqlite3.IntegrityError: ', detail)
+        log.error('(sqlite3 doesn\'t think all the calibration files are unique)')
         flatBias_metadata = None
     else:
-        print('Success!')
-        print('Calibrations corresponding to {0} are now ingested in {1}'.format(repo, calib_repo))
+        log.info('Success!')
+        log.info('Calibrations corresponding to {0} are now ingested in {1}'.format(repo, calib_repo))
         flatBias_metadata = calibIngestTask.getFullMetadata()
     return flatBias_metadata
 
@@ -300,18 +304,20 @@ def defectIngest(repo, calib_repo, defectfiles):
     - They will be manually uncompressed and saved in calib_repo/defects/<tarballname>/.
     - They will be added to the calib registry, but not linked like the flats and biases
     '''
+    lsst.log.configure()
+    log = lsst.log.Log.getLogger('ap.pipe.defectIngest')
     os.chdir(calib_repo)
     try:
         os.mkdir('defects')
     except OSError:
         # most likely the defects directory already exists
         if os.path.isdir('defects'):
-            print('Defects were previously ingested, skipping...')
+            log.warn('Defects were previously ingested, skipping...')
         else:
-            print('Defect ingestion failed because \'defects\' dir could not be created')
+            log.error('Defect ingestion failed because \'defects\' dir could not be created')
         defect_metadata = None
     else:
-        print('Ingesting defects...')
+        log.info('Ingesting defects...')
         defectargs = ['../../' + repo, '--calib', '.', '--calibType', 'defect',
                       '--mode', 'skip', '--validity', '999']
         defect_tarball = defectfiles[0] + '.tar.gz'
@@ -365,12 +371,14 @@ def doIngestCalibs(repo, calib_repo, calibdatafiles, defectfiles):
     calib ingestion ingests *all* the calibs, not just the ones needed
     for the specified visits. We may want to revisit this in the future.
     '''
+    lsst.log.configure()
+    log = lsst.log.Log.getLogger('ap.pipe.doIngestCalibs')
     if not os.path.isdir(calib_repo):
         os.mkdir(calib_repo)
         flatBias_metadata = flatBiasIngest(repo, calib_repo, calibdatafiles)
         defect_metadata = defectIngest(repo, calib_repo, defectfiles)
     elif os.path.exists(os.path.join(calib_repo, 'cpBIAS')):
-        print('Flats and biases were previously ingested, skipping...')
+        log.warn('Flats and biases were previously ingested, skipping...')
         flatBias_metadata = None
         defect_metadata = defectIngest(repo, calib_repo, defectfiles)
     else:
@@ -419,12 +427,14 @@ def doProcessCcd(repo, calib_repo, processed_repo, visit, ccdnum):
     By default, the configuration for astrometric reference catalogs uses Gaia
     and the configuration for photometry reference catalogs uses Pan-STARRS.
     '''
+    lsst.log.configure()
+    log = lsst.log.Log.getLogger('ap.pipe.doProcessCcd')
     if os.path.isdir(os.path.join(processed_repo, '0'+visit)):
-        print('ProcessCcd has already been run for visit {0}, skipping...'.format(visit))
+        log.warn('ProcessCcd has already been run for visit {0}, skipping...'.format(visit))
         return None
     if not os.path.isdir(processed_repo):
         os.mkdir(processed_repo)
-    print('Running ProcessCcd...')
+    log.info('Running ProcessCcd...')
     OBS_DECAM_DIR = getPackageDir('obs_decam')
     config = ProcessCcdConfig()
     # Use gaia for astrometry (phot_g_mean_mag is only available DR1 filter)
@@ -501,12 +511,14 @@ def doDiffIm(processed_repo, sciencevisit, ccdnum, templatevisit, diffim_repo):
     diffim_repo/deepDiff/v+sciencevisit populated with difference images
     and catalogs of detected sources (diaSrc, diffexp, and metadata files)
     '''
+    lsst.log.configure()
+    log = lsst.log.Log.getLogger('ap.pipe.doDiffIm')
     if os.path.exists(os.path.join(diffim_repo, 'deepDiff', 'v' + sciencevisit)):
-        print('DiffIm has already been run for visit {0}, skipping...'.format(sciencevisit))
+        log.warn('DiffIm has already been run for visit {0}, skipping...'.format(sciencevisit))
         return None
     if not os.path.isdir(diffim_repo):
         os.mkdir(diffim_repo)
-    print('Running ImageDifference...')
+    log.info('Running ImageDifference...')
     config = ImageDifferenceConfig()
     config.getTemplate.retarget(GetCalexpAsTemplateTask)
     config.detection.thresholdValue = 5.0
@@ -527,7 +539,7 @@ def runPipelineAlone():
     for testing or standalone image processing independently from verification.
     '''
     lsst.log.configure()
-    log = lsst.log.Log.getDefaultLogger()
+    log = lsst.log.Log.getLogger('ap.pipe.runPipelineAlone')
     repolist, filelist, idlist, ref_cats = parsePipelineArgs()
 
     repo = repolist[0]
