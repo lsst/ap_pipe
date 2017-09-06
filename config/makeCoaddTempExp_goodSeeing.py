@@ -1,4 +1,4 @@
-from lsst.decam.hits import MaxPsfWcsSelectImagesTask
+from lsst.ap.pipe import MaxPsfWcsSelectImagesTask
 
 config.bgSubtracted=True
 
