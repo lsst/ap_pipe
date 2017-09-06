@@ -1,6 +1,6 @@
 #
 # LSST Data Management System
-# Copyright 2008, 2009, 2010 LSST Corporation.
+# Copyright 2008-2017 AURA/LSST.
 #
 # This product includes software developed by the
 # LSST Project (http://www.lsst.org/).
@@ -19,27 +19,52 @@
 # the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
+
+from __future__ import absolute_import, division, print_function
+from builtins import zip
+import numpy as np
+
 import lsst.pex.config as pexConfig
 import lsst.pex.exceptions as pexExceptions
 import lsst.afw.geom as afwGeom
 import lsst.pipe.base as pipeBase
 from lsst.pipe.tasks.selectImages import WcsSelectImagesTask, BaseExposureInfo
+from lsst.geom import convexHull
 
 __all__ = ["MaxPsfWcsSelectImagesTask"]
 
 
 class MaxPsfWcsSelectImageConfig(WcsSelectImagesTask.ConfigClass):
+    """Base configuration for MaxPsfSelectImagesTask.
+    """
     maxPsfFwhm = pexConfig.Field(dtype=float, doc="Maximum PSF FWHM (in pixels) to warp", default=5.)
     minPsfFwhm = pexConfig.Field(dtype=float, doc="Minimum PSF FWHM (in pixels) to warp", default=0.)
 
 
 class MaxPsfWcsSelectImagesTask(WcsSelectImagesTask):
-    """Select images using their Wcs and a maximum seeing"""
+    """Select images using their Wcs and a maximum seeing.
+    """
     ConfigClass = MaxPsfWcsSelectImageConfig
 
-    def runDataRef(self, dataRef, coordList, makeDataRefList=True, selectDataList=[]):
-        """Select images in the selectDataList that overlap the patch
+    def runDataRef(self, coordList, selectDataList,  makeDataRefList=True):
+        """Select images in the selectDataList that overlap the patch.
 
+        Parameters
+        ----------
+        coordList : `list` of `Coord` 
+            List of Coord specifying boundary of patch
+        selectDataList : `list` of `SelectStruct`
+            List of SelectStruct, to consider for selection
+        makeDataRefList : `boolean`, optional
+            Construct a list of data references? Default `True`.
+
+        Returns
+        -------
+        pipe.base.Struct with filtered exposureList and dataRefList 
+        (if makeDataRefList is True).
+
+        Notes
+        -----
         We use the "convexHull" function in the geom package to define
         polygons on the celestial sphere, and test the polygon of the
         patch for overlap with the polygon of the image.
@@ -49,12 +74,7 @@ class MaxPsfWcsSelectImagesTask(WcsSelectImagesTask):
         are pretty high and we don't want to be responsible for reaching them.
         If "convexHull" is found to be too slow, we can revise this.
 
-        @param dataRef: Data reference for coadd/tempExp (with tract, patch)
-        @param coordList: List of Coord specifying boundary of patch
-        @param makeDataRefList: Construct a list of data references?
-        @param selectDataList: List of SelectStruct, to consider for selection
         """
-        from lsst.geom import convexHull
         psf_sizes = []
         dataRefList = []
         exposureInfoList = []
@@ -90,7 +110,7 @@ class MaxPsfWcsSelectImagesTask(WcsSelectImagesTask):
         filteredExposureInfoList = []
         for size_sigma, dataRef, expInfo in zip(psf_sizes, dataRefList, exposureInfoList):
             # size_sigma is in sigma.  Convert to FWHM
-            size_fwhm = size_sigma*2.355
+            size_fwhm = size_sigma * np.sqrt(8.*np.log(2.))
             if size_fwhm < self.config.maxPsfFwhm and size_fwhm > self.config.minPsfFwhm:
                 self.log.info("%s selected with FWHM of %f pixels"%(dataRef.dataId, size_fwhm))
                 filteredDataRefList.append(dataRef)
