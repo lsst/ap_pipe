@@ -51,6 +51,78 @@ from lsst.utils import getPackageDir
 from lsst.ip.diffim.getTemplate import GetCalexpAsTemplateTask
 from lsst.pipe.tasks.imageDifference import ImageDifferenceConfig, ImageDifferenceTask
 
+# IN PROGRESS: figure out which of these ALL-CAPS VARIABLES are already known by
+# ap_verify and which need to be explicitly provided in a function here in ap_pipe
+
+# Names of directories containing data products in dataset_root
+RAW_DIR = 'raw'
+MASTERCAL_DIR = 'calib'
+DEFECT_DIR = 'calib'
+REFCATS_DIR = 'refcats'
+TEMPLATES_DIR = 'templates'
+
+# Name of defects tarball residing in DEFECT_DIR
+DEFECT_TARBALL = 'defects_2014-12-05.tar.gz'
+
+# Names of directories to be created in specified output location
+INGESTED_DIR = 'ingested'
+CALIBINGESTED_DIR = 'calibingested'
+PROCESSED_DIR = 'processed'
+DIFFIM_DIR = 'diffim'
+
+
+def get_datafiles(dataset_root):
+    '''
+    words
+    '''
+    types = ('*.fits', '*.fz')
+    datafiles = []
+    for files in types:
+        datafiles.extend(glob(os.path.join(dataset_root, RAW_DIR, files)))
+    return datafiles
+
+
+def get_calibdatafiles(dataset_root):
+    '''
+    words
+    '''
+    types = ('*.fits', '*.fz')
+    allcalibdatafiles = []
+    for files in types:
+        allcalibdatafiles.extend(glob(os.path.join(dataset_root, MASTERCAL_DIR, files)))
+    # Ignore wtmaps and illumcors
+    calibdatafiles = []
+    filestoignore = ['fcw', 'zcw', 'ici']
+    for file in allcalibdatafiles:
+        if all(string not in file for string in filestoignore):
+            calibdatafiles.append(file)
+    return calibdatafiles
+
+
+def get_defectfiles(dataset_root):
+    '''
+    words
+    '''
+    # Retrieve defect filenames from tarball
+    defectloc = os.path.join(dataset_root, DEFECT_DIR)
+    defect_tarfile_path = glob(os.path.join(defectloc, DEFECT_TARBALL))[0]
+    defectfiles = tarfile.open(defect_tarfile_path).getnames()
+    defectfiles = [os.path.join(defectloc, file) for file in defectfiles]
+    return defectfiles
+
+
+def get_output_repos(outputpath):
+    '''
+    words
+    '''
+    if not os.path.isdir(args.output):
+        os.mkdir(args.output)
+    repo = os.path.join(args.output, INGESTED_DIR)
+    calib_repo = os.path.join(args.output, CALIBINGESTED_DIR)
+    processed_repo = os.path.join(args.output, PROCESSED_DIR)
+    diffim_repo = os.path.join(args.output, DIFFIM_DIR)
+    return repo, calib_repo, processed_repo, diffim_repo
+
 
 def parsePipelineArgs():
     '''
@@ -61,33 +133,18 @@ def parsePipelineArgs():
 
     Returns
     -------
-    repolist: `list` containing four `str`
-        New repos that will be written to disk following ingestion, calib
-        ingestion, processing, and difference imaging, respectively
-        [repo, calib_repo, processed_repo, diffim_repo]
-    filelist: `list` containing four `str`
-        Files in dataset_root: raw images, flats and biases, and defects
-        [datafiles, calibdatafiles, defectfiles]
+    repos_and_files: `dict`
+        Includes the names of new repos that will be written to disk
+        following ingestion, calib ingestion, processing, and difference imaging
+        (repo, calib_repo, processed_repo, diffim_repo)
+        Includes the files in dataset_root for raw images, flats and biases, 
+        and defects (datafiles, calibdatafiles, defectfiles)
     idlist: `list` containing four `str`
-        Data ID information needed to process
+        Data ID information needed for processing and difference imaging
         [visit, sciencevisit, templatevisit, ccdnum]
-    ref_cats: `str`
+    refcats: `str`
         Path on disk of the reference catalogs
     '''
-    # Names of directories containing data products in dataset_root
-    RAW_DIR = 'raw'
-    MASTERCAL_DIR = 'calib'
-    DEFECT_DIR = 'calib'
-    REFCATS_DIR = 'ref_cats'
-
-    # Name of defects tarball residing in DEFECT_DIR
-    DEFECT_TARBALL = 'defects_2014-12-05.tar.gz'
-
-    # Names of directories to be created in specified output location
-    INGESTED_DIR = 'ingested'
-    CALIBINGESTED_DIR = 'calibingested'
-    PROCESSED_DIR = 'processed'
-    DIFFIM_DIR = 'diffim'
 
     # Parse command line arguments with argparse
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
@@ -97,7 +154,7 @@ def parsePipelineArgs():
     USAGE:
     $ python ap_pipe.py -d dataset_root -o output_location -i "visit=12345, ccd=5"
                                      '''))
-    parser.add_argument('-d', '--dataset',
+    parser.add_argument('-d', '--dataset_root',
                         help="Location on disk of dataset_root, which contains subdirectories of raw data, calibs, etc.")
     parser.add_argument('-o', '--output',
                         help="Location on disk where output repos will live.")
@@ -106,34 +163,16 @@ def parsePipelineArgs():
     #                    help="String containing visit and ccd information. Typically set as 'visit=12345, ccd=5'.")
     args = parser.parse_args()
 
-    if not os.path.isdir(args.output):
-        os.mkdir(args.output)
-    repo = os.path.join(args.output, INGESTED_DIR)
-    calib_repo = os.path.join(args.output, CALIBINGESTED_DIR)
-    processed_repo = os.path.join(args.output, PROCESSED_DIR)
-    diffim_repo = os.path.join(args.output, DIFFIM_DIR)
-    types = ('*.fits', '*.fz')
-    datafiles = []
-    allcalibdatafiles = []
-    for files in types:
-        datafiles.extend(glob(os.path.join(args.dataset, RAW_DIR, files)))
-        allcalibdatafiles.extend(glob(os.path.join(args.dataset, MASTERCAL_DIR, files)))
+    # Retrieve lists of input files for raw images and calibration products
+    datafiles = get_datafiles(args.dataset_root)
+    calibdatafiles = get_calibdatafiles(args.dataset_root)
+    defectfiles = get_defectfiles(args.dataset_root)
 
-    # Ignore wtmaps and illumcors
-    calibdatafiles = []
-    filestoignore = ['fcw', 'zcw', 'ici']
-    for file in allcalibdatafiles:
-        if all(string not in file for string in filestoignore):
-            calibdatafiles.append(file)
+    # Define output repo locations on disk
+    repo, calib_repo, processed_repo, diffim_repo = get_output_repos(args.output)
 
-    # Retrieve defect filenames from tarball
-    defectloc = os.path.join(args.dataset, DEFECT_DIR)
-    defect_tarfile_path = glob(os.path.join(defectloc, DEFECT_TARBALL))[0]
-    defectfiles = tarfile.open(defect_tarfile_path).getnames()
-    defectfiles = [os.path.join(defectloc, file) for file in defectfiles]
-
-    # Provide location of ref_cats directory containing gaia and pan-starrs tarballs
-    ref_cats = os.path.join(args.dataset, REFCATS_DIR)
+    # Retrieve location of refcats directory containing gaia and pan-starrs tarballs
+    refcats = os.path.join(args.dataset_root, REFCATS_DIR)
 
     # TEMPORARY HARDWIRED THINGS ARE TEMPORARY
     # TODO (DM-11422):
@@ -144,15 +183,16 @@ def parsePipelineArgs():
     ccdnum = '25'  # arbitrary single CCD for testing
     sciencevisit = visit  # for doDiffIm, for now
 
-    # Collect useful things to pass to main
-    repolist = [repo, calib_repo, processed_repo, diffim_repo]
-    filelist = [datafiles, calibdatafiles, defectfiles]
+    repos_and_files = {'repo': repo, 'calib_repo': calib_repo, 
+                       'processed_repo': processed_repo, 
+                       'diffim_repo': diffim_repo, 'datafiles': datafiles, 
+                       'calibdatafiles', calibdatafiles, 'defectfiles': defectfiles}
     idlist = [visit, sciencevisit, templatevisit, ccdnum]
 
-    return repolist, filelist, idlist, ref_cats
+    return repos_and_files, idlist, refcats
 
 
-def doIngest(repo, ref_cats, datafiles):
+def doIngest(repo, refcats, datafiles):
     '''
     Ingest raw DECam images into a repository with a corresponding registry
 
@@ -160,7 +200,7 @@ def doIngest(repo, ref_cats, datafiles):
     ----------
     repo: `str`
         The output repository location on disk where ingested raw images live.
-    ref_cats: `str`
+    refcats: `str`
         A directory containing two .tar.gz files with LSST-formatted astrometric
         and photometric reference catalog information. The filenames are set below.
     datafiles: `list`
@@ -168,7 +208,7 @@ def doIngest(repo, ref_cats, datafiles):
 
     BASH EQUIVALENT:
     $ ingestImagesDecam.py repo --filetype raw --mode link datafiles
-    ** If run from bash, ref_cats must also be manually copied or symlinked to repo
+    ** If run from bash, refcats must also be manually copied or symlinked to repo
 
     Returns
     -------
@@ -188,8 +228,8 @@ def doIngest(repo, ref_cats, datafiles):
     PHOTOM_REFCAT_TAR = 'ps1_HiTS_2015.tar.gz'
 
     # Names of reference catalog directories processCcd expects to find in repo
-    ASTROM_REFCAT_DIR = 'ref_cats/gaia'
-    PHOTOM_REFCAT_DIR = 'ref_cats/pan-starrs'
+    ASTROM_REFCAT_DIR = 'refcats/gaia'
+    PHOTOM_REFCAT_DIR = 'refcats/pan-starrs'
 
     lsst.log.configure()
     log = lsst.log.Log.getLogger('ap.pipe.doIngest')
@@ -219,9 +259,9 @@ def doIngest(repo, ref_cats, datafiles):
     parsedCmd = argumentParser.parse_args(config=config, args=args)
     # finally, run the ingestTask
     ingestTask.run(parsedCmd)
-    # Copy ref_cats files to repo (needed for doProcessCcd)
-    astrom_tarball = os.path.join(ref_cats, ASTROM_REFCAT_TAR)
-    photom_tarball = os.path.join(ref_cats, PHOTOM_REFCAT_TAR)
+    # Copy refcats files to repo (needed for doProcessCcd)
+    astrom_tarball = os.path.join(refcats, ASTROM_REFCAT_TAR)
+    photom_tarball = os.path.join(refcats, PHOTOM_REFCAT_TAR)
     tarfile.open(astrom_tarball, 'r').extractall(os.path.join(repo, ASTROM_REFCAT_DIR))
     tarfile.open(photom_tarball, 'r').extractall(os.path.join(repo, PHOTOM_REFCAT_DIR))
     log.info('Images are now ingested in {0}'.format(repo))
@@ -356,10 +396,9 @@ def doIngestCalibs(repo, calib_repo, calibdatafiles, defectfiles):
 
     Returns
     -------
-    flatBias_metadata: `PropertySet` or None
-        Metadata from the IngestCalibTask (flats and biases) for use by ap_verify
-    defect_metadata: `PropertySet` or None
-        Metadata from the IngestCalibTask (defects) for use by ap_verify
+    calibingest_metadata: `PropertySet` or None
+        Metadata from the IngestCalibTask (flats and biases) and from the
+        IngestCalibTask (defects) for use by ap_verify
 
     RESULT:
     calib_repo populated with *links* to calibdatafiles,
@@ -369,7 +408,7 @@ def doIngestCalibs(repo, calib_repo, calibdatafiles, defectfiles):
 
     NOTE:
     calib ingestion ingests *all* the calibs, not just the ones needed
-    for the specified visits. We may want to revisit this in the future.
+    for certain visits. We may want to ...revisit... this in the future.
     '''
     lsst.log.configure()
     log = lsst.log.Log.getLogger('ap.pipe.doIngestCalibs')
@@ -384,7 +423,9 @@ def doIngestCalibs(repo, calib_repo, calibdatafiles, defectfiles):
     else:
         flatBias_metadata = flatBiasIngest(repo, calib_repo, calibdatafiles)
         defect_metadata = defectIngest(repo, calib_repo, defectfiles)
-    return flatBias_metadata, defect_metadata
+    calibingest_metadata = flatBias_metadata
+    calibingest_metadata.combine(defect_metadata)
+    return calibingest_metadata
 
 
 def doProcessCcd(repo, calib_repo, processed_repo, visit, ccdnum):
@@ -419,7 +460,7 @@ def doProcessCcd(repo, calib_repo, processed_repo, visit, ccdnum):
             --config calibrate.doAstrometry=True calibrate.doPhotoCal=True
     ** to run from bash, 'processccd_config.py' must exist and contain
        all of the refObjLoader information in the code below. repo must also
-       already contain the ref_cats (this is done during doIngest).
+       already contain the refcats (this is done during doIngest).
 
     RESULT:
     processed_repo/visit populated with subdirectories containing the
@@ -506,6 +547,9 @@ def doDiffIm(processed_repo, sciencevisit, ccdnum, templatevisit, diffim_repo):
         config.doDecorrelation = True
 
     TODO: use coadds as templates by default, not another visit (DM-11422).
+    Part of this will require copying/linking the templates from their dataset
+    location so they live in diffim_repo before running ImageDifferenceTask.
+    Some of the new comments in this function are placeholders for DM-11422 work.
 
     RESULT:
     diffim_repo/deepDiff/v+sciencevisit populated with difference images
@@ -520,11 +564,15 @@ def doDiffIm(processed_repo, sciencevisit, ccdnum, templatevisit, diffim_repo):
         os.mkdir(diffim_repo)
     log.info('Running ImageDifference...')
     config = ImageDifferenceConfig()
-    config.getTemplate.retarget(GetCalexpAsTemplateTask)
+    config.getTemplate.retarget(GetCalexpAsTemplateTask)  # not for use with coadds
+    #config.doSelectSources = False  # for use with coadds only
     config.detection.thresholdValue = 5.0
     config.doDecorrelation = True
     args = [processed_repo, '--id', 'visit=' + sciencevisit, 'ccdnum=' + ccdnum,
-            '--templateId', 'visit=' + templatevisit, '--output', diffim_repo]
+            '--templateId', 'visit=' + templatevisit, '--output', diffim_repo]  # visit option
+    # args = [processed_repo, '--id', 'visit=' + sciencevisit, 'ccdnum=' + ccdnum,
+    #         '--output', diffim_repo]  # coadd option
+    # IMPORTANT: diffim_repo must have the coadd templates in it
     diffim_result = ImageDifferenceTask.parseAndRun(args=args, config=config, doReturnResults=True)
     diffim_metadata = diffim_result.resultList[0].metadata
     return diffim_metadata
@@ -540,16 +588,16 @@ def runPipelineAlone():
     '''
     lsst.log.configure()
     log = lsst.log.Log.getLogger('ap.pipe.runPipelineAlone')
-    repolist, filelist, idlist, ref_cats = parsePipelineArgs()
+    repos_and_files, idlist, refcats = parsePipelineArgs()
+    
+    repo = repos_and_files['repo']
+    calib_repo = repos_and_files['calib_repo']
+    processed_repo = repos_and_files['processed_repo']
+    diffim_repo = repos_and_files['diffim_repo']
 
-    repo = repolist[0]
-    calib_repo = repolist[1]
-    processed_repo = repolist[2]
-    diffim_repo = repolist[3]
-
-    datafiles = filelist[0]
-    calibdatafiles = filelist[1]
-    defectfiles = filelist[2]
+    datafiles = repos_and_files['datafiles']
+    calibdatafiles = repos_and_files['calibdatafiles']
+    defectfiles = repos_and_files['defectfiles']
 
     visit = idlist[0]
     sciencevisit = idlist[1]
@@ -557,7 +605,7 @@ def runPipelineAlone():
     ccdnum = idlist[3]
 
     # Run all the tasks in order
-    doIngest(repo, ref_cats, datafiles)
+    doIngest(repo, refcats, datafiles)
     doIngestCalibs(repo, calib_repo, calibdatafiles, defectfiles)
     doProcessCcd(repo, calib_repo, processed_repo, visit, ccdnum)
     doProcessCcd(repo, calib_repo, processed_repo, templatevisit, ccdnum)  # temporary
