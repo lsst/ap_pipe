@@ -73,7 +73,17 @@ DIFFIM_DIR = 'diffim'
 
 def get_datafiles(dataset_root):
     '''
-    words
+    Retrieve a list of the raw DECam images for use during ingestion.
+
+    Parameters
+    ----------
+    dataset_root: `str`
+        The top-level directory containing all pieces of an ap_verify-style dataset.
+
+    Returns
+    -------
+    datafiles: `list`
+        A list of the filenames of each raw image file.
     '''
     types = ('*.fits', '*.fz')
     datafiles = []
@@ -84,7 +94,17 @@ def get_datafiles(dataset_root):
 
 def get_calibdatafiles(dataset_root):
     '''
-    words
+    Retrieve a list of the DECam MasterCal flat and bias files for use during ingestion.
+
+    Parameters
+    ----------
+    dataset_root: `str`
+        The top-level directory containing all pieces of an ap_verify-style dataset.
+
+    Returns
+    -------
+    calibdatafiles: `list`
+        A list of the filenames of each flat and bias image file.
     '''
     types = ('*.fits', '*.fz')
     allcalibdatafiles = []
@@ -101,7 +121,19 @@ def get_calibdatafiles(dataset_root):
 
 def get_defectfiles(dataset_root):
     '''
-    words
+    Retrieve a list of the DECam defect files for use during ingestion.
+
+    Parameters
+    ----------
+    dataset_root: `str`
+        The top-level directory containing all pieces of an ap_verify-style dataset.
+
+    Returns
+    -------
+    defectfiles: `list`
+        A list of the filenames of each defect image file.
+        The first element in this list will be the name of a .tar.gz file
+        which contains all the compressed defect images.
     '''
     # Retrieve defect filenames from tarball
     defectloc = os.path.join(dataset_root, DEFECT_DIR)
@@ -113,7 +145,23 @@ def get_defectfiles(dataset_root):
 
 def get_output_repos(outputpath):
     '''
-    words
+    Define locations on disk for all of the output repositories used by ap_pipe.
+
+    Parameters
+    ----------
+    dataset_root: `str`
+        The top-level directory containing all pieces of an ap_verify-style dataset.
+
+    Returns
+    -------
+    repo: `str`
+        Repository (directory on disk) where raw images will be ingested.
+    calib_repo: `str`
+        Repository (directory on disk) where calibration products will be ingested.
+    processed_repo: `str`
+        Repository (directory on disk) where calexps from processCcd will live.
+    diffim_repo: `str`
+        Repository (directory on disk) where difference images will live.
     '''
     if not os.path.isdir(args.output):
         os.mkdir(args.output)
@@ -139,9 +187,10 @@ def parsePipelineArgs():
         (repo, calib_repo, processed_repo, diffim_repo)
         Includes the files in dataset_root for raw images, flats and biases, 
         and defects (datafiles, calibdatafiles, defectfiles)
-    idlist: `list` containing four `str`
-        Data ID information needed for processing and difference imaging
-        [visit, sciencevisit, templatevisit, ccdnum]
+    idlist: `list` containing two `str`
+        Data ID and template info needed for processing and difference imaging
+        [dataId, template]
+        TODO: allow 'template' to be either a visit ID or a repo name (DM-11422)
     refcats: `str`
         Path on disk of the reference catalogs
     '''
@@ -152,7 +201,7 @@ def parsePipelineArgs():
     Process raw decam images with MasterCals from ingestion --> difference imaging
 
     USAGE:
-    $ python ap_pipe.py -d dataset_root -o output_location -i "visit=12345, ccd=5"
+    $ python ap_pipe.py -d dataset_root -o output_location -i "visit=12345 ccdnum=5"
                                      '''))
     parser.add_argument('-d', '--dataset_root',
                         help="Location on disk of dataset_root, which contains subdirectories of raw data, calibs, etc.")
@@ -440,12 +489,9 @@ def doProcessCcd(repo, calib_repo, processed_repo, visit, ccdnum):
         The output repository location on disk where ingested calibration images live.
     processed_repo: `str`
         The output repository location on disk where processed raw images live.
-    visit: `str`
-        One or more DECam visit numbers, e.g., `54321`. Multiple visits may be
-        indicated with standard Butler parsing, e.g., `54321^12345`.
-    ccdnum: `str`
-        One or more DECam CCDs (`1` through `62` are allowed). Setting
-        ccdnum='1..62' will process all of the CCDs.
+    dataId: `str`
+        Butler identifier naming the data to be processed (e.g., visit and ccdnum)
+        formatted in the usual way (e.g., 'visit=54321 ccdnum=7').
 
     Returns
     -------
@@ -453,7 +499,7 @@ def doProcessCcd(repo, calib_repo, processed_repo, visit, ccdnum):
         Metadata from the ProcessCcdTask for use by ap_verify
 
     BASH EQUIVALENT:
-    $ processCcd.py repo --id visit=visit ccdnum=ccdnum
+    $ processCcd.py repo --id dataId
             --output processed_repo --calib calib_repo
             -C $OBS_DECAM_DIR/config/processCcdCpIsr.py
             -C processccd_config.py
@@ -519,15 +565,13 @@ def doDiffIm(processed_repo, sciencevisit, ccdnum, templatevisit, diffim_repo):
     ----------
     processed_repo: `str`
         The output repository location on disk where processed raw images live.
-    sciencevisit: `str`
-        One or more DECam visit numbers, e.g., `54321`. Multiple visits may be
-        indicated with standard Butler parsing, e.g., `54321^12345`.
-    ccdnum: `str`
-        One or more DECam CCDs (`1` through `62` are allowed). Setting
-        ccdnum='1..62' will process all of the CCDs.
-    templatevisit: `str`
+    dataId: `str`
+        Butler identifier naming the data to be processed (e.g., visit and ccdnum)
+        formatted in the usual way (e.g., 'visit=54321 ccdnum=7').
+    template: `str`
         The single DECam visit number which will be used as a template for
         difference imaging.
+        TODO: allow 'template' to be either a visit ID or a repo name (DM-11422)
     diffim_repo: `str`
         The output repository location on disk where difference images live.
 
@@ -537,8 +581,8 @@ def doDiffIm(processed_repo, sciencevisit, ccdnum, templatevisit, diffim_repo):
         Metadata from the ImageDifferenceTask for use by ap_verify
 
     BASH EQUIVALENT:
-    $ imageDifference.py processed_repo --id visit=sciencevisit ccdnum=ccdnum
-            --templateId visit=templatevisit --output diffim_repo
+    $ imageDifference.py processed_repo --id dataId
+            --templateId visit=template --output diffim_repo
             -C diffim_config.py
     ** to run from bash, 'diffim_config.py' must exist and contain, e.g.,
         from lsst.ip.diffim.getTemplate import GetCalexpAsTemplateTask
@@ -547,12 +591,10 @@ def doDiffIm(processed_repo, sciencevisit, ccdnum, templatevisit, diffim_repo):
         config.doDecorrelation = True
 
     TODO: use coadds as templates by default, not another visit (DM-11422).
-    Part of this will require copying/linking the templates from their dataset
-    location so they live in diffim_repo before running ImageDifferenceTask.
-    Some of the new comments in this function are placeholders for DM-11422 work.
+    Some of the comments in this function are placeholders for DM-11422 work.
 
     RESULT:
-    diffim_repo/deepDiff/v+sciencevisit populated with difference images
+    diffim_repo/deepDiff/v+visit populated with difference images
     and catalogs of detected sources (diaSrc, diffexp, and metadata files)
     '''
     lsst.log.configure()
