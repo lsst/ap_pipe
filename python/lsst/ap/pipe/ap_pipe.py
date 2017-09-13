@@ -29,7 +29,9 @@ TODO: Update DMTN-039 to reflect the new user interface.
 
 from __future__ import absolute_import, division, print_function
 
-__all__ = ['runPipelineAlone', 'doIngest', 'doIngestCalibs', 'doProcessCcd', 'doDiffIm']
+__all__ = ['get_datafiles', 'get_calibdatafiles', 'get_defectfiles', 'get_output_repos',
+           'doIngest', 'doIngestCalibs', 'doProcessCcd', 'doDiffIm',
+           'runPipelineAlone']
 
 import os
 import argparse
@@ -37,6 +39,7 @@ import textwrap
 import tarfile
 from glob import glob
 import sqlite3
+import re
 
 import lsst.log
 from lsst.obs.decam import ingest
@@ -163,12 +166,12 @@ def get_output_repos(outputpath):
     diffim_repo: `str`
         Repository (directory on disk) where difference images will live.
     '''
-    if not os.path.isdir(args.output):
-        os.mkdir(args.output)
-    repo = os.path.join(args.output, INGESTED_DIR)
-    calib_repo = os.path.join(args.output, CALIBINGESTED_DIR)
-    processed_repo = os.path.join(args.output, PROCESSED_DIR)
-    diffim_repo = os.path.join(args.output, DIFFIM_DIR)
+    if not os.path.isdir(outputpath):
+        os.mkdir(outputpath)
+    repo = os.path.join(outputpath, INGESTED_DIR)
+    calib_repo = os.path.join(outputpath, CALIBINGESTED_DIR)
+    processed_repo = os.path.join(outputpath, PROCESSED_DIR)
+    diffim_repo = os.path.join(outputpath, DIFFIM_DIR)
     return repo, calib_repo, processed_repo, diffim_repo
 
 
@@ -185,7 +188,7 @@ def parsePipelineArgs():
         Includes the names of new repos that will be written to disk
         following ingestion, calib ingestion, processing, and difference imaging
         (repo, calib_repo, processed_repo, diffim_repo)
-        Includes the files in dataset_root for raw images, flats and biases, 
+        Includes the files in dataset_root for raw images, flats and biases,
         and defects (datafiles, calibdatafiles, defectfiles)
     idlist: `list` containing two `str`
         Data ID and template info needed for processing and difference imaging
@@ -207,9 +210,9 @@ def parsePipelineArgs():
                         help="Location on disk of dataset_root, which contains subdirectories of raw data, calibs, etc.")
     parser.add_argument('-o', '--output',
                         help="Location on disk where output repos will live.")
-    # TODO: implement this argument. Part of DM-11422.
-    # parser.add_argument('-i', '--id',
-    #                    help="String containing visit and ccd information. Typically set as 'visit=12345, ccd=5'.")
+    parser.add_argument('-i', '--dataId',
+                        help="Butler identifier naming the data to be processed (e.g., visit and ccdnum) \
+                              formatted in the usual way (e.g., 'visit=54321 ccdnum=7').")
     args = parser.parse_args()
 
     # Retrieve lists of input files for raw images and calibration products
@@ -226,17 +229,14 @@ def parsePipelineArgs():
     # TEMPORARY HARDWIRED THINGS ARE TEMPORARY
     # TODO (DM-11422):
     # - use a coadd as a template instead of a visit
-    # - implement the --id argument and pull visit and ccdnum from there (default = all CCDs)
-    visit = '410985'  # one arbitrary g-band visit in Blind15A40
-    templatevisit = '410929'  # another arbitrary g-band visit in Blind15A40
-    ccdnum = '25'  # arbitrary single CCD for testing
-    sciencevisit = visit  # for doDiffIm, for now
+    # dataId = 'visit=410985 ccdnum=25'  # one g-band visit in Blind15A40 and one CCD for testing
+    template = '410929'  # one g-band visit in Blind15A40
 
-    repos_and_files = {'repo': repo, 'calib_repo': calib_repo, 
-                       'processed_repo': processed_repo, 
-                       'diffim_repo': diffim_repo, 'datafiles': datafiles, 
-                       'calibdatafiles', calibdatafiles, 'defectfiles': defectfiles}
-    idlist = [visit, sciencevisit, templatevisit, ccdnum]
+    repos_and_files = {'repo': repo, 'calib_repo': calib_repo,
+                       'processed_repo': processed_repo,
+                       'diffim_repo': diffim_repo, 'datafiles': datafiles,
+                       'calibdatafiles': calibdatafiles, 'defectfiles': defectfiles}
+    idlist = [args.dataId, template]
 
     return repos_and_files, idlist, refcats
 
@@ -472,12 +472,17 @@ def doIngestCalibs(repo, calib_repo, calibdatafiles, defectfiles):
     else:
         flatBias_metadata = flatBiasIngest(repo, calib_repo, calibdatafiles)
         defect_metadata = defectIngest(repo, calib_repo, defectfiles)
-    calibingest_metadata = flatBias_metadata
-    calibingest_metadata.combine(defect_metadata)
+    # Handle the case where one or both of the calib metadatas may be None
+    if flatBias_metadata is not None:
+        calibingest_metadata = flatBias_metadata
+        if defect_metadata is not None:
+            calibingest_metadata.combine(defect_metadata)
+    else:
+        calibingest_metadata = defect_metadata
     return calibingest_metadata
 
 
-def doProcessCcd(repo, calib_repo, processed_repo, visit, ccdnum):
+def doProcessCcd(repo, calib_repo, processed_repo, dataId):
     '''
     Perform ISR with ingested images and calibrations via processCcd
 
@@ -516,6 +521,13 @@ def doProcessCcd(repo, calib_repo, processed_repo, visit, ccdnum):
     '''
     lsst.log.configure()
     log = lsst.log.Log.getLogger('ap.pipe.doProcessCcd')
+    if 'visit' not in dataId:
+        raise RuntimeError('The dataId string is missing \'visit\'')
+    else:  # manually retrieve the visit number from the dataId string
+        dataId_items = re.split('[ +=]', dataId)
+        for idx, item in enumerate(dataId_items):
+            if item == 'visit':
+                visit = dataId_items[idx+1]
     if os.path.isdir(os.path.join(processed_repo, '0'+visit)):
         log.warn('ProcessCcd has already been run for visit {0}, skipping...'.format(visit))
         return None
@@ -546,18 +558,20 @@ def doProcessCcd(repo, calib_repo, processed_repo, visit, ccdnum):
                                                     'z': 'z',
                                                     'y': 'y',
                                                     'VR': 'g'}
-    args = [repo, '--id', 'visit=' + visit, 'ccdnum=' + ccdnum,
-            '--output', processed_repo,
-            '--calib', calib_repo,
-            '-C', OBS_DECAM_DIR + '/config/processCcdCpIsr.py',
-            '--config', 'calibrate.doAstrometry=True',
-            'calibrate.doPhotoCal=True']
+    dataId = dataId.split(' ')
+    args = [repo, '--id']
+    args.extend(dataId)
+    args.extend(['--output', processed_repo,
+                 '--calib', calib_repo,
+                 '-C', OBS_DECAM_DIR + '/config/processCcdCpIsr.py',
+                 '--config', 'calibrate.doAstrometry=True',
+                 'calibrate.doPhotoCal=True'])
     process_result = ProcessCcdTask.parseAndRun(args=args, config=config, doReturnResults=True)
     process_metadata = process_result.resultList[0].metadata
     return process_metadata
 
 
-def doDiffIm(processed_repo, sciencevisit, ccdnum, templatevisit, diffim_repo):
+def doDiffIm(processed_repo, dataId, template, diffim_repo):
     '''
     Do difference imaging with a visit as a template and one or more as science
 
@@ -599,22 +613,28 @@ def doDiffIm(processed_repo, sciencevisit, ccdnum, templatevisit, diffim_repo):
     '''
     lsst.log.configure()
     log = lsst.log.Log.getLogger('ap.pipe.doDiffIm')
-    if os.path.exists(os.path.join(diffim_repo, 'deepDiff', 'v' + sciencevisit)):
-        log.warn('DiffIm has already been run for visit {0}, skipping...'.format(sciencevisit))
+    if 'visit' not in dataId:
+        raise RuntimeError('The dataId string is missing \'visit\'')
+    else:  # manually retrieve the visit number from the dataId string
+        dataId_items = re.split('[ +=]', dataId)
+        for idx, item in enumerate(dataId_items):
+            if item == 'visit':
+                visit = dataId_items[idx+1]
+    if os.path.exists(os.path.join(diffim_repo, 'deepDiff', 'v' + visit)):
+        log.warn('DiffIm has already been run for visit {0}, skipping...'.format(visit))
         return None
     if not os.path.isdir(diffim_repo):
         os.mkdir(diffim_repo)
     log.info('Running ImageDifference...')
     config = ImageDifferenceConfig()
-    config.getTemplate.retarget(GetCalexpAsTemplateTask)  # not for use with coadds
-    #config.doSelectSources = False  # for use with coadds only
+    config.getTemplate.retarget(GetCalexpAsTemplateTask)  # visit template config
+    # config.doSelectSources = False  # coadd template config
     config.detection.thresholdValue = 5.0
     config.doDecorrelation = True
-    args = [processed_repo, '--id', 'visit=' + sciencevisit, 'ccdnum=' + ccdnum,
-            '--templateId', 'visit=' + templatevisit, '--output', diffim_repo]  # visit option
-    # args = [processed_repo, '--id', 'visit=' + sciencevisit, 'ccdnum=' + ccdnum,
-    #         '--output', diffim_repo]  # coadd option
-    # IMPORTANT: diffim_repo must have the coadd templates in it
+    args = [processed_repo, '--id']
+    args.extend(dataId)
+    args.extend(['--templateId', 'visit=' + template, '--output', diffim_repo])  # visit option
+    # args.extend(['--template', template, '--output', diffim_repo])  # coadd option (DM-11422)
     diffim_result = ImageDifferenceTask.parseAndRun(args=args, config=config, doReturnResults=True)
     diffim_metadata = diffim_result.resultList[0].metadata
     return diffim_metadata
@@ -631,7 +651,7 @@ def runPipelineAlone():
     lsst.log.configure()
     log = lsst.log.Log.getLogger('ap.pipe.runPipelineAlone')
     repos_and_files, idlist, refcats = parsePipelineArgs()
-    
+
     repo = repos_and_files['repo']
     calib_repo = repos_and_files['calib_repo']
     processed_repo = repos_and_files['processed_repo']
@@ -641,17 +661,17 @@ def runPipelineAlone():
     calibdatafiles = repos_and_files['calibdatafiles']
     defectfiles = repos_and_files['defectfiles']
 
-    visit = idlist[0]
-    sciencevisit = idlist[1]
-    templatevisit = idlist[2]
-    ccdnum = idlist[3]
+    dataId = idlist[0]
+    template = idlist[1]
+
+    dataId_template = 'visit=410929 ccdnum=25'  # temporary for testing
 
     # Run all the tasks in order
     doIngest(repo, refcats, datafiles)
     doIngestCalibs(repo, calib_repo, calibdatafiles, defectfiles)
-    doProcessCcd(repo, calib_repo, processed_repo, visit, ccdnum)
-    doProcessCcd(repo, calib_repo, processed_repo, templatevisit, ccdnum)  # temporary
-    doDiffIm(processed_repo, sciencevisit, ccdnum, templatevisit, diffim_repo)
+    doProcessCcd(repo, calib_repo, processed_repo, dataId)
+    doProcessCcd(repo, calib_repo, processed_repo, dataId_template)  # temporary
+    doDiffIm(processed_repo, dataId, template, diffim_repo)
     log.info('Prototype AP Pipeline run complete.')
 
     return
