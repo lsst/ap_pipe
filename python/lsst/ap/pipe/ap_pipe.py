@@ -53,6 +53,7 @@ from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask
 from lsst.utils import getPackageDir
 from lsst.ip.diffim.getTemplate import GetCalexpAsTemplateTask
 from lsst.pipe.tasks.imageDifference import ImageDifferenceConfig, ImageDifferenceTask
+import lsst.daf.persistence as dafPersist
 
 # IN PROGRESS: figure out which of these ALL-CAPS VARIABLES are already known by
 # ap_verify and which need to be explicitly provided in a function here in ap_pipe
@@ -179,9 +180,6 @@ def parsePipelineArgs():
     '''
     Parse command-line arguments to run the pipeline. NOT used by ap_verify.
 
-    TODO (DM-11422): Implement the arguments that specify dataid info instead
-    of having hardwired values for visits and ccdnum.
-
     Returns
     -------
     repos_and_files: `dict`
@@ -207,7 +205,8 @@ def parsePipelineArgs():
     $ python ap_pipe.py -d dataset_root -o output_location -i "visit=12345 ccdnum=5"
                                      '''))
     parser.add_argument('-d', '--dataset_root',
-                        help="Location on disk of dataset_root, which contains subdirectories of raw data, calibs, etc.")
+                        help="Location on disk of dataset_root, which contains subdirectories of \
+                              raw data, calibs, etc.")
     parser.add_argument('-o', '--output',
                         help="Location on disk where output repos will live.")
     parser.add_argument('-i', '--dataId',
@@ -230,7 +229,7 @@ def parsePipelineArgs():
     # TODO (DM-11422):
     # - use a coadd as a template instead of a visit
     # dataId = 'visit=410985 ccdnum=25'  # one g-band visit in Blind15A40 and one CCD for testing
-    template = '410929'  # one g-band visit in Blind15A40
+    template = '410929'  # one g-band visit in Blind15A40, temporarily hard-wired
 
     repos_and_files = {'repo': repo, 'calib_repo': calib_repo,
                        'processed_repo': processed_repo,
@@ -277,8 +276,8 @@ def doIngest(repo, refcats, datafiles):
     PHOTOM_REFCAT_TAR = 'ps1_HiTS_2015.tar.gz'
 
     # Names of reference catalog directories processCcd expects to find in repo
-    ASTROM_REFCAT_DIR = 'refcats/gaia'
-    PHOTOM_REFCAT_DIR = 'refcats/pan-starrs'
+    ASTROM_REFCAT_DIR = 'ref_cats/gaia'
+    PHOTOM_REFCAT_DIR = 'ref_cats/pan-starrs'
 
     lsst.log.configure()
     log = lsst.log.Log.getLogger('ap.pipe.doIngest')
@@ -521,13 +520,12 @@ def doProcessCcd(repo, calib_repo, processed_repo, dataId):
     '''
     lsst.log.configure()
     log = lsst.log.Log.getLogger('ap.pipe.doProcessCcd')
-    if 'visit' not in dataId:
+    dataId_items = re.split('[ +=]', dataId)
+    dataId_dict = dict(zip(dataId_items[::2], dataId_items[1::2]))
+    if 'visit' not in dataId_dict.keys():
         raise RuntimeError('The dataId string is missing \'visit\'')
-    else:  # manually retrieve the visit number from the dataId string
-        dataId_items = re.split('[ +=]', dataId)
-        for idx, item in enumerate(dataId_items):
-            if item == 'visit':
-                visit = dataId_items[idx+1]
+    else:  # save the visit number from the dataId
+        visit = dataId_dict['visit']
     if os.path.isdir(os.path.join(processed_repo, '0'+visit)):
         log.warn('ProcessCcd has already been run for visit {0}, skipping...'.format(visit))
         return None
@@ -535,7 +533,14 @@ def doProcessCcd(repo, calib_repo, processed_repo, dataId):
         os.mkdir(processed_repo)
     log.info('Running ProcessCcd...')
     OBS_DECAM_DIR = getPackageDir('obs_decam')
+    calib_repo = os.path.abspath(calib_repo)
+    butler = dafPersist.Butler(inputs={'root': repo, 'mapperArgs': {'calibRoot': calib_repo}},
+                               outputs=processed_repo)
     config = ProcessCcdConfig()
+    config.load(OBS_DECAM_DIR + '/config/processCcd.py')
+    config.load(OBS_DECAM_DIR + '/config/processCcdCpIsr.py')
+    config.calibrate.doAstrometry = True
+    config.calibrate.doPhotoCal = True
     # Use gaia for astrometry (phot_g_mean_mag is only available DR1 filter)
     # Use pan-starrs for photometry (grizy filters)
     for refObjLoader in (config.calibrate.astromRefObjLoader,
@@ -558,16 +563,9 @@ def doProcessCcd(repo, calib_repo, processed_repo, dataId):
                                                     'z': 'z',
                                                     'y': 'y',
                                                     'VR': 'g'}
-    dataId = dataId.split(' ')
-    args = [repo, '--id']
-    args.extend(dataId)
-    args.extend(['--output', processed_repo,
-                 '--calib', calib_repo,
-                 '-C', OBS_DECAM_DIR + '/config/processCcdCpIsr.py',
-                 '--config', 'calibrate.doAstrometry=True',
-                 'calibrate.doPhotoCal=True'])
-    process_result = ProcessCcdTask.parseAndRun(args=args, config=config, doReturnResults=True)
-    process_metadata = process_result.resultList[0].metadata
+    processCcdTask = ProcessCcdTask(butler=butler, config=config)
+    processCcdTask.run(butler.dataRef('raw', dataId=dataId_dict))
+    process_metadata = processCcdTask.metadata
     return process_metadata
 
 
@@ -613,13 +611,12 @@ def doDiffIm(processed_repo, dataId, template, diffim_repo):
     '''
     lsst.log.configure()
     log = lsst.log.Log.getLogger('ap.pipe.doDiffIm')
-    if 'visit' not in dataId:
+    dataId_items = re.split('[ +=]', dataId)
+    dataId_dict = dict(zip(dataId_items[::2], dataId_items[1::2]))
+    if 'visit' not in dataId_dict.keys():
         raise RuntimeError('The dataId string is missing \'visit\'')
-    else:  # manually retrieve the visit number from the dataId string
-        dataId_items = re.split('[ +=]', dataId)
-        for idx, item in enumerate(dataId_items):
-            if item == 'visit':
-                visit = dataId_items[idx+1]
+    else:  # save the visit number from the dataId
+        visit = dataId_dict['visit']
     if os.path.exists(os.path.join(diffim_repo, 'deepDiff', 'v' + visit)):
         log.warn('DiffIm has already been run for visit {0}, skipping...'.format(visit))
         return None
@@ -631,6 +628,7 @@ def doDiffIm(processed_repo, dataId, template, diffim_repo):
     # config.doSelectSources = False  # coadd template config
     config.detection.thresholdValue = 5.0
     config.doDecorrelation = True
+    dataId = dataId.split(' ')
     args = [processed_repo, '--id']
     args.extend(dataId)
     args.extend(['--templateId', 'visit=' + template, '--output', diffim_repo])  # visit option
@@ -664,7 +662,7 @@ def runPipelineAlone():
     dataId = idlist[0]
     template = idlist[1]
 
-    dataId_template = 'visit=410929 ccdnum=25'  # temporary for testing
+    dataId_template = 'visit=410929 ccdnum=25'  # temporary
 
     # Run all the tasks in order
     doIngest(repo, refcats, datafiles)
