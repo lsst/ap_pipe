@@ -73,9 +73,10 @@ INGESTED_DIR = 'ingested'
 CALIBINGESTED_DIR = 'calibingested'
 PROCESSED_DIR = 'processed'
 DIFFIM_DIR = 'diffim'
+OUTPUT_DIRS = [INGESTED_DIR, CALIBINGESTED_DIR, PROCESSED_DIR, DIFFIM_DIR]
 
 
-def get_datafiles(dataset_root):
+def get_datafiles(dataset_root, RAW_DIR=RAW_DIR):
     '''
     Retrieve a list of the raw DECam images for use during ingestion.
 
@@ -96,7 +97,7 @@ def get_datafiles(dataset_root):
     return datafiles
 
 
-def get_calibdatafiles(dataset_root):
+def get_calibdatafiles(dataset_root, MASTERCAL_DIR=MASTERCAL_DIR):
     '''
     Retrieve a list of the DECam MasterCal flat and bias files for use during ingestion.
 
@@ -123,7 +124,7 @@ def get_calibdatafiles(dataset_root):
     return calibdatafiles
 
 
-def get_defectfiles(dataset_root):
+def get_defectfiles(dataset_root, DEFECT_DIR=DEFECT_DIR, DEFECT_TARBALL=DEFECT_TARBALL):
     '''
     Retrieve a list of the DECam defect files for use during ingestion.
 
@@ -147,7 +148,7 @@ def get_defectfiles(dataset_root):
     return defectfiles
 
 
-def get_output_repos(outputpath):
+def get_output_repos(outputpath, OUTPUT_DIRS=OUTPUT_DIRS):
     '''
     Define locations on disk for all of the output repositories used by ap_pipe.
 
@@ -169,10 +170,10 @@ def get_output_repos(outputpath):
     '''
     if not os.path.isdir(outputpath):
         os.mkdir(outputpath)
-    repo = os.path.join(outputpath, INGESTED_DIR)
-    calib_repo = os.path.join(outputpath, CALIBINGESTED_DIR)
-    processed_repo = os.path.join(outputpath, PROCESSED_DIR)
-    diffim_repo = os.path.join(outputpath, DIFFIM_DIR)
+    repo = os.path.join(outputpath, OUTPUT_DIRS[0])
+    calib_repo = os.path.join(outputpath, OUTPUT_DIRS[1])
+    processed_repo = os.path.join(outputpath, OUTPUT_DIRS[2])
+    diffim_repo = os.path.join(outputpath, OUTPUT_DIRS[3])
     return repo, calib_repo, processed_repo, diffim_repo
 
 
