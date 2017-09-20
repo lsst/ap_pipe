@@ -21,10 +21,14 @@
 #
 
 '''
-Process raw decam images with MasterCals from ingestion --> difference imaging
+Process raw DECam images with MasterCals from ingestion --> difference imaging.
 
-TODO: Update DMTN-039 to reflect the new user interface.
-      I'm postponing this until DM-11422 and/or DM-11390 are complete.
+A tutorial for using ap_pipe is available in DMTN-039 (http://dmtn-039.lsst.io).
+
+ap_pipe is designed to be used as the main processing portion of ap_verify, but
+it can also be run alone from the command line, e.g.:
+$ python ap_pipe/bin.src/ap_pipe.py -d ap_verify_hits2015/ -o output_dir
+         -i "visit=410985 ccdnum=25"
 '''
 
 from __future__ import absolute_import, division, print_function
