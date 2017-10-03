@@ -46,7 +46,8 @@ class MaxPsfWcsSelectImagesTask(WcsSelectImagesTask):
     """
     ConfigClass = MaxPsfWcsSelectImageConfig
 
-    def runDataRef(self, coordList, selectDataList,  makeDataRefList=True):
+    def runDataRef(self, dataRef, coordList, makeDataRefList=True, 
+                   selectDataList=[]):
         """Select images in the selectDataList that overlap the patch.
 
         Parameters
@@ -87,7 +88,7 @@ class MaxPsfWcsSelectImagesTask(WcsSelectImagesTask):
             imageWcs = data.wcs
             cal = dataRef.get('calexp', immediate=True)
             psf_size = cal.getPsf().computeShape().getDeterminantRadius()
-            nx, ny = data.dims
+            nx, ny = cal.getDimensions()
 
             imageBox = afwGeom.Box2D(afwGeom.Point2D(0, 0), afwGeom.Extent2D(nx, ny))
             try:
