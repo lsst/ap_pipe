@@ -9,6 +9,3 @@ config.bgSubtracted=True
 config.select.retarget(MaxPsfWcsSelectImagesTask)
 config.makePsfMatched=True
 config.makeDirect=True
-# !! This must be the same as the kernelSize in the processEimage
-# psfMeasurement.
-config.modelPsf.size=25
