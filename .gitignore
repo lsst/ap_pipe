@@ -3,6 +3,7 @@
 *.pyc
 *.so
 *~
+pytest_session.txt
 .cache
 .sconf_temp
 .sconsign.dblite
