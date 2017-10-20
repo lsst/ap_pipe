@@ -11,6 +11,7 @@ setupRequired(pex_exceptions >= 4.6.0.0)
 setupRequired(ndarray)
 
 setupRequired(obs_decam)
+setupRequired(ap_association)
 
 # The following is boilerplate for all packages.
 # See Tech Note DMTN-001 for details on LSST_LIBRARY_PATH

@@ -34,7 +34,7 @@ $ python ap_pipe/bin.src/ap_pipe.py -d ap_verify_hits2015/ -o output_dir
 from __future__ import absolute_import, division, print_function
 
 __all__ = ['get_datafiles', 'get_calib_datafiles', 'get_defectfiles', 'get_output_repo',
-           'doIngest', 'doIngestCalibs', 'doProcessCcd', 'doDiffIm',
+           'doIngest', 'doIngestCalibs', 'doProcessCcd', 'doDiffIm', 'doAssociation',
            'runPipelineAlone']
 
 import os
@@ -57,6 +57,7 @@ from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask
 from lsst.utils import getPackageDir
 from lsst.ip.diffim.getTemplate import GetCalexpAsTemplateTask
 from lsst.pipe.tasks.imageDifference import ImageDifferenceConfig, ImageDifferenceTask
+from lsst.ap.association import AssociationDBSqliteTask, AssociationConfig, AssociationTask
 import lsst.daf.persistence as dafPersist
 
 # Names of directories containing data products in dataset_root
@@ -74,6 +75,7 @@ INGESTED_DIR = 'ingested'
 CALIBINGESTED_DIR = 'calibingested'
 PROCESSED_DIR = 'processed'
 DIFFIM_DIR = 'diffim'
+DB_DIR = 'l1db'
 
 
 def get_datafiles(raw_location):
@@ -218,6 +220,7 @@ def parsePipelineArgs():
     calib_repo = get_output_repo(args.output, CALIBINGESTED_DIR)
     processed_repo = get_output_repo(args.output, PROCESSED_DIR)
     diffim_repo = get_output_repo(args.output, DIFFIM_DIR)
+    db_repo = get_output_repo(args.output, DB_DIR)
 
     # Retrieve location of refcats directory containing gaia and pan-starrs tarballs
     refcats = os.path.join(args.dataset_root, REFCATS_DIR)
@@ -230,7 +233,8 @@ def parsePipelineArgs():
 
     repos_and_files = {'repo': repo, 'calib_repo': calib_repo,
                        'processed_repo': processed_repo,
-                       'diffim_repo': diffim_repo, 'datafiles': datafiles,
+                       'diffim_repo': diffim_repo, 'db_repo': db_repo,
+                       'datafiles': datafiles,
                        'calib_datafiles': calib_datafiles, 'defectfiles': defectfiles,
                        'refcats': refcats}
     idlist = [args.dataId, template]
@@ -630,6 +634,92 @@ def doDiffIm(processed_repo, dataId, template, diffim_repo):
     return diffim_metadata
 
 
+def _setupDatabase(configurable):
+    '''
+    Set up a database according to a configuration.
+
+    Takes no action if the database already exists.
+
+    Parameters
+    ----------
+    configurable: `lsst.pex.config.ConfigurableInstance`
+        A ConfigurableInstance with a database-managing class in its `target`
+        field. The API of `target` must expose a `create_tables` method taking
+        no arguments.
+    '''
+    db = configurable.apply()
+    try:
+        db.create_tables()
+    finally:
+        db.close()
+
+
+# TODO: duplication of ArgumentParser's internal functionality; remove this in DM-11372
+def _deStringDataId(dataId):
+    '''
+    Replace a dataId's values with numbers, where appropriate.
+
+    Parameters
+    ----------
+    dataId: `dict`
+        The dataId to be cleaned up.
+    '''
+    integer = re.compile('^\s*[+-]?\d+\s*$')
+    for key, value in dataId.items():
+        if isinstance(value, basestring) and integer.match(value) is not None:
+            dataId[key] = int(value)
+
+
+def doAssociation(diffim_repo, dataId, db_repo):
+    '''
+    Do source association.
+
+    Parameters
+    ----------
+    diffim_repo: `str`
+        The output repository location on disk where difference images live.
+    dataId: `str`
+        Butler identifier naming the data to be processed (e.g., visit and ccdnum)
+        formatted in the usual way (e.g., 'visit=54321 ccdnum=7').
+    db_repo: `str`
+        The output repository location on disk where the source database lives.
+
+    Returns
+    -------
+    assoc_metadata: `PropertySet` or None
+        Metadata from the AssociationTask for use by ap_verify
+    '''
+    log = lsst.log.Log.getLogger('ap.pipe.doAssociation')
+    dataId_items = re.split('[ +=]', dataId)
+    dataId_dict = dict(zip(dataId_items[::2], dataId_items[1::2]))
+    if 'visit' not in dataId_dict.keys():
+        raise RuntimeError('The dataId string is missing \'visit\'')
+    _deStringDataId(dataId_dict)
+
+    # No reasonable way to check if Association finished successfully
+    if not os.path.isdir(db_repo):
+        os.mkdir(db_repo)
+
+    log.info('Running Association...')
+    config = AssociationConfig()
+    config.level1_db.retarget(AssociationDBSqliteTask)
+    config.level1_db.db_name = os.path.join(db_repo, 'association.db')
+
+    butler = dafPersist.Butler(inputs=diffim_repo)
+
+    _setupDatabase(config.level1_db)
+
+    associationTask = AssociationTask(config=config)
+    try:
+        catalog = butler.get('deepDiff_diaSrc', dataId=dataId_dict)
+        exposure = butler.get('deepDiff_differenceExp', dataId=dataId_dict)
+        associationTask.run(catalog, exposure)
+    finally:
+        associationTask.level1_db.close()
+
+    return associationTask.getFullMetadata()
+
+
 def runPipelineAlone():
     '''
     Run each step of the pipeline. NOT used by ap_verify.
@@ -646,6 +736,7 @@ def runPipelineAlone():
     calib_repo = repos_and_files['calib_repo']
     processed_repo = repos_and_files['processed_repo']
     diffim_repo = repos_and_files['diffim_repo']
+    db_repo = repos_and_files['db_repo']
 
     datafiles = repos_and_files['datafiles']
     calib_datafiles = repos_and_files['calib_datafiles']
@@ -664,6 +755,7 @@ def runPipelineAlone():
     doProcessCcd(repo, calib_repo, processed_repo, dataId)
     doProcessCcd(repo, calib_repo, processed_repo, dataId_template)  # temporary
     doDiffIm(processed_repo, dataId, template, diffim_repo)
+    doAssociation(diffim_repo, dataId, db_repo)
     log.info('Prototype AP Pipeline run complete.')
 
     return
