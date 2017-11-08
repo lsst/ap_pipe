@@ -698,7 +698,7 @@ def _doProcessCcd(repo, calib_repo, processed_repo, dataId):
                                                     'VR': 'g'}
     processCcdTask = ProcessCcdTask(butler=butler, config=config)
     processCcdTask.run(butler.dataRef('raw', dataId=dataId_dict))
-    process_metadata = processCcdTask.metadata
+    process_metadata = processCcdTask.getFullMetadata()
     return process_metadata
 
 
@@ -776,6 +776,8 @@ def _doDiffIm(processed_repo, dataId, templateType, template, diffim_repo):
         raise RuntimeError('The dataId string is missing \'visit\'')
     else:  # save the visit number from the dataId
         visit = dataId_dict['visit']
+    _deStringDataId(dataId_dict)
+
     if os.path.exists(os.path.join(diffim_repo, 'deepDiff', 'v' + visit)):
         log.warn('DiffIm has already been run for visit {0}, skipping...'.format(visit))
         return None
@@ -802,8 +804,10 @@ def _doDiffIm(processed_repo, dataId, templateType, template, diffim_repo):
     log.info('Running ImageDifference...')
     if not os.path.isdir(diffim_repo):
         os.mkdir(diffim_repo)
-    diffim_result = ImageDifferenceTask.parseAndRun(args=args, config=config, doReturnResults=True)
-    diffim_metadata = diffim_result.resultList[0].metadata
+    ImageDifferenceTask.parseAndRun(args=args, config=config)
+    butler = dafPersist.Butler(inputs=diffim_repo)
+    metadataType = ImageDifferenceTask()._getMetadataName()
+    diffim_metadata = butler.get(metadataType, dataId_dict)
     return diffim_metadata
 
 
