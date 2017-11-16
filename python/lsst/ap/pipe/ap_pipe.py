@@ -951,7 +951,12 @@ def runPipelineAlone():
         # TODO: should be unneccessary once DM-11865 is resolved
         _doIngestTemplates(repo, repo, template)
     elif templateType == 'visit':
-        _doProcessCcd(repo, calib_repo, processed_repo, template + ' ccdnum=25')  # TODO
+        dataId_items = re.split('[ +=]', dataId)
+        dataId_dict = dict(zip(dataId_items[::2], dataId_items[1::2]))
+        if 'ccdnum' not in dataId_dict.keys():
+            raise RuntimeError('The dataId string is missing \'ccdnum\'')
+        ccdTemplate = template + (' ccdnum=%s' % dataId_dict['ccdnum'])
+        _doProcessCcd(repo, calib_repo, processed_repo, ccdTemplate)
     else:
         raise ValueError('templateType must be "coadd" or "visit", gave "%s" instead' % templateType)
     _doDiffIm(processed_repo, dataId, templateType, template, diffim_repo)
