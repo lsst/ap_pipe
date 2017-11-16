@@ -702,7 +702,7 @@ def _doProcessCcd(repo, calib_repo, processed_repo, dataId):
     return process_metadata
 
 
-def doDiffIm(base_repo, dataId):
+def doDiffIm(base_repo, templateDir, dataId):
     '''
     Do difference imaging with an automatically selected template.
 
@@ -710,6 +710,8 @@ def doDiffIm(base_repo, dataId):
     ----------
     base_repo: `str`
         The output repository location on disk.
+    templateDir: `str`
+        The input repository location containing precomputed templates.
     dataId: `str`
         Butler identifier naming the data to be processed (e.g., visit and ccdnum)
         formatted in the usual way (e.g., 'visit=54321 ccdnum=7').
@@ -719,13 +721,12 @@ def doDiffIm(base_repo, dataId):
     diffim_metadata: `PropertySet` or None
         Metadata from the ImageDifferenceTask for use by ap_verify
     '''
-    # TEMPORARY HARDWIRED THINGS ARE TEMPORARY
-    # TODO (DM-11422):
-    # - use a coadd as a template instead of a visit
-    template = 'visit=410929'  # one g-band visit in Blind15A40, temporarily hard-wired
+    repo = get_output_repo(base_repo, INGESTED_DIR)
     processed_repo = get_output_repo(base_repo, PROCESSED_DIR)
     diffim_repo = get_output_repo(base_repo, DIFFIM_DIR)
-    return _doDiffIm(processed_repo, dataId, 'visit', template, diffim_repo)
+    # TODO: remove this once DM-11865 resolved
+    _doIngestTemplates(repo, repo, templateDir)
+    return _doDiffIm(processed_repo, dataId, 'coadd', templateDir, diffim_repo)
 
 
 def _doDiffIm(processed_repo, dataId, templateType, template, diffim_repo):
