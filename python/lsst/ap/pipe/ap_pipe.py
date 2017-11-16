@@ -44,6 +44,7 @@ import tarfile
 from glob import glob
 import sqlite3
 import re
+import shutil
 
 import lsst.log
 from lsst.obs.decam import ingest
@@ -323,6 +324,7 @@ def _doIngest(repo, refcats, datafiles):
     if os.path.exists(os.path.join(repo, 'registry.sqlite3')):
         log.warn('Raw images were previously ingested, skipping...')
         return None
+    # TODO: make this a new-style repository (DM-12662)
     if not os.path.isdir(repo):
         os.mkdir(repo)
     # make a text file that handles the mapper, per the obs_decam github README
@@ -550,6 +552,43 @@ def _doIngestCalibs(repo, calib_repo, calib_datafiles, defectfiles):
     return calibingest_metadata
 
 
+def _doIngestTemplates(repo, templateRepo, inputTemplates):
+    '''Ingest templates into the input repository, so that
+    GetCoaddAsTemplateTask can find them.
+
+    After this method returns, butler queries against `templateRepo` can find the
+    templates in `inputTemplates`.
+
+    Parameters
+    ----------
+    repo: `str`
+        The output repository location on disk where ingested raw images live.
+    templateRepo: `str`
+        The output repository location on disk where ingested templates live.
+    inputTemplates: `str`
+        The input repository location where templates have been previously computed.
+
+    Returns
+    -------
+    calibingest_metadata: `PropertySet` or None
+        Metadata from any tasks run by this method
+    '''
+    log = lsst.log.Log.getLogger('ap.pipe._doIngestTemplates')
+    # TODO: this check will need to be rewritten when Butler directories change, ticket TBD
+    if os.path.exists(os.path.join(templateRepo, 'deepCoadd')):
+        log.warn('Templates were previously ingested, skipping...')
+        return None
+    else:
+        # TODO: chain inputTemplates to templateRepo once DM-12662 resolved
+        if not os.path.isdir(templateRepo):
+            os.mkdir(templateRepo)
+        for baseName in os.listdir(inputTemplates):
+            oldDir = os.path.abspath(os.path.join(inputTemplates, baseName))
+            if os.path.isdir(oldDir):
+                os.symlink(oldDir, os.path.join(templateRepo, baseName))
+        return None
+
+
 def doProcessCcd(base_repo, dataId):
     '''
     Perform ISR with ingested images and calibrations via processCcd
@@ -751,6 +790,7 @@ def _doDiffIm(processed_repo, dataId, templateType, template, diffim_repo):
     if templateType == 'coadd':
         # TODO: Add argument for input templates once DM-11865 resolved
         config.coaddName = 'deep'  # TODO: generalize in DM-12315
+        config.getTemplate.warpType = 'psfMatched'
         config.doSelectSources = False
     elif templateType == 'visit':
         args.extend(['--templateId', template])
