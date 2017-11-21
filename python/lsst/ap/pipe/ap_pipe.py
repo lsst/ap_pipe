@@ -21,7 +21,7 @@
 #
 
 '''
-Process raw DECam images with MasterCals from ingestion --> difference imaging.
+Process raw DECam images with MasterCals from ingestion --> source association.
 
 A tutorial for using ap_pipe is available in DMTN-039 (http://dmtn-039.lsst.io).
 
@@ -44,6 +44,7 @@ import tarfile
 from glob import glob
 import sqlite3
 import re
+import shutil
 
 import lsst.log
 from lsst.obs.decam import ingest
@@ -179,17 +180,16 @@ def parsePipelineArgs():
 
     Returns
     -------
-    repos_and_files: `dict`
+    `dict`
         Includes the names of new repos that will be written to disk
         following ingestion, calib ingestion, processing, and difference imaging
         ('repo', 'calib_repo', 'processed_repo', 'diffim_repo')
         Includes the files in dataset_root for raw images, flats and biases,
         and defects ('datafiles', 'calib_datafiles', 'defectfiles')
-        Finally includes the path on disk of the reference catalogs ('refcats')
-    idlist: `list` containing two `str`
-        Data ID and template info needed for processing and difference imaging
-        [dataId, template]
-        TODO: allow 'template' to be either a visit ID or a repo name (DM-11422)
+        Includes the path on disk of the reference catalogs ('refcats')
+        Includes the data ID of the data to process ('dataID')
+        Includes the type of template ('templateType', can be 'coadd' or 'visit'),
+        and the repository or dataId of the template, respectively ('template')
     '''
 
     # Parse command line arguments with argparse
@@ -198,16 +198,23 @@ def parsePipelineArgs():
     Process raw decam images with MasterCals from ingestion --> difference imaging
 
     USAGE:
-    $ python ap_pipe.py -d dataset_root -o output_location -i "visit=12345 ccdnum=5"
+    $ python ap_pipe.py -d dataset_root -t template_location -o output_location -i "visit=12345 ccdnum=5"
                                      '''))
     parser.add_argument('-d', '--dataset_root',
-                        help="Location on disk of dataset_root, which contains subdirectories of \
-                              raw data, calibs, etc.")
+                        help="Location on disk of dataset_root, which contains subdirectories of "
+                             "raw data, calibs, etc.")
     parser.add_argument('-o', '--output',
                         help="Location on disk where output repos will live.")
     parser.add_argument('-i', '--dataId',
-                        help="Butler identifier naming the data to be processed (e.g., visit and ccdnum) \
-                              formatted in the usual way (e.g., 'visit=54321 ccdnum=7').")
+                        help="Butler identifier naming the data to be processed (e.g., visit and ccdnum) "
+                             "formatted in the usual way (e.g., 'visit=54321 ccdnum=7').")
+    templateFlags = parser.add_mutually_exclusive_group()
+    templateFlags.add_argument('--templateId', default='visit=410929',
+                               help="A Butler identifier naming a visit to use as the template "
+                                    "(e.g., 'visit=101'). Defaults to 'visit=410929' if neither "
+                                    "--templateId nor --templateRepo provided.")
+    templateFlags.add_argument('-t', '--templateRepo',
+                               help="A URI to a Butler repository that will be searched for coadd templates")
     args = parser.parse_args()
 
     # Retrieve lists of input files for raw images and calibration products
@@ -225,21 +232,24 @@ def parsePipelineArgs():
     # Retrieve location of refcats directory containing gaia and pan-starrs tarballs
     refcats = os.path.join(args.dataset_root, REFCATS_DIR)
 
-    # TEMPORARY HARDWIRED THINGS ARE TEMPORARY
-    # TODO (DM-11422):
-    # - use a coadd as a template instead of a visit
-    # dataId = 'visit=410985 ccdnum=25'  # one g-band visit in Blind15A40 and one CCD for testing
-    template = '410929'  # one g-band visit in Blind15A40, temporarily hard-wired
+    # Stringly typed code, but I don't see a safer way to do this in Python
+    if args.templateRepo is not None:
+        templateType = 'coadd'
+        template = args.templateRepo
+    else:
+        templateType = 'visit'
+        template = args.templateId
 
     repos_and_files = {'repo': repo, 'calib_repo': calib_repo,
                        'processed_repo': processed_repo,
                        'diffim_repo': diffim_repo, 'db_repo': db_repo,
                        'datafiles': datafiles,
                        'calib_datafiles': calib_datafiles, 'defectfiles': defectfiles,
-                       'refcats': refcats}
-    idlist = [args.dataId, template]
+                       'refcats': refcats,
+                       'dataId': args.dataId,
+                       'template_type': templateType, 'template': template}
 
-    return repos_and_files, idlist
+    return repos_and_files
 
 
 def doIngest(base_repo, raw_dir, refcat_dir):
@@ -314,6 +324,7 @@ def _doIngest(repo, refcats, datafiles):
     if os.path.exists(os.path.join(repo, 'registry.sqlite3')):
         log.warn('Raw images were previously ingested, skipping...')
         return None
+    # TODO: make this a new-style repository (DM-12662)
     if not os.path.isdir(repo):
         os.mkdir(repo)
     # make a text file that handles the mapper, per the obs_decam github README
@@ -541,6 +552,43 @@ def _doIngestCalibs(repo, calib_repo, calib_datafiles, defectfiles):
     return calibingest_metadata
 
 
+def _doIngestTemplates(repo, templateRepo, inputTemplates):
+    '''Ingest templates into the input repository, so that
+    GetCoaddAsTemplateTask can find them.
+
+    After this method returns, butler queries against `templateRepo` can find the
+    templates in `inputTemplates`.
+
+    Parameters
+    ----------
+    repo: `str`
+        The output repository location on disk where ingested raw images live.
+    templateRepo: `str`
+        The output repository location on disk where ingested templates live.
+    inputTemplates: `str`
+        The input repository location where templates have been previously computed.
+
+    Returns
+    -------
+    calibingest_metadata: `PropertySet` or None
+        Metadata from any tasks run by this method
+    '''
+    log = lsst.log.Log.getLogger('ap.pipe._doIngestTemplates')
+    # TODO: this check will need to be rewritten when Butler directories change, ticket TBD
+    if os.path.exists(os.path.join(templateRepo, 'deepCoadd')):
+        log.warn('Templates were previously ingested, skipping...')
+        return None
+    else:
+        # TODO: chain inputTemplates to templateRepo once DM-12662 resolved
+        if not os.path.isdir(templateRepo):
+            os.mkdir(templateRepo)
+        for baseName in os.listdir(inputTemplates):
+            oldDir = os.path.abspath(os.path.join(inputTemplates, baseName))
+            if os.path.isdir(oldDir):
+                os.symlink(oldDir, os.path.join(templateRepo, baseName))
+        return None
+
+
 def doProcessCcd(base_repo, dataId):
     '''
     Perform ISR with ingested images and calibrations via processCcd
@@ -654,7 +702,7 @@ def _doProcessCcd(repo, calib_repo, processed_repo, dataId):
     return process_metadata
 
 
-def doDiffIm(base_repo, dataId):
+def doDiffIm(base_repo, templateDir, dataId):
     '''
     Do difference imaging with an automatically selected template.
 
@@ -662,6 +710,8 @@ def doDiffIm(base_repo, dataId):
     ----------
     base_repo: `str`
         The output repository location on disk.
+    templateDir: `str`
+        The input repository location containing precomputed templates.
     dataId: `str`
         Butler identifier naming the data to be processed (e.g., visit and ccdnum)
         formatted in the usual way (e.g., 'visit=54321 ccdnum=7').
@@ -671,18 +721,17 @@ def doDiffIm(base_repo, dataId):
     diffim_metadata: `PropertySet` or None
         Metadata from the ImageDifferenceTask for use by ap_verify
     '''
-    # TEMPORARY HARDWIRED THINGS ARE TEMPORARY
-    # TODO (DM-11422):
-    # - use a coadd as a template instead of a visit
-    template = '410929'  # one g-band visit in Blind15A40, temporarily hard-wired
+    repo = get_output_repo(base_repo, INGESTED_DIR)
     processed_repo = get_output_repo(base_repo, PROCESSED_DIR)
     diffim_repo = get_output_repo(base_repo, DIFFIM_DIR)
-    return _doDiffIm(processed_repo, dataId, template, diffim_repo)
+    # TODO: remove this once DM-11865 resolved
+    _doIngestTemplates(repo, repo, templateDir)
+    return _doDiffIm(processed_repo, dataId, 'coadd', templateDir, diffim_repo)
 
 
-def _doDiffIm(processed_repo, dataId, template, diffim_repo):
+def _doDiffIm(processed_repo, dataId, templateType, template, diffim_repo):
     '''
-    Do difference imaging with a visit as a template and one or more as science
+    Do difference imaging with a template and one or more visits as science
 
     Parameters
     ----------
@@ -691,10 +740,13 @@ def _doDiffIm(processed_repo, dataId, template, diffim_repo):
     dataId: `str`
         Butler identifier naming the data to be processed (e.g., visit and ccdnum)
         formatted in the usual way (e.g., 'visit=54321 ccdnum=7').
+    templateType: 'coadd' | 'visit'
+        The type of template to use for difference imaging.
     template: `str`
-        The single DECam visit number which will be used as a template for
-        difference imaging.
-        TODO: allow 'template' to be either a visit ID or a repo name (DM-11422)
+        If `templateType` is 'coadd', the input repository containing the
+        template coadds.
+        If `templateType` is 'visit', the DECam data ID which will be used as a
+        template for difference imaging.
     diffim_repo: `str`
         The output repository location on disk where difference images live.
 
@@ -713,8 +765,6 @@ def _doDiffIm(processed_repo, dataId, template, diffim_repo):
         config.detection.thresholdValue = 5.0
         config.doDecorrelation = True
 
-    TODO: use coadds as templates by default, not another visit (DM-11422).
-
     RESULT:
     diffim_repo/deepDiff/v+visit populated with difference images
     and catalogs of detected sources (diaSrc, diffexp, and metadata files)
@@ -729,19 +779,29 @@ def _doDiffIm(processed_repo, dataId, template, diffim_repo):
     if os.path.exists(os.path.join(diffim_repo, 'deepDiff', 'v' + visit)):
         log.warn('DiffIm has already been run for visit {0}, skipping...'.format(visit))
         return None
-    if not os.path.isdir(diffim_repo):
-        os.mkdir(diffim_repo)
-    log.info('Running ImageDifference...')
+
+    dataId = dataId.split(' ')
+    args = [processed_repo, '--id'] + dataId
+    args.extend(['--output', diffim_repo])
+
     config = ImageDifferenceConfig()
-    config.getTemplate.retarget(GetCalexpAsTemplateTask)  # visit template config
-    # config.doSelectSources = False  # coadd template config
     config.detection.thresholdValue = 5.0
     config.doDecorrelation = True
-    dataId = dataId.split(' ')
-    args = [processed_repo, '--id']
-    args.extend(dataId)
-    args.extend(['--templateId', 'visit=' + template, '--output', diffim_repo])  # visit option
-    # args.extend(['--template', template, '--output', diffim_repo])  # coadd option (DM-11422)
+
+    if templateType == 'coadd':
+        # TODO: Add argument for input templates once DM-11865 resolved
+        config.coaddName = 'deep'  # TODO: generalize in DM-12315
+        config.getTemplate.warpType = 'psfMatched'
+        config.doSelectSources = False
+    elif templateType == 'visit':
+        args.extend(['--templateId', template])
+        config.getTemplate.retarget(GetCalexpAsTemplateTask)
+    else:
+        raise ValueError('templateType must be "coadd" or "visit", gave "%s" instead' % templateType)
+
+    log.info('Running ImageDifference...')
+    if not os.path.isdir(diffim_repo):
+        os.mkdir(diffim_repo)
     diffim_result = ImageDifferenceTask.parseAndRun(args=args, config=config, doReturnResults=True)
     diffim_metadata = diffim_result.resultList[0].metadata
     return diffim_metadata
@@ -865,31 +925,41 @@ def runPipelineAlone():
     '''
     lsst.log.configure()
     log = lsst.log.Log.getLogger('ap.pipe.runPipelineAlone')
-    repos_and_files, idlist = parsePipelineArgs()
+    parsed = parsePipelineArgs()
 
-    repo = repos_and_files['repo']
-    calib_repo = repos_and_files['calib_repo']
-    processed_repo = repos_and_files['processed_repo']
-    diffim_repo = repos_and_files['diffim_repo']
-    db_repo = repos_and_files['db_repo']
+    repo = parsed['repo']
+    calib_repo = parsed['calib_repo']
+    processed_repo = parsed['processed_repo']
+    diffim_repo = parsed['diffim_repo']
+    db_repo = parsed['db_repo']
 
-    datafiles = repos_and_files['datafiles']
-    calib_datafiles = repos_and_files['calib_datafiles']
-    defectfiles = repos_and_files['defectfiles']
+    datafiles = parsed['datafiles']
+    calib_datafiles = parsed['calib_datafiles']
+    defectfiles = parsed['defectfiles']
 
-    refcats = repos_and_files['refcats']
+    refcats = parsed['refcats']
 
-    dataId = idlist[0]
-    template = idlist[1]
-
-    dataId_template = 'visit=410929 ccdnum=25'  # temporary
+    dataId = parsed['dataId']
+    templateType = parsed['template_type']
+    template = parsed['template']
 
     # Run all the tasks in order
     _doIngest(repo, refcats, datafiles)
     _doIngestCalibs(repo, calib_repo, calib_datafiles, defectfiles)
     _doProcessCcd(repo, calib_repo, processed_repo, dataId)
-    _doProcessCcd(repo, calib_repo, processed_repo, dataId_template)  # temporary
-    _doDiffIm(processed_repo, dataId, template, diffim_repo)
+    if templateType == 'coadd':
+        # TODO: should be unneccessary once DM-11865 is resolved
+        _doIngestTemplates(repo, repo, template)
+    elif templateType == 'visit':
+        dataId_items = re.split('[ +=]', dataId)
+        dataId_dict = dict(zip(dataId_items[::2], dataId_items[1::2]))
+        if 'ccdnum' not in dataId_dict.keys():
+            raise RuntimeError('The dataId string is missing \'ccdnum\'')
+        ccdTemplate = template + (' ccdnum=%s' % dataId_dict['ccdnum'])
+        _doProcessCcd(repo, calib_repo, processed_repo, ccdTemplate)
+    else:
+        raise ValueError('templateType must be "coadd" or "visit", gave "%s" instead' % templateType)
+    _doDiffIm(processed_repo, dataId, templateType, template, diffim_repo)
     _doAssociation(diffim_repo, dataId, db_repo)
     log.info('Prototype AP Pipeline run complete.')
 
