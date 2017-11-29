@@ -850,6 +850,10 @@ def _deStringDataId(dataId):
     dataId: `dict`
         The dataId to be cleaned up.
     '''
+    try:
+        basestring
+    except NameError:
+        basestring = str
     integer = re.compile('^\s*[+-]?\d+\s*$')
     for key, value in dataId.items():
         if isinstance(value, basestring) and integer.match(value) is not None:
