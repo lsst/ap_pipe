@@ -118,6 +118,8 @@ def get_calib_datafiles(calib_location):
     for files in types:
         all_calib_datafiles.extend(glob(os.path.join(calib_location, files)))
     # Ignore wtmaps and illumcors
+    # These data products may be useful in the future, but are not yet supported by the Stack
+    # and will confuse the ingester
     calib_datafiles = []
     files_to_ignore = ['fcw', 'zcw', 'ici']
     for file in all_calib_datafiles:
