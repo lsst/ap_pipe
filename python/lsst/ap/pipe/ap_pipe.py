@@ -21,13 +21,13 @@
 #
 
 '''
-Process raw DECam images with MasterCals from ingestion --> source association.
+Process raw DECam images with MasterCals from basic processing --> source association.
 
 A tutorial for using ap_pipe is available in DMTN-039 (http://dmtn-039.lsst.io).
 
 ap_pipe is designed to be used as the main processing portion of ap_verify, but
 it can also be run alone from the command line, e.g.:
-$ python ap_pipe/bin.src/ap_pipe.py -d ap_verify_hits2015/ -o output_dir
+$ python ap_pipe/bin.src/ap_pipe.py input_dir -o output_dir
          -i "visit=410985 ccdnum=25"
 '''
 
@@ -185,9 +185,6 @@ def parsePipelineArgs():
         Includes the names of new repos that will be written to disk
         following ingestion, calib ingestion, processing, and difference imaging
         ('repo', 'calib_repo', 'processed_repo', 'diffim_repo')
-        Includes the files in dataset_root for raw images, flats and biases,
-        and defects ('datafiles', 'calib_datafiles', 'defectfiles')
-        Includes the path on disk of the reference catalogs ('refcats')
         Includes the data ID of the data to process ('dataID')
         Includes the type of template ('templateType', can be 'coadd' or 'visit'),
         and the repository or dataId of the template, respectively ('template')
@@ -196,16 +193,16 @@ def parsePipelineArgs():
     # Parse command line arguments with argparse
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
                                      description=textwrap.dedent('''
-    Process raw decam images with MasterCals from ingestion --> difference imaging
+    Process raw decam images with MasterCals from basic processing --> source association
 
     USAGE:
-    $ python ap_pipe.py -d dataset_root -t template_location -o output_location -i "visit=12345 ccdnum=5"
+    $ python ap_pipe.py input_location -t template_location -o output_location -i "visit=12345 ccdnum=5"
                                      '''))
-    parser.add_argument('-d', '--dataset_root',
-                        help="Location on disk of dataset_root, which contains subdirectories of "
-                             "raw data, calibs, etc.")
+    parser.add_argument('input',
+                        help="Location on disk of input Butler repository. Must contain subdirectories "
+                             "named %s/ and %s/." % (INGESTED_DIR, CALIBINGESTED_DIR))
     parser.add_argument('-o', '--output',
-                        help="Location on disk where output repos will live.")
+                        help="Location on disk where output repos will live. May be the same as input.")
     parser.add_argument('-i', '--dataId',
                         help="Butler identifier naming the data to be processed (e.g., visit and ccdnum) "
                              "formatted in the usual way (e.g., 'visit=54321 ccdnum=7').")
@@ -221,20 +218,14 @@ def parsePipelineArgs():
                                help="A URI to a Butler repository that will be searched for coadd templates")
     args = parser.parse_args()
 
-    # Retrieve lists of input files for raw images and calibration products
-    datafiles = get_datafiles(os.path.join(args.dataset_root, RAW_DIR))
-    calib_datafiles = get_calib_datafiles(os.path.join(args.dataset_root, MASTERCAL_DIR))
-    defectfiles = get_defectfiles(os.path.join(args.dataset_root, DEFECT_DIR))
+    # Define input repo locations on disk
+    repo = get_output_repo(args.input, INGESTED_DIR)
+    calib_repo = get_output_repo(args.input, CALIBINGESTED_DIR)
 
     # Define output repo locations on disk
-    repo = get_output_repo(args.output, INGESTED_DIR)
-    calib_repo = get_output_repo(args.output, CALIBINGESTED_DIR)
     processed_repo = get_output_repo(args.output, PROCESSED_DIR)
     diffim_repo = get_output_repo(args.output, DIFFIM_DIR)
     db_repo = get_output_repo(args.output, DB_DIR)
-
-    # Retrieve location of refcats directory containing gaia and pan-starrs tarballs
-    refcats = os.path.join(args.dataset_root, REFCATS_DIR)
 
     skip = args.skip
 
@@ -249,9 +240,6 @@ def parsePipelineArgs():
     repos_and_files = {'repo': repo, 'calib_repo': calib_repo,
                        'processed_repo': processed_repo,
                        'diffim_repo': diffim_repo, 'db_repo': db_repo,
-                       'datafiles': datafiles,
-                       'calib_datafiles': calib_datafiles, 'defectfiles': defectfiles,
-                       'refcats': refcats,
                        'dataId': args.dataId,
                        'template_type': templateType, 'template': template,
                        'skip': skip}
@@ -957,12 +945,6 @@ def runPipelineAlone():
     diffim_repo = parsed['diffim_repo']
     db_repo = parsed['db_repo']
 
-    datafiles = parsed['datafiles']
-    calib_datafiles = parsed['calib_datafiles']
-    defectfiles = parsed['defectfiles']
-
-    refcats = parsed['refcats']
-
     skip = parsed['skip']
 
     dataId = parsed['dataId']
@@ -970,8 +952,6 @@ def runPipelineAlone():
     template = parsed['template']
 
     # Run all the tasks in order
-    _doIngest(repo, refcats, datafiles)
-    _doIngestCalibs(repo, calib_repo, calib_datafiles, defectfiles)
     _doProcessCcd(repo, calib_repo, processed_repo, dataId, skip=skip)
     if templateType == 'coadd':
         # TODO: should be unneccessary once DM-11865 is resolved
