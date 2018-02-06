@@ -440,6 +440,10 @@ def defectIngest(repo, calib_repo, defectfiles):
     - They will be added to the calib registry, but not linked like the flats and biases
     '''
     log = lsst.log.Log.getLogger('ap.pipe.defectIngest')
+    absRepo = os.path.abspath(repo)
+    defect_tarball = os.path.abspath(defectfiles[0] + '.tar.gz')
+    startDir = os.path.abspath(os.getcwd())
+    # CameraMapper does not accept absolute paths
     os.chdir(calib_repo)
     try:
         os.mkdir('defects')
@@ -453,10 +457,9 @@ def defectIngest(repo, calib_repo, defectfiles):
             raise
     else:
         log.info('Ingesting defects...')
-        defectargs = ['../../' + repo, '--calib', '.', '--calibType', 'defect',
+        defectargs = [absRepo, '--calib', '.', '--calibType', 'defect',
                       '--mode', 'skip', '--validity', '999']
-        defect_tarball = defectfiles[0] + '.tar.gz'
-        tarfile.open(os.path.join('../../', defect_tarball), 'r').extractall('defects')
+        tarfile.open(defect_tarball, 'r').extractall('defects')
         defectfiles = glob(os.path.join('defects', os.path.basename(defectfiles[0]), '*.fits'))
         defectargs.extend(defectfiles)
         defectArgumentParser = IngestCalibsArgumentParser(name='ingestCalibs')
@@ -467,7 +470,7 @@ def defectIngest(repo, calib_repo, defectfiles):
         DefectIngestTask.run(defectParsedCmd)
         defect_metadata = DefectIngestTask.getFullMetadata()
     finally:
-        os.chdir('../..')
+        os.chdir(startDir)
     return defect_metadata
 
 
