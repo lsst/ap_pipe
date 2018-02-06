@@ -34,7 +34,7 @@ $ python ap_pipe/bin.src/ap_pipe.py input_dir -o output_dir
 from __future__ import absolute_import, division, print_function
 
 __all__ = ['get_output_repo',
-           'doProcessCcd', 'doDiffIm', 'doAssociation',
+           'doIngestTemplates', 'doProcessCcd', 'doDiffIm', 'doAssociation',
            'runPipelineAlone']
 
 import os
@@ -116,12 +116,13 @@ def parsePipelineArgs():
                         help="Do not skip pipeline steps that have already been started. Necessary for "
                              "processing multiple data IDs in the same repository.")
     templateFlags = parser.add_mutually_exclusive_group()
-    templateFlags.add_argument('--templateId', default='visit=410929',
+    templateFlags.add_argument('--templateId',
                                help="A Butler identifier naming a visit to use as the template "
-                                    "(e.g., 'visit=101'). Defaults to 'visit=410929' if neither "
-                                    "--templateId nor --templateRepo provided.")
+                                    "(e.g., 'visit=101').")
     templateFlags.add_argument('-t', '--templateRepo',
-                               help="A URI to a Butler repository that will be searched for coadd templates")
+                               help="A URI to a Butler repository that will be searched for coadd "
+                                    "templates. Defaults to input if neither --templateId "
+                                    "nor --templateRepo provided.")
     args = parser.parse_args()
 
     # Define input repo locations on disk
@@ -139,9 +140,12 @@ def parsePipelineArgs():
     if args.templateRepo is not None:
         templateType = 'coadd'
         template = args.templateRepo
-    else:
+    elif args.templateId is not None:
         templateType = 'visit'
         template = args.templateId
+    else:
+        templateType = 'coadd'
+        template = repo
 
     repos_and_files = {'repo': repo, 'calib_repo': calib_repo,
                        'processed_repo': processed_repo,
@@ -153,7 +157,8 @@ def parsePipelineArgs():
     return repos_and_files
 
 
-def _doIngestTemplates(repo, templateRepo, inputTemplates):
+# TODO: move doIngestTemplates to ap_verify once DM-11865 resolved
+def doIngestTemplates(repo, templateRepo, inputTemplates):
     '''Ingest templates into the input repository, so that
     GetCoaddAsTemplateTask can find them.
 
@@ -174,7 +179,7 @@ def _doIngestTemplates(repo, templateRepo, inputTemplates):
     calibingest_metadata: `PropertySet` or None
         Metadata from any tasks run by this method
     '''
-    log = lsst.log.Log.getLogger('ap.pipe._doIngestTemplates')
+    log = lsst.log.Log.getLogger('ap.pipe.doIngestTemplates')
     # TODO: this check will need to be rewritten when Butler directories change, ticket TBD
     if os.path.exists(os.path.join(templateRepo, 'deepCoadd')):
         log.warn('Templates were previously ingested, skipping...')
@@ -305,7 +310,7 @@ def _doProcessCcd(repo, calib_repo, processed_repo, dataId, skip=True):
     return process_metadata
 
 
-def doDiffIm(base_repo, templateDir, dataId):
+def doDiffIm(base_repo, dataId):
     '''
     Do difference imaging with an automatically selected template.
 
@@ -313,8 +318,6 @@ def doDiffIm(base_repo, templateDir, dataId):
     ----------
     base_repo: `str`
         The output repository location on disk.
-    templateDir: `str`
-        The input repository location containing precomputed templates.
     dataId: `str`
         Butler identifier naming the data to be processed (e.g., visit and ccdnum)
         formatted in the usual way (e.g., 'visit=54321 ccdnum=7').
@@ -327,9 +330,7 @@ def doDiffIm(base_repo, templateDir, dataId):
     repo = get_output_repo(base_repo, INGESTED_DIR)
     processed_repo = get_output_repo(base_repo, PROCESSED_DIR)
     diffim_repo = get_output_repo(base_repo, DIFFIM_DIR)
-    # TODO: remove this once DM-11865 resolved
-    _doIngestTemplates(repo, repo, templateDir)
-    return _doDiffIm(processed_repo, dataId, 'coadd', templateDir, diffim_repo, skip=False)
+    return _doDiffIm(processed_repo, dataId, 'coadd', repo, diffim_repo, skip=False)
 
 
 def _doDiffIm(processed_repo, dataId, templateType, template, diffim_repo, skip=True):
@@ -557,8 +558,9 @@ def runPipelineAlone():
     # Run all the tasks in order
     _doProcessCcd(repo, calib_repo, processed_repo, dataId, skip=skip)
     if templateType == 'coadd':
-        # TODO: should be unneccessary once DM-11865 is resolved
-        _doIngestTemplates(repo, repo, template)
+        if not os.path.samefile(template, repo):
+            # TODO: should be unneccessary once DM-11865 is resolved
+            doIngestTemplates(repo, repo, template)
     elif templateType == 'visit':
         dataId_items = re.split('[ +=]', dataId)
         dataId_dict = dict(zip(dataId_items[::2], dataId_items[1::2]))
