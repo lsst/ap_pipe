@@ -105,8 +105,9 @@ def parsePipelineArgs():
     $ python ap_pipe.py input_location -t template_location -o output_location -i "visit=12345 ccdnum=5"
                                      '''))
     parser.add_argument('input',
-                        help="Location on disk of input Butler repository. Must contain subdirectories "
-                             "named %s/ and %s/." % (INGESTED_DIR, CALIBINGESTED_DIR))
+                        help="Location on disk of input data repository.")
+    parser.add_argument('--calib',
+                        help="Location on disk of input calib repository. Defaults to input.")
     parser.add_argument('-o', '--output',
                         help="Location on disk where output repos will live. May be the same as input.")
     parser.add_argument('-i', '--dataId',
@@ -126,15 +127,12 @@ def parsePipelineArgs():
     args = parser.parse_args()
 
     # Define input repo locations on disk
-    repo = get_output_repo(args.input, INGESTED_DIR)
-    calib_repo = get_output_repo(args.input, CALIBINGESTED_DIR)
+    repo = args.input
 
-    # Define output repo locations on disk
-    processed_repo = get_output_repo(args.output, PROCESSED_DIR)
-    diffim_repo = get_output_repo(args.output, DIFFIM_DIR)
-    db_repo = get_output_repo(args.output, DB_DIR)
-
-    skip = args.skip
+    if args.calib is not None:
+        calib_repo = args.calib
+    else:
+        calib_repo = repo
 
     # Stringly typed code, but I don't see a safer way to do this in Python
     if args.templateRepo is not None:
@@ -146,6 +144,13 @@ def parsePipelineArgs():
     else:
         templateType = 'coadd'
         template = repo
+
+    # Define output repo locations on disk
+    processed_repo = get_output_repo(args.output, PROCESSED_DIR)
+    diffim_repo = get_output_repo(args.output, DIFFIM_DIR)
+    db_repo = get_output_repo(args.output, DB_DIR)
+
+    skip = args.skip
 
     repos_and_files = {'repo': repo, 'calib_repo': calib_repo,
                        'processed_repo': processed_repo,
