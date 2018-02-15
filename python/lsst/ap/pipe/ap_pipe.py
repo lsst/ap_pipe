@@ -39,7 +39,6 @@ __all__ = ['get_output_repo',
 
 import os
 import argparse
-import textwrap
 import re
 
 import lsst.log
@@ -97,13 +96,9 @@ def parsePipelineArgs():
     '''
 
     # Parse command line arguments with argparse
-    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
-                                     description=textwrap.dedent('''
-    Process raw decam images with MasterCals from basic processing --> source association
-
-    USAGE:
-    $ python ap_pipe.py input_location -t template_location -o output_location -i "visit=12345 ccdnum=5"
-                                     '''))
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawTextHelpFormatter,
+        description='Process raw decam images with MasterCals from basic processing --> source association')
     parser.add_argument('input',
                         help="Location on disk of input data repository.")
     parser.add_argument('--calib',
