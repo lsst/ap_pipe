@@ -34,7 +34,8 @@ $ python ap_pipe/bin.src/ap_pipe.py input_dir -o output_dir
 
 from __future__ import absolute_import, division, print_function
 
-__all__ = ['get_output_repo',
+__all__ = ['ApPipeConfig',
+           'get_output_repo',
            'doIngestTemplates', 'doProcessCcd', 'doDiffIm', 'doAssociation',
            'runPipelineAlone']
 
@@ -43,12 +44,13 @@ import argparse
 import re
 
 import lsst.log
-from lsst.pipe.tasks.processCcd import ProcessCcdTask, ProcessCcdConfig
+import lsst.pex.config as pexConfig
+from lsst.pipe.tasks.processCcd import ProcessCcdTask
 from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask
 from lsst.utils import getPackageDir
 from lsst.ip.diffim.getTemplate import GetCalexpAsTemplateTask
-from lsst.pipe.tasks.imageDifference import ImageDifferenceConfig, ImageDifferenceTask
-from lsst.ap.association import AssociationDBSqliteTask, AssociationConfig, AssociationTask
+from lsst.pipe.tasks.imageDifference import ImageDifferenceTask
+from lsst.ap.association import AssociationDBSqliteTask, AssociationTask
 import lsst.daf.persistence as dafPersist
 
 # Names of directories to be created in specified output location
@@ -57,6 +59,73 @@ CALIBINGESTED_DIR = 'calibingested'
 PROCESSED_DIR = 'processed'
 DIFFIM_DIR = 'diffim'
 DB_DIR = 'l1db'
+
+
+class ApPipeConfig(pexConfig.Config):
+    """Settings and defaults for ApPipeTask.
+    """
+
+    ccdProcessor = pexConfig.ConfigurableField(
+        target=ProcessCcdTask,
+        doc="Task used to perform basic image reduction and characterization.",
+    )
+    differencer = pexConfig.ConfigurableField(
+        target=ImageDifferenceTask,
+        doc="Task used to do image subtraction and DiaSource detection.",
+    )
+    associator = pexConfig.ConfigurableField(
+        target=AssociationTask,
+        doc="Task used to associate DiaSources with DiaObjects.",
+    )
+
+    def setDefaults(self):
+        """Settings assumed in baseline ap_pipe runs.
+        """
+        # TODO: remove explicit DECam reference in DM-12315
+        obsDecamDir = getPackageDir('obs_decam')
+        self.ccdProcessor.load(os.path.join(obsDecamDir, 'config/processCcd.py'))
+        self.ccdProcessor.load(os.path.join(obsDecamDir, 'config/processCcdCpIsr.py'))
+
+        self.ccdProcessor.calibrate.doAstrometry = True
+        self.ccdProcessor.calibrate.doPhotoCal = True
+
+        # Use gaia for astrometry (phot_g_mean_mag is only available DR1 filter)
+        # Use pan-starrs for photometry (grizy filters)
+        for refObjLoader in (self.ccdProcessor.calibrate.astromRefObjLoader,
+                             self.ccdProcessor.calibrate.photoRefObjLoader,
+                             self.ccdProcessor.charImage.refObjLoader,):
+            refObjLoader.retarget(LoadIndexedReferenceObjectsTask)
+        self.ccdProcessor.calibrate.astromRefObjLoader.ref_dataset_name = 'gaia'
+        self.ccdProcessor.calibrate.astromRefObjLoader.filterMap = {
+            'u': 'phot_g_mean_mag',
+            'g': 'phot_g_mean_mag',
+            'r': 'phot_g_mean_mag',
+            'i': 'phot_g_mean_mag',
+            'z': 'phot_g_mean_mag',
+            'y': 'phot_g_mean_mag',
+            'VR': 'phot_g_mean_mag'}
+        self.ccdProcessor.calibrate.photoRefObjLoader.ref_dataset_name = 'pan-starrs'
+        self.ccdProcessor.calibrate.photoRefObjLoader.filterMap = {
+            'u': 'g',
+            'g': 'g',
+            'r': 'r',
+            'i': 'i',
+            'z': 'z',
+            'y': 'y',
+            'VR': 'g'}
+
+        # TODO: single-template support now done by retargeting self.differencer.getTemplate
+        # Document how to do this in DM-13164
+        self.differencer.detection.thresholdValue = 5.0
+        self.differencer.doDecorrelation = True
+        self.differencer.coaddName = 'deep'  # TODO: generalize in DM-12315
+        self.differencer.getTemplate.warpType = 'psfMatched'
+        self.differencer.doSelectSources = False
+
+        self.associator.level1_db.retarget(AssociationDBSqliteTask)
+
+    def validate(self):
+        pexConfig.Config.validate(self)
 
 
 def get_output_repo(output_root, output_dir):
@@ -232,8 +301,6 @@ def doProcessCcd(repo, calib_repo, processed_repo, dataId, skip=True):
     RESULT:
     processed_repo/visit populated with subdirectories containing the
     usual post-ISR data (bkgd, calexp, icExp, icSrc, postISR).
-    By default, the configuration for astrometric reference catalogs uses Gaia
-    and the configuration for photometry reference catalogs uses Pan-STARRS.
     '''
     log = lsst.log.Log.getLogger('ap.pipe.doProcessCcd')
     dataId_items = re.split('[ +=]', dataId)
@@ -248,37 +315,10 @@ def doProcessCcd(repo, calib_repo, processed_repo, dataId, skip=True):
     if not os.path.isdir(processed_repo):
         os.mkdir(processed_repo)
     log.info('Running ProcessCcd...')
-    OBS_DECAM_DIR = getPackageDir('obs_decam')
     calib_repo = os.path.abspath(calib_repo)
     butler = dafPersist.Butler(inputs={'root': repo, 'mapperArgs': {'calibRoot': calib_repo}},
                                outputs=processed_repo)
-    config = ProcessCcdConfig()
-    config.load(os.path.join(OBS_DECAM_DIR, 'config/processCcd.py'))
-    config.load(os.path.join(OBS_DECAM_DIR, 'config/processCcdCpIsr.py'))
-    config.calibrate.doAstrometry = True
-    config.calibrate.doPhotoCal = True
-    # Use gaia for astrometry (phot_g_mean_mag is only available DR1 filter)
-    # Use pan-starrs for photometry (grizy filters)
-    for refObjLoader in (config.calibrate.astromRefObjLoader,
-                         config.calibrate.photoRefObjLoader,
-                         config.charImage.refObjLoader,):
-        refObjLoader.retarget(LoadIndexedReferenceObjectsTask)
-    config.calibrate.astromRefObjLoader.ref_dataset_name = 'gaia'
-    config.calibrate.astromRefObjLoader.filterMap = {'u': 'phot_g_mean_mag',
-                                                     'g': 'phot_g_mean_mag',
-                                                     'r': 'phot_g_mean_mag',
-                                                     'i': 'phot_g_mean_mag',
-                                                     'z': 'phot_g_mean_mag',
-                                                     'y': 'phot_g_mean_mag',
-                                                     'VR': 'phot_g_mean_mag'}
-    config.calibrate.photoRefObjLoader.ref_dataset_name = 'pan-starrs'
-    config.calibrate.photoRefObjLoader.filterMap = {'u': 'g',
-                                                    'g': 'g',
-                                                    'r': 'r',
-                                                    'i': 'i',
-                                                    'z': 'z',
-                                                    'y': 'y',
-                                                    'VR': 'g'}
+    config = ApPipeConfig().ccdProcessor.value
     processCcdTask = ProcessCcdTask(butler=butler, config=config)
     processCcdTask.run(butler.dataRef('raw', dataId=dataId_dict))
     process_metadata = processCcdTask.getFullMetadata()
@@ -344,18 +384,15 @@ def doDiffIm(processed_repo, dataId, templateType, template, diffim_repo, skip=T
     args = [processed_repo, '--id'] + dataId
     args.extend(['--output', diffim_repo])
 
-    config = ImageDifferenceConfig()
-    config.detection.thresholdValue = 5.0
-    config.doDecorrelation = True
+    config = ApPipeConfig().differencer.value
 
     if templateType == 'coadd':
         # TODO: Add argument for input templates once DM-11865 resolved
-        config.coaddName = 'deep'  # TODO: generalize in DM-12315
-        config.getTemplate.warpType = 'psfMatched'
-        config.doSelectSources = False
+        pass  # This mode is assumed by ApPipeConfig
     elif templateType == 'visit':
         args.extend(['--templateId', template])
         config.getTemplate.retarget(GetCalexpAsTemplateTask)
+        config.doSelectSources = True
     else:
         raise ValueError('templateType must be "coadd" or "visit", gave "%s" instead' % templateType)
 
@@ -442,8 +479,8 @@ def doAssociation(diffim_repo, dataId, db_repo, skip=True):
         os.mkdir(db_repo)
 
     log.info('Running Association...')
-    config = AssociationConfig()
-    config.level1_db.retarget(AssociationDBSqliteTask)
+    config = ApPipeConfig().associator.value
+    # TODO: workaround for DM-13602
     config.level1_db.db_name = os.path.join(db_repo, 'association.db')
 
     butler = dafPersist.Butler(inputs=diffim_repo)
