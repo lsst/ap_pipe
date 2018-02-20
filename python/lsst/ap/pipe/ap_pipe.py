@@ -265,62 +265,32 @@ def doIngestTemplates(repo, templateRepo, inputTemplates):
         return None
 
 
-def doProcessCcd(repo, calib_repo, processed_repo, dataId, skip=True):
+def doProcessCcd(sensorRef):
     '''
     Perform ISR with ingested images and calibrations via processCcd
 
+    The output repository associated with ``sensorRef`` will be populated with subdirectories containing the
+    usual post-ISR data (bkgd, calexp, icExp, icSrc, postISR).
+
     Parameters
     ----------
-    repo: `str`
-        The output repository location on disk where ingested raw images live.
-    calib_repo: `str`
-        The output repository location on disk where ingested calibration images live.
-    processed_repo: `str`
-        The output repository location on disk where processed raw images live.
-    dataId: `str`
-        Butler identifier naming the data to be processed (e.g., visit and ccdnum)
-        formatted in the usual way (e.g., 'visit=54321 ccdnum=7').
-    skip: `bool`
-        If set, doProcessCcd will skip processing if data have already been processed.
+    sensorRef: `lsst.daf.persistence.ButlerDataRef`
+        Data reference for raw data.
 
     Returns
     -------
     process_metadata: `PropertySet` or None
         Metadata from the ProcessCcdTask for use by ap_verify
 
-    BASH EQUIVALENT:
-    $ processCcd.py repo --id dataId
-            --output processed_repo --calib calib_repo
-            -C $OBS_DECAM_DIR/config/processCcdCpIsr.py
-            -C processccd_config.py
-            --config calibrate.doAstrometry=True calibrate.doPhotoCal=True
-    ** to run from bash, 'processccd_config.py' must exist and contain
-       all of the refObjLoader information in the code below. repo must also
-       already contain the refcats.
-
-    RESULT:
-    processed_repo/visit populated with subdirectories containing the
-    usual post-ISR data (bkgd, calexp, icExp, icSrc, postISR).
+    Notes
+    -----
+    The input repository corresponding to ``sensorRef`` must already contain the refcats.
     '''
     log = lsst.log.Log.getLogger('ap.pipe.doProcessCcd')
-    dataId_items = re.split('[ +=]', dataId)
-    dataId_dict = dict(zip(dataId_items[::2], dataId_items[1::2]))
-    if 'visit' not in dataId_dict.keys():
-        raise RuntimeError('The dataId string is missing \'visit\'')
-    else:  # save the visit number from the dataId
-        visit = dataId_dict['visit']
-    if skip and os.path.isdir(os.path.join(processed_repo, '0'+visit)):
-        log.warn('ProcessCcd has already been run for visit {0}, skipping...'.format(visit))
-        return None
-    if not os.path.isdir(processed_repo):
-        os.mkdir(processed_repo)
     log.info('Running ProcessCcd...')
-    calib_repo = os.path.abspath(calib_repo)
-    butler = dafPersist.Butler(inputs={'root': repo, 'mapperArgs': {'calibRoot': calib_repo}},
-                               outputs=processed_repo)
     config = ApPipeConfig().ccdProcessor.value
-    processCcdTask = ProcessCcdTask(butler=butler, config=config)
-    processCcdTask.run(butler.dataRef('raw', dataId=dataId_dict))
+    processCcdTask = ProcessCcdTask(butler=sensorRef.getButler(), config=config)
+    processCcdTask.run(sensorRef)
     process_metadata = processCcdTask.getFullMetadata()
     return process_metadata
 
@@ -510,11 +480,11 @@ def runPipelineAlone():
     log = lsst.log.Log.getLogger('ap.pipe.runPipelineAlone')
     parsed = parsePipelineArgs()
 
-    repo = parsed['repo']
-    calib_repo = parsed['calib_repo']
-    processed_repo = parsed['processed_repo']
-    diffim_repo = parsed['diffim_repo']
-    db_repo = parsed['db_repo']
+    repo = os.path.abspath(parsed['repo'])
+    calib_repo = os.path.abspath(parsed['calib_repo'])
+    processed_repo = os.path.abspath(parsed['processed_repo'])
+    diffim_repo = os.path.abspath(parsed['diffim_repo'])
+    db_repo = os.path.abspath(parsed['db_repo'])
 
     skip = parsed['skip']
 
@@ -522,19 +492,36 @@ def runPipelineAlone():
     templateType = parsed['template_type']
     template = parsed['template']
 
+    # Set up repos
+    dataId_items = re.split('[ +=]', dataId)
+    dataId_dict = dict(zip(dataId_items[::2], dataId_items[1::2]))
+    if 'visit' not in dataId_dict.keys():
+        raise RuntimeError('The dataId string is missing \'visit\'')
+    else:  # save the visit number from the dataId
+        visit = dataId_dict['visit']
+    _deStringDataId(dataId_dict)
+    rawButler = dafPersist.Butler(inputs={'root': repo, 'mapperArgs': {'calibRoot': calib_repo}},
+                                  outputs=processed_repo)
+    rawRef = rawButler.dataRef('raw', dataId=dataId_dict)
+
     # Run all the tasks in order
-    doProcessCcd(repo, calib_repo, processed_repo, dataId, skip=skip)
+    if skip and os.path.isdir(os.path.join(processed_repo, '0'+visit)):
+        log.warn('ProcessCcd has already been run for visit {0}, skipping...'.format(visit))
+    else:
+        doProcessCcd(rawRef)
+
     if templateType == 'coadd':
         if not os.path.samefile(template, repo):
             # TODO: should be unneccessary once DM-11865 is resolved
             doIngestTemplates(repo, repo, template)
     elif templateType == 'visit':
-        dataId_items = re.split('[ +=]', dataId)
-        dataId_dict = dict(zip(dataId_items[::2], dataId_items[1::2]))
         if 'ccdnum' not in dataId_dict.keys():
             raise RuntimeError('The dataId string is missing \'ccdnum\'')
-        ccdTemplate = template + (' ccdnum=%s' % dataId_dict['ccdnum'])
-        doProcessCcd(repo, calib_repo, processed_repo, ccdTemplate, skip=skip)
+        template_items = re.split('[ +=]', template)
+        template_dict = dict(zip(template_items[::2], template_items[1::2]))
+        template_dict['ccdnum'] = dataId_dict['ccdnum']
+        ccdTemplate = rawButler.dataRef('raw', dataId=template_dict)
+        doProcessCcd(ccdTemplate)
     else:
         raise ValueError('templateType must be "coadd" or "visit", gave "%s" instead' % templateType)
     doDiffIm(processed_repo, dataId, templateType, template, diffim_repo, skip=skip)
