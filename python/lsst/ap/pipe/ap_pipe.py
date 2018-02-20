@@ -468,6 +468,25 @@ def doAssociation(diffim_repo, dataId, db_repo, skip=True):
     return associationTask.getFullMetadata()
 
 
+def _parseDataId(rawDataId):
+    """Convert a dataId from a command-line string to a dict.
+
+    Parameters
+    ----------
+    rawDataId: `str`
+        A string in a format like "visit=54321 ccdnum=7".
+
+    Returns
+    -------
+    dataId: `dict` from `str` to any type
+        A dataId ready for passing to Stack operations.
+    """
+    dataIdItems = re.split('[ +=]', rawDataId)
+    dataId = dict(zip(dataIdItems[::2], dataIdItems[1::2]))
+    _deStringDataId(dataId)
+    return dataId
+
+
 def runPipelineAlone():
     '''
     Run each step of the pipeline. NOT used by ap_verify.
@@ -493,19 +512,17 @@ def runPipelineAlone():
     template = parsed['template']
 
     # Set up repos
-    dataId_items = re.split('[ +=]', dataId)
-    dataId_dict = dict(zip(dataId_items[::2], dataId_items[1::2]))
+    dataId_dict = _parseDataId(dataId)
     if 'visit' not in dataId_dict.keys():
         raise RuntimeError('The dataId string is missing \'visit\'')
     else:  # save the visit number from the dataId
         visit = dataId_dict['visit']
-    _deStringDataId(dataId_dict)
     rawButler = dafPersist.Butler(inputs={'root': repo, 'mapperArgs': {'calibRoot': calib_repo}},
                                   outputs=processed_repo)
     rawRef = rawButler.dataRef('raw', dataId=dataId_dict)
 
     # Run all the tasks in order
-    if skip and os.path.isdir(os.path.join(processed_repo, '0'+visit)):
+    if skip and os.path.isdir(os.path.join(processed_repo, '0' + str(visit))):
         log.warn('ProcessCcd has already been run for visit {0}, skipping...'.format(visit))
     else:
         doProcessCcd(rawRef)
@@ -517,8 +534,7 @@ def runPipelineAlone():
     elif templateType == 'visit':
         if 'ccdnum' not in dataId_dict.keys():
             raise RuntimeError('The dataId string is missing \'ccdnum\'')
-        template_items = re.split('[ +=]', template)
-        template_dict = dict(zip(template_items[::2], template_items[1::2]))
+        template_dict = _parseDataId(template)
         template_dict['ccdnum'] = dataId_dict['ccdnum']
         ccdTemplate = rawButler.dataRef('raw', dataId=template_dict)
         doProcessCcd(ccdTemplate)
