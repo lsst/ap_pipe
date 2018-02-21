@@ -438,7 +438,6 @@ def runPipelineAlone():
                                         'mapperArgs': mapperArgs})
     rawRef = butler.dataRef('raw', dataId=dataId_dict)
     processedRef = butler.dataRef('calexp', dataId=dataId_dict)
-    differencedRef = butler.dataRef('deepDiff_differenceExp', dataId=dataId_dict)
     # TODO: workaround for DM-11767
     database = os.path.join(output_repo, 'association.db')
 
@@ -468,7 +467,7 @@ def runPipelineAlone():
         doDiffIm(processedRef, templateType, template)
 
     # No reasonable way to check if Association finished successfully
-    doAssociation(differencedRef, database)
+    doAssociation(processedRef, database)
 
     log.info('Prototype AP Pipeline run complete.')
 
