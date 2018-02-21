@@ -295,17 +295,17 @@ def doProcessCcd(sensorRef):
     return process_metadata
 
 
-def doDiffIm(processed_repo, dataId, templateType, template, diffim_repo, skip=True):
+def doDiffIm(sensorRef, templateType, template):
     '''
     Do difference imaging with a template and one or more visits as science
 
+    The output repository associated with ``sensorRef`` will be populated with difference images
+    and catalogs of detected sources (diaSrc, diffexp, and metadata files)
+
     Parameters
     ----------
-    processed_repo: `str`
-        The output repository location on disk where processed raw images live.
-    dataId: `str`
-        Butler identifier naming the data to be processed (e.g., visit and ccdnum)
-        formatted in the usual way (e.g., 'visit=54321 ccdnum=7').
+    sensorRef: `lsst.daf.persistence.ButlerDataRef`
+        Data reference for multiple dataset types, both input and output.
     templateType: 'coadd' | 'visit'
         The type of template to use for difference imaging.
     template: `str`
@@ -313,66 +313,30 @@ def doDiffIm(processed_repo, dataId, templateType, template, diffim_repo, skip=T
         template coadds.
         If `templateType` is 'visit', the DECam data ID which will be used as a
         template for difference imaging.
-    diffim_repo: `str`
-        The output repository location on disk where difference images live.
-    skip: `bool`
-        If set, doDiffIm will skip processing if data have already been processed.
 
     Returns
     -------
     diffim_metadata: `PropertySet` or None
         Metadata from the ImageDifferenceTask for use by ap_verify
-
-    BASH EQUIVALENT:
-    $ imageDifference.py processed_repo --id dataId
-            --templateId visit=template --output diffim_repo
-            -C diffim_config.py
-    ** to run from bash, 'diffim_config.py' must exist and contain, e.g.,
-        from lsst.ip.diffim.getTemplate import GetCalexpAsTemplateTask
-        config.getTemplate.retarget(GetCalexpAsTemplateTask)
-        config.detection.thresholdValue = 5.0
-        config.doDecorrelation = True
-
-    RESULT:
-    diffim_repo/deepDiff/v+visit populated with difference images
-    and catalogs of detected sources (diaSrc, diffexp, and metadata files)
     '''
     log = lsst.log.Log.getLogger('ap.pipe.doDiffIm')
-    dataId_items = re.split('[ +=]', dataId)
-    dataId_dict = dict(zip(dataId_items[::2], dataId_items[1::2]))
-    if 'visit' not in dataId_dict.keys():
-        raise RuntimeError('The dataId string is missing \'visit\'')
-    else:  # save the visit number from the dataId
-        visit = dataId_dict['visit']
-    _deStringDataId(dataId_dict)
-
-    if skip and os.path.exists(os.path.join(diffim_repo, 'deepDiff', 'v' + visit)):
-        log.warn('DiffIm has already been run for visit {0}, skipping...'.format(visit))
-        return None
-
-    dataId = dataId.split(' ')
-    args = [processed_repo, '--id'] + dataId
-    args.extend(['--output', diffim_repo])
-
     config = ApPipeConfig().differencer.value
 
     if templateType == 'coadd':
+        templateIdList = None
         # TODO: Add argument for input templates once DM-11865 resolved
         pass  # This mode is assumed by ApPipeConfig
     elif templateType == 'visit':
-        args.extend(['--templateId', template])
+        templateIdList = [_parseDataId(template)]
         config.getTemplate.retarget(GetCalexpAsTemplateTask)
         config.doSelectSources = True
     else:
         raise ValueError('templateType must be "coadd" or "visit", gave "%s" instead' % templateType)
 
     log.info('Running ImageDifference...')
-    if not os.path.isdir(diffim_repo):
-        os.mkdir(diffim_repo)
-    ImageDifferenceTask.parseAndRun(args=args, config=config)
-    butler = dafPersist.Butler(inputs=diffim_repo)
-    metadataType = ImageDifferenceTask()._getMetadataName()
-    diffim_metadata = butler.get(metadataType, dataId_dict)
+    imageDifferenceTask = ImageDifferenceTask(butler=sensorRef.getButler(), config=config)
+    imageDifferenceTask.run(sensorRef, templateIdList=templateIdList)
+    diffim_metadata = imageDifferenceTask.getFullMetadata()
     return diffim_metadata
 
 
@@ -521,6 +485,9 @@ def runPipelineAlone():
                                   outputs=processed_repo)
     rawRef = rawButler.dataRef('raw', dataId=dataId_dict)
 
+    processedButler = dafPersist.Butler(inputs=processed_repo, outputs=diffim_repo)
+    processedRef = processedButler.dataRef('calexp', dataId=dataId_dict)
+
     # Run all the tasks in order
     if skip and os.path.isdir(os.path.join(processed_repo, '0' + str(visit))):
         log.warn('ProcessCcd has already been run for visit {0}, skipping...'.format(visit))
@@ -540,7 +507,11 @@ def runPipelineAlone():
         doProcessCcd(ccdTemplate)
     else:
         raise ValueError('templateType must be "coadd" or "visit", gave "%s" instead' % templateType)
-    doDiffIm(processed_repo, dataId, templateType, template, diffim_repo, skip=skip)
+
+    if skip and os.path.exists(os.path.join(diffim_repo, 'deepDiff', 'v' + str(visit))):
+        log.warn('DiffIm has already been run for visit {0}, skipping...'.format(visit))
+    else:
+        doDiffIm(processedRef, templateType, template)
     doAssociation(diffim_repo, dataId, db_repo, skip=skip)
     log.info('Prototype AP Pipeline run complete.')
 
