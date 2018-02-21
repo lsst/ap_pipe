@@ -35,7 +35,6 @@ $ python ap_pipe/bin.src/ap_pipe.py input_dir -o output_dir
 from __future__ import absolute_import, division, print_function
 
 __all__ = ['ApPipeConfig',
-           'get_output_repo',
            'doIngestTemplates', 'doProcessCcd', 'doDiffIm', 'doAssociation',
            'runPipelineAlone']
 
@@ -52,13 +51,6 @@ from lsst.ip.diffim.getTemplate import GetCalexpAsTemplateTask
 from lsst.pipe.tasks.imageDifference import ImageDifferenceTask
 from lsst.ap.association import AssociationDBSqliteTask, AssociationTask
 import lsst.daf.persistence as dafPersist
-
-# Names of directories to be created in specified output location
-INGESTED_DIR = 'ingested'
-CALIBINGESTED_DIR = 'calibingested'
-PROCESSED_DIR = 'processed'
-DIFFIM_DIR = 'diffim'
-DB_DIR = 'l1db'
 
 
 class ApPipeConfig(pexConfig.Config):
@@ -128,28 +120,6 @@ class ApPipeConfig(pexConfig.Config):
         pexConfig.Config.validate(self)
 
 
-def get_output_repo(output_root, output_dir):
-    '''
-    Return location on disk for one output repository used by ap_pipe.
-
-    Parameters
-    ----------
-    output_root: `str`
-        The top-level directory where the output will live.
-    output_dir: `str`
-        Name of the subdirectory to be created in output_root.
-
-    Returns
-    -------
-    output_path: `str`
-        Repository (directory on disk) where desired output product will live.
-    '''
-    if not os.path.isdir(output_root):
-        os.mkdir(output_root)
-    output_path = os.path.join(output_root, output_dir)
-    return output_path
-
-
 def parsePipelineArgs():
     '''
     Parse command-line arguments to run the pipeline. NOT used by ap_verify.
@@ -211,15 +181,12 @@ def parsePipelineArgs():
         template = repo
 
     # Define output repo locations on disk
-    processed_repo = get_output_repo(args.output, PROCESSED_DIR)
-    diffim_repo = get_output_repo(args.output, DIFFIM_DIR)
-    db_repo = get_output_repo(args.output, DB_DIR)
+    processed_repo = args.output
 
     skip = args.skip
 
     repos_and_files = {'repo': repo, 'calib_repo': calib_repo,
                        'processed_repo': processed_repo,
-                       'diffim_repo': diffim_repo, 'db_repo': db_repo,
                        'dataId': args.dataId,
                        'template_type': templateType, 'template': template,
                        'skip': skip}
@@ -449,9 +416,7 @@ def runPipelineAlone():
 
     repo = os.path.abspath(parsed['repo'])
     calib_repo = os.path.abspath(parsed['calib_repo'])
-    processed_repo = os.path.abspath(parsed['processed_repo'])
-    diffim_repo = os.path.abspath(parsed['diffim_repo'])
-    db_repo = os.path.abspath(parsed['db_repo'])
+    output_repo = os.path.abspath(parsed['processed_repo'])
 
     skip = parsed['skip']
 
@@ -465,19 +430,20 @@ def runPipelineAlone():
         raise RuntimeError('The dataId string is missing \'visit\'')
     else:  # save the visit number from the dataId
         visit = dataId_dict['visit']
-    rawButler = dafPersist.Butler(inputs={'root': repo, 'mapperArgs': {'calibRoot': calib_repo}},
-                                  outputs=processed_repo)
-    rawRef = rawButler.dataRef('raw', dataId=dataId_dict)
-
-    processedButler = dafPersist.Butler(inputs=processed_repo, outputs=diffim_repo)
-    processedRef = processedButler.dataRef('calexp', dataId=dataId_dict)
-
-    differencedButler = dafPersist.Butler(inputs=diffim_repo, outputs=db_repo)
-    differencedRef = differencedButler.dataRef('deepDiff_differenceExp', dataId=dataId_dict)
-    database = os.path.join(db_repo, 'association.db')
+    mapperArgs = {'calibRoot': calib_repo}
+    butler = dafPersist.Butler(inputs={'root': repo,
+                                       'mapperArgs': mapperArgs},
+                               outputs={'root': output_repo,
+                                        'mode': 'rw',
+                                        'mapperArgs': mapperArgs})
+    rawRef = butler.dataRef('raw', dataId=dataId_dict)
+    processedRef = butler.dataRef('calexp', dataId=dataId_dict)
+    differencedRef = butler.dataRef('deepDiff_differenceExp', dataId=dataId_dict)
+    # TODO: workaround for DM-11767
+    database = os.path.join(output_repo, 'association.db')
 
     # Run all the tasks in order
-    if skip and os.path.isdir(os.path.join(processed_repo, '0' + str(visit))):
+    if skip and os.path.isdir(os.path.join(output_repo, '0' + str(visit))):
         log.warn('ProcessCcd has already been run for visit {0}, skipping...'.format(visit))
     else:
         doProcessCcd(rawRef)
@@ -491,12 +457,12 @@ def runPipelineAlone():
             raise RuntimeError('The dataId string is missing \'ccdnum\'')
         template_dict = _parseDataId(template)
         template_dict['ccdnum'] = dataId_dict['ccdnum']
-        ccdTemplate = rawButler.dataRef('raw', dataId=template_dict)
+        ccdTemplate = butler.dataRef('raw', dataId=template_dict)
         doProcessCcd(ccdTemplate)
     else:
         raise ValueError('templateType must be "coadd" or "visit", gave "%s" instead' % templateType)
 
-    if skip and os.path.exists(os.path.join(diffim_repo, 'deepDiff', 'v' + str(visit))):
+    if skip and os.path.exists(os.path.join(output_repo, 'deepDiff', 'v' + str(visit))):
         log.warn('DiffIm has already been run for visit {0}, skipping...'.format(visit))
     else:
         doDiffIm(processedRef, templateType, template)
