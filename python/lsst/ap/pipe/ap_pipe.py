@@ -380,21 +380,17 @@ def _deStringDataId(dataId):
             dataId[key] = int(value)
 
 
-def doAssociation(diffim_repo, dataId, db_repo, skip=True):
+# TODO: dbFile is a workaround for DM-11767
+def doAssociation(sensorRef, dbFile):
     '''
     Do source association.
 
     Parameters
     ----------
-    diffim_repo: `str`
-        The output repository location on disk where difference images live.
-    dataId: `str`
-        Butler identifier naming the data to be processed (e.g., visit and ccdnum)
-        formatted in the usual way (e.g., 'visit=54321 ccdnum=7').
-    db_repo: `str`
-        The output repository location on disk where the source database lives.
-    skip: `bool`
-        If set, doAssociation will skip processing if data have already been processed.
+    sensorRef: `lsst.daf.persistence.ButlerDataRef`
+        Data reference for multiple input dataset types.
+    dbFile: `str`
+        The filename where the source database lives.
 
     Returns
     -------
@@ -402,29 +398,17 @@ def doAssociation(diffim_repo, dataId, db_repo, skip=True):
         Metadata from the AssociationTask for use by ap_verify
     '''
     log = lsst.log.Log.getLogger('ap.pipe.doAssociation')
-    dataId_items = re.split('[ +=]', dataId)
-    dataId_dict = dict(zip(dataId_items[::2], dataId_items[1::2]))
-    if 'visit' not in dataId_dict.keys():
-        raise RuntimeError('The dataId string is missing \'visit\'')
-    _deStringDataId(dataId_dict)
-
-    # No reasonable way to check if Association finished successfully
-    if not os.path.isdir(db_repo):
-        os.mkdir(db_repo)
-
     log.info('Running Association...')
     config = ApPipeConfig().associator.value
     # TODO: workaround for DM-13602
-    config.level1_db.db_name = os.path.join(db_repo, 'association.db')
-
-    butler = dafPersist.Butler(inputs=diffim_repo)
+    config.level1_db.db_name = dbFile
 
     _setupDatabase(config.level1_db)
 
     associationTask = AssociationTask(config=config)
     try:
-        catalog = butler.get('deepDiff_diaSrc', dataId=dataId_dict)
-        exposure = butler.get('deepDiff_differenceExp', dataId=dataId_dict)
+        catalog = sensorRef.get('deepDiff_diaSrc')
+        exposure = sensorRef.get('deepDiff_differenceExp')
         associationTask.run(catalog, exposure)
     finally:
         associationTask.level1_db.close()
@@ -488,6 +472,10 @@ def runPipelineAlone():
     processedButler = dafPersist.Butler(inputs=processed_repo, outputs=diffim_repo)
     processedRef = processedButler.dataRef('calexp', dataId=dataId_dict)
 
+    differencedButler = dafPersist.Butler(inputs=diffim_repo, outputs=db_repo)
+    differencedRef = differencedButler.dataRef('deepDiff_differenceExp', dataId=dataId_dict)
+    database = os.path.join(db_repo, 'association.db')
+
     # Run all the tasks in order
     if skip and os.path.isdir(os.path.join(processed_repo, '0' + str(visit))):
         log.warn('ProcessCcd has already been run for visit {0}, skipping...'.format(visit))
@@ -512,7 +500,10 @@ def runPipelineAlone():
         log.warn('DiffIm has already been run for visit {0}, skipping...'.format(visit))
     else:
         doDiffIm(processedRef, templateType, template)
-    doAssociation(diffim_repo, dataId, db_repo, skip=skip)
+
+    # No reasonable way to check if Association finished successfully
+    doAssociation(differencedRef, database)
+
     log.info('Prototype AP Pipeline run complete.')
 
     return
