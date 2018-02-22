@@ -401,22 +401,20 @@ def runPipelineAlone():
     butler = dafPersist.Butler(inputs=inputs,
                                outputs={'root': output_repo, 'mode': 'rw', 'mapperArgs': mapperArgs})
 
-    if templateType == 'visit':
-        if 'ccdnum' not in dataId_dict.keys():
-            raise RuntimeError('The dataId string is missing \'ccdnum\'')
-        template_dict = _parseDataId(template)
-        template_dict['ccdnum'] = dataId_dict['ccdnum']
-        templateRaw = butler.dataRef('raw', dataId=template_dict)
-        templateProcessed = butler.dataRef('calexp', dataId=template_dict)
-        if not skip or not templateProcessed.datasetExists('calexp', write=True):
-            doProcessCcd(templateRaw)
-    elif templateType != 'coadd':
-        raise ValueError('templateType must be "coadd" or "visit", gave "%s" instead' % templateType)
-
     rawRef = butler.dataRef('raw', dataId=dataId_dict)
     processedRef = butler.dataRef('calexp', dataId=dataId_dict)
     # TODO: workaround for DM-11767
     database = os.path.join(output_repo, 'association.db')
+
+    if templateType == 'visit':
+        template_dict = rawRef.dataId.copy()
+        template_dict.update(_parseDataId(template))
+        templateRaw = rawRef.getButler().dataRef('raw', dataId=template_dict)
+        templateProcessed = processedRef.getButler().dataRef('calexp', dataId=template_dict)
+        if not skip or not templateProcessed.datasetExists('calexp', write=True):
+            doProcessCcd(templateRaw)
+    elif templateType != 'coadd':
+        raise ValueError('templateType must be "coadd" or "visit", gave "%s" instead' % templateType)
 
     # Run all the tasks in order
     if skip and processedRef.datasetExists('calexp', write=True):
