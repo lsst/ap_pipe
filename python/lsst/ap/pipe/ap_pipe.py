@@ -406,8 +406,10 @@ def runPipelineAlone():
             raise RuntimeError('The dataId string is missing \'ccdnum\'')
         template_dict = _parseDataId(template)
         template_dict['ccdnum'] = dataId_dict['ccdnum']
-        ccdTemplate = butler.dataRef('raw', dataId=template_dict)
-        doProcessCcd(ccdTemplate)
+        templateRaw = butler.dataRef('raw', dataId=template_dict)
+        templateProcessed = butler.dataRef('calexp', dataId=template_dict)
+        if not skip or not templateProcessed.datasetExists('calexp', write=True):
+            doProcessCcd(templateRaw)
     elif templateType != 'coadd':
         raise ValueError('templateType must be "coadd" or "visit", gave "%s" instead' % templateType)
 
@@ -417,12 +419,12 @@ def runPipelineAlone():
     database = os.path.join(output_repo, 'association.db')
 
     # Run all the tasks in order
-    if skip and os.path.isdir(os.path.join(output_repo, '0' + str(visit))):
+    if skip and processedRef.datasetExists('calexp', write=True):
         log.warn('ProcessCcd has already been run for visit {0}, skipping...'.format(visit))
     else:
         doProcessCcd(rawRef)
 
-    if skip and os.path.exists(os.path.join(output_repo, 'deepDiff', 'v' + str(visit))):
+    if skip and processedRef.datasetExists('deepDiff_diaSrc', write=True):
         log.warn('DiffIm has already been run for visit {0}, skipping...'.format(visit))
     else:
         doDiffIm(processedRef, templateType, template)
