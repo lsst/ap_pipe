@@ -35,7 +35,7 @@ $ python ap_pipe/bin.src/ap_pipe.py input_dir -o output_dir
 from __future__ import absolute_import, division, print_function
 
 __all__ = ['ApPipeConfig',
-           'doIngestTemplates', 'doProcessCcd', 'doDiffIm', 'doAssociation',
+           'doProcessCcd', 'doDiffIm', 'doAssociation',
            'runPipelineAlone']
 
 import os
@@ -194,44 +194,6 @@ def parsePipelineArgs():
     return repos_and_files
 
 
-# TODO: move doIngestTemplates to ap_verify once DM-11865 resolved
-def doIngestTemplates(repo, templateRepo, inputTemplates):
-    '''Ingest templates into the input repository, so that
-    GetCoaddAsTemplateTask can find them.
-
-    After this method returns, butler queries against `templateRepo` can find the
-    templates in `inputTemplates`.
-
-    Parameters
-    ----------
-    repo: `str`
-        The output repository location on disk where ingested raw images live.
-    templateRepo: `str`
-        The output repository location on disk where ingested templates live.
-    inputTemplates: `str`
-        The input repository location where templates have been previously computed.
-
-    Returns
-    -------
-    calibingest_metadata: `PropertySet` or None
-        Metadata from any tasks run by this method
-    '''
-    log = lsst.log.Log.getLogger('ap.pipe.doIngestTemplates')
-    # TODO: this check will need to be rewritten when Butler directories change, ticket TBD
-    if os.path.exists(os.path.join(templateRepo, 'deepCoadd')):
-        log.warn('Templates were previously ingested, skipping...')
-        return None
-    else:
-        # TODO: chain inputTemplates to templateRepo once DM-12662 resolved
-        if not os.path.isdir(templateRepo):
-            os.mkdir(templateRepo)
-        for baseName in os.listdir(inputTemplates):
-            oldDir = os.path.abspath(os.path.join(inputTemplates, baseName))
-            if os.path.isdir(oldDir):
-                os.symlink(oldDir, os.path.join(templateRepo, baseName))
-        return None
-
-
 def doProcessCcd(sensorRef):
     '''
     Perform ISR with ingested images and calibrations via processCcd
@@ -276,8 +238,7 @@ def doDiffIm(sensorRef, templateType, template):
     templateType: 'coadd' | 'visit'
         The type of template to use for difference imaging.
     template: `str`
-        If `templateType` is 'coadd', the input repository containing the
-        template coadds.
+        Ignored if `templateType` is 'coadd'.
         If `templateType` is 'visit', the DECam data ID which will be used as a
         template for difference imaging.
 
@@ -291,7 +252,6 @@ def doDiffIm(sensorRef, templateType, template):
 
     if templateType == 'coadd':
         templateIdList = None
-        # TODO: Add argument for input templates once DM-11865 resolved
         pass  # This mode is assumed by ApPipeConfig
     elif templateType == 'visit':
         templateIdList = [_parseDataId(template)]
@@ -430,12 +390,27 @@ def runPipelineAlone():
         raise RuntimeError('The dataId string is missing \'visit\'')
     else:  # save the visit number from the dataId
         visit = dataId_dict['visit']
+
     mapperArgs = {'calibRoot': calib_repo}
-    butler = dafPersist.Butler(inputs={'root': repo,
-                                       'mapperArgs': mapperArgs},
-                               outputs={'root': output_repo,
-                                        'mode': 'rw',
-                                        'mapperArgs': mapperArgs})
+    inputs = [{'root': repo, 'mapperArgs': mapperArgs}]
+    if templateType == 'coadd':
+        # samefile is a workaround for DM-13626, blocks DM-11482
+        if not os.path.samefile(template, repo):
+            inputs.append({'root': template, 'mode': 'r', 'mapperArgs': mapperArgs})
+
+    butler = dafPersist.Butler(inputs=inputs,
+                               outputs={'root': output_repo, 'mode': 'rw', 'mapperArgs': mapperArgs})
+
+    if templateType == 'visit':
+        if 'ccdnum' not in dataId_dict.keys():
+            raise RuntimeError('The dataId string is missing \'ccdnum\'')
+        template_dict = _parseDataId(template)
+        template_dict['ccdnum'] = dataId_dict['ccdnum']
+        ccdTemplate = butler.dataRef('raw', dataId=template_dict)
+        doProcessCcd(ccdTemplate)
+    elif templateType != 'coadd':
+        raise ValueError('templateType must be "coadd" or "visit", gave "%s" instead' % templateType)
+
     rawRef = butler.dataRef('raw', dataId=dataId_dict)
     processedRef = butler.dataRef('calexp', dataId=dataId_dict)
     # TODO: workaround for DM-11767
@@ -446,20 +421,6 @@ def runPipelineAlone():
         log.warn('ProcessCcd has already been run for visit {0}, skipping...'.format(visit))
     else:
         doProcessCcd(rawRef)
-
-    if templateType == 'coadd':
-        if not os.path.samefile(template, repo):
-            # TODO: should be unneccessary once DM-11865 is resolved
-            doIngestTemplates(repo, repo, template)
-    elif templateType == 'visit':
-        if 'ccdnum' not in dataId_dict.keys():
-            raise RuntimeError('The dataId string is missing \'ccdnum\'')
-        template_dict = _parseDataId(template)
-        template_dict['ccdnum'] = dataId_dict['ccdnum']
-        ccdTemplate = butler.dataRef('raw', dataId=template_dict)
-        doProcessCcd(ccdTemplate)
-    else:
-        raise ValueError('templateType must be "coadd" or "visit", gave "%s" instead' % templateType)
 
     if skip and os.path.exists(os.path.join(output_repo, 'deepDiff', 'v' + str(visit))):
         log.warn('DiffIm has already been run for visit {0}, skipping...'.format(visit))
