@@ -386,10 +386,6 @@ def runPipelineAlone():
 
     # Set up repos
     dataId_dict = _parseDataId(dataId)
-    if 'visit' not in dataId_dict.keys():
-        raise RuntimeError('The dataId string is missing \'visit\'')
-    else:  # save the visit number from the dataId
-        visit = dataId_dict['visit']
 
     mapperArgs = {'calibRoot': calib_repo}
     inputs = [{'root': repo, 'mapperArgs': mapperArgs}]
@@ -418,12 +414,12 @@ def runPipelineAlone():
 
     # Run all the tasks in order
     if skip and processedRef.datasetExists('calexp', write=True):
-        log.warn('ProcessCcd has already been run for visit {0}, skipping...'.format(visit))
+        log.warn('ProcessCcd has already been run for {0}, skipping...'.format(rawRef.dataId))
     else:
         doProcessCcd(rawRef)
 
     if skip and processedRef.datasetExists('deepDiff_diaSrc', write=True):
-        log.warn('DiffIm has already been run for visit {0}, skipping...'.format(visit))
+        log.warn('DiffIm has already been run for {0}, skipping...'.format(processedRef.dataId))
     else:
         doDiffIm(processedRef, templateType, template)
 
