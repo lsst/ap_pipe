@@ -21,21 +21,9 @@
 # salong with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-'''
-Process raw DECam images with MasterCals from basic processing --> source association.
-
-A tutorial for using ap_pipe is available in DMTN-039 (http://dmtn-039.lsst.io).
-
-ap_pipe is designed to be used as the main processing portion of ap_verify, but
-it can also be run alone from the command line, e.g.:
-$ python ap_pipe/bin.src/ap_pipe.py input_dir -o output_dir
-         -i "visit=410985 ccdnum=25"
-'''
-
 from __future__ import absolute_import, division, print_function
 
-__all__ = ['ApPipeConfig',
-           'doProcessCcd', 'doDiffIm', 'doAssociation',
+__all__ = ['ApPipeConfig', 'ApPipeTask',
            'runPipelineAlone']
 
 import os
@@ -44,13 +32,15 @@ import re
 
 import lsst.log
 import lsst.pex.config as pexConfig
+import lsst.daf.persistence as dafPersist
+import lsst.pipe.base as pipeBase
+
 from lsst.pipe.tasks.processCcd import ProcessCcdTask
 from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask
 from lsst.utils import getPackageDir
 from lsst.ip.diffim.getTemplate import GetCalexpAsTemplateTask
 from lsst.pipe.tasks.imageDifference import ImageDifferenceTask
 from lsst.ap.association import AssociationDBSqliteTask, AssociationTask
-import lsst.daf.persistence as dafPersist
 
 
 class ApPipeConfig(pexConfig.Config):
@@ -118,6 +108,239 @@ class ApPipeConfig(pexConfig.Config):
 
     def validate(self):
         pexConfig.Config.validate(self)
+
+
+class ApPipeTask(pipeBase.CmdLineTask):
+    """Command-line task representing the entire AP pipeline.
+
+    ``ApPipeTask`` processes raw DECam images from basic processing through
+    source association. Other observatories will be supported in the future.
+
+    A tutorial for using ``ApPipeTask`` is available in
+    [DMTN-039](http://dmtn-039.lsst.io).
+
+    ``ApPipeTask`` can be run from the command line, but it can also be called
+    from other pipeline code. It provides public methods for executing each
+    major step of the pipeline by itself.
+
+    Parameters
+    ----------
+    butler : `lsst.daf.persistence.Butler`
+        A Butler providing access to the science, calibration, and (unless
+        ``config.differencer.getTemplate`` is overridden) template data to
+        be processed. Its output repository must be both readable
+        and writable.
+    """
+
+    ConfigClass = ApPipeConfig
+    RunnerClass = pipeBase.ButlerInitializedTaskRunner
+    _DefaultName = "apPipe"
+
+    def __init__(self, butler, *args, **kwargs):
+        pipeBase.CmdLineTask.__init__(self, *args, **kwargs)
+
+        self.makeSubtask("ccdProcessor", butler=butler)
+        self.makeSubtask("differencer", butler=butler)
+        self.makeSubtask("associator")
+
+    @pipeBase.timeMethod
+    def run(self, rawRef, calexpRef, database, templateIds=None, skip=False):
+        """Execute the ap_pipe pipeline on a single image.
+
+        Parameters
+        ----------
+        rawRef : `lsst.daf.persistence.ButlerDataRef`
+            A reference to the raw data to process.
+        calexpRef : `lsst.daf.persistence.ButlerDataRef`
+            A reference to the calibrated data corresponding to ``rawRef``.
+        database : `str`
+            The filename where the source database lives.
+        templateIds : `list` of `dict`, optional
+            A list of parsed data IDs for templates to use. Only used if
+            ``config.differencer`` is configured to do so. ``differencer`` or
+            its subtasks may restrict the allowed IDs.
+        skip : `bool`, optional
+            If set, the pipeline will attempt to determine if the products for
+            a particular step are already provided in the output repository,
+            and if so skip that step. If unset (the default), calls will
+            attempt to re-run the entire pipeline.
+
+        Returns
+        -------
+        result : `lsst.pipe.base.Struct`
+            Result struct with components:
+
+            - fullMetadata : metadata produced by the run. Intended as a transitional API
+                for ap_verify, and may be removed later (`lsst.daf.base.PropertySet`).
+            - l1Database : handle for accessing the final association database, conforming to
+                `ap_association`'s DB access API
+            - ccdProcessor : output of `config.ccdProcessor.run` (`lsst.pipe.base.Struct` or `None`).
+            - differencer : output of `config.differencer.run` (`lsst.pipe.base.Struct` or `None`).
+            - associator : output of `config.associator.run` (`lsst.pipe.base.Struct` or `None`).
+        """
+        # Ensure that templateIds make it through basic data reduction
+        # TODO: treat as independent jobs (may need SuperTask framework?)
+        if templateIds is not None:
+            for templateId in templateIds:
+                rawTemplateRef = rawRef.getButler().dataRef(
+                    'raw', dataId=rawRef.dataId, **templateId)
+                calexpTemplateRef = calexpRef.getButler().dataRef(
+                    'calexp', dataId=calexpRef.dataId, **templateId)
+                if not skip or not calexpTemplateRef.datasetExists('calexp', write=True):
+                    self.runProcessCcd(rawTemplateRef)
+
+        if skip and calexpRef.datasetExists('calexp', write=True):
+            self.log.info('ProcessCcd has already been run for {0}, skipping...'.format(rawRef.dataId))
+            processResults = None
+        else:
+            processResults = self.runProcessCcd(rawRef)
+
+        if skip and calexpRef.datasetExists('deepDiff_diaSrc', write=True):
+            self.log.info('DiffIm has already been run for {0}, skipping...'.format(calexpRef.dataId))
+            diffImResults = None
+        else:
+            diffImResults = self.runDiffIm(calexpRef,
+                                           'coadd' if templateIds is None else 'visit',
+                                           templateIds)
+
+        # No reasonable way to check if Association can be skipped
+        associationResults = self.runAssociation(calexpRef, database)
+
+        return pipeBase.Struct(
+            fullMetadata = self.getFullMetadata(),
+            l1Database = associationResults.l1Database,
+            ccdProcessor = processResults.taskResults if processResults else None,
+            differencer = diffImResults.taskResults if diffImResults else None,
+            associator = associationResults.taskResults if associationResults else None
+        )
+
+    @pipeBase.timeMethod
+    def runProcessCcd(self, sensorRef):
+        """Perform ISR with ingested images and calibrations via processCcd.
+
+        The output repository associated with ``sensorRef`` will be populated with the
+        usual post-ISR data (bkgd, calexp, icExp, icSrc, postISR).
+
+        Parameters
+        ----------
+        sensorRef : `lsst.daf.persistence.ButlerDataRef`
+            Data reference for raw data.
+
+        Returns
+        -------
+        result : `lsst.pipe.base.Struct`
+            Result struct with components:
+
+            - fullMetadata : metadata produced by the Task. Intended as a transitional API
+                for ap_verify, and may be removed later (`lsst.daf.base.PropertySet`).
+            - taskResults : output of `config.ccdProcessor.run` (`lsst.pipe.base.Struct`).
+
+        Notes
+        -----
+        The input repository corresponding to ``sensorRef`` must already contain the refcats.
+        """
+        log = lsst.log.Log.getLogger('ap.pipe.doProcessCcd')
+        log.info('Running ProcessCcd...')
+        config = ApPipeConfig().ccdProcessor.value
+        processCcdTask = ProcessCcdTask(butler=sensorRef.getButler(), config=config)
+        result = processCcdTask.run(sensorRef)
+        return pipeBase.Struct(
+            fullMetadata = processCcdTask.getFullMetadata(),
+            taskResults = result
+        )
+
+    @pipeBase.timeMethod
+    def runDiffIm(self, sensorRef, templateType, template):
+        """Do difference imaging with a template and a science image
+
+        The output repository associated with ``sensorRef`` will be populated with difference images
+        and catalogs of detected sources (diaSrc, diffexp, and metadata files)
+
+        Parameters
+        ----------
+        sensorRef: `lsst.daf.persistence.ButlerDataRef`
+            Data reference for multiple dataset types, both input and output.
+        templateType: 'coadd' | 'visit'
+            The type of template to use for difference imaging.
+        template: `list` of `dict`, or `None`
+            Ignored if `templateType` is 'coadd'.
+            If `templateType` is 'visit', the DECam data ID which will be used as a
+            template for difference imaging.
+
+        Returns
+        -------
+        result : `lsst.pipe.base.Struct`
+            Result struct with components:
+
+            - fullMetadata : metadata produced by the run. Intended as a transitional API
+                for ap_verify, and may be removed later (`lsst.daf.base.PropertySet`).
+            - taskResults : output of `config.differencer.run` (`lsst.pipe.base.Struct`).
+        """
+        log = lsst.log.Log.getLogger('ap.pipe.doDiffIm')
+        config = ApPipeConfig().differencer.value
+
+        if templateType == 'coadd':
+            templateIdList = None
+            pass  # This mode is assumed by ApPipeConfig
+        elif templateType == 'visit':
+            templateIdList = template
+            config.getTemplate.retarget(GetCalexpAsTemplateTask)
+            config.doSelectSources = True
+        else:
+            raise ValueError('templateType must be "coadd" or "visit", gave "%s" instead' % templateType)
+
+        log.info('Running ImageDifference...')
+        imageDifferenceTask = ImageDifferenceTask(butler=sensorRef.getButler(), config=config)
+        result = imageDifferenceTask.run(sensorRef, templateIdList=templateIdList)
+        return pipeBase.Struct(
+            fullMetadata = imageDifferenceTask.getFullMetadata(),
+            taskResults = result
+        )
+
+    @pipeBase.timeMethod
+    # TODO: dbFile is a workaround for DM-11767
+    def runAssociation(self, sensorRef, dbFile):
+        """Do source association.
+
+        Parameters
+        ----------
+        sensorRef : `lsst.daf.persistence.ButlerDataRef`
+            Data reference for multiple input dataset types.
+        dbFile : `str`
+            The filename where the source database lives.
+
+        Returns
+        -------
+        result : `lsst.pipe.base.Struct`
+            Result struct with components:
+
+            - fullMetadata : metadata produced by the run. Intended as a transitional API
+                for ap_verify, and may be removed later (`lsst.daf.base.PropertySet`).
+            - l1Database : handle for accessing the final association database, conforming to
+                `ap_association`'s DB access API
+            - taskResults : output of `config.associator.run` (`lsst.pipe.base.Struct`).
+        """
+        log = lsst.log.Log.getLogger('ap.pipe.doAssociation')
+        log.info('Running Association...')
+        config = ApPipeConfig().associator.value
+        # TODO: workaround for DM-13602
+        config.level1_db.db_name = dbFile
+
+        _setupDatabase(config.level1_db)
+
+        associationTask = AssociationTask(config=config)
+        try:
+            catalog = sensorRef.get('deepDiff_diaSrc')
+            exposure = sensorRef.get('deepDiff_differenceExp')
+            result = associationTask.run(catalog, exposure)
+        finally:
+            associationTask.level1_db.close()
+
+        return pipeBase.Struct(
+            fullMetadata = associationTask.getFullMetadata(),
+            l1Database = config.level1_db.apply(),
+            taskResults = result
+        )
 
 
 def parsePipelineArgs():
@@ -194,79 +417,6 @@ def parsePipelineArgs():
     return repos_and_files
 
 
-def doProcessCcd(sensorRef):
-    '''
-    Perform ISR with ingested images and calibrations via processCcd
-
-    The output repository associated with ``sensorRef`` will be populated with subdirectories containing the
-    usual post-ISR data (bkgd, calexp, icExp, icSrc, postISR).
-
-    Parameters
-    ----------
-    sensorRef: `lsst.daf.persistence.ButlerDataRef`
-        Data reference for raw data.
-
-    Returns
-    -------
-    process_metadata: `PropertySet` or None
-        Metadata from the ProcessCcdTask for use by ap_verify
-
-    Notes
-    -----
-    The input repository corresponding to ``sensorRef`` must already contain the refcats.
-    '''
-    log = lsst.log.Log.getLogger('ap.pipe.doProcessCcd')
-    log.info('Running ProcessCcd...')
-    config = ApPipeConfig().ccdProcessor.value
-    processCcdTask = ProcessCcdTask(butler=sensorRef.getButler(), config=config)
-    processCcdTask.run(sensorRef)
-    process_metadata = processCcdTask.getFullMetadata()
-    return process_metadata
-
-
-def doDiffIm(sensorRef, templateType, template):
-    '''
-    Do difference imaging with a template and one or more visits as science
-
-    The output repository associated with ``sensorRef`` will be populated with difference images
-    and catalogs of detected sources (diaSrc, diffexp, and metadata files)
-
-    Parameters
-    ----------
-    sensorRef: `lsst.daf.persistence.ButlerDataRef`
-        Data reference for multiple dataset types, both input and output.
-    templateType: 'coadd' | 'visit'
-        The type of template to use for difference imaging.
-    template: `str`
-        Ignored if `templateType` is 'coadd'.
-        If `templateType` is 'visit', the DECam data ID which will be used as a
-        template for difference imaging.
-
-    Returns
-    -------
-    diffim_metadata: `PropertySet` or None
-        Metadata from the ImageDifferenceTask for use by ap_verify
-    '''
-    log = lsst.log.Log.getLogger('ap.pipe.doDiffIm')
-    config = ApPipeConfig().differencer.value
-
-    if templateType == 'coadd':
-        templateIdList = None
-        pass  # This mode is assumed by ApPipeConfig
-    elif templateType == 'visit':
-        templateIdList = [_parseDataId(template)]
-        config.getTemplate.retarget(GetCalexpAsTemplateTask)
-        config.doSelectSources = True
-    else:
-        raise ValueError('templateType must be "coadd" or "visit", gave "%s" instead' % templateType)
-
-    log.info('Running ImageDifference...')
-    imageDifferenceTask = ImageDifferenceTask(butler=sensorRef.getButler(), config=config)
-    imageDifferenceTask.run(sensorRef, templateIdList=templateIdList)
-    diffim_metadata = imageDifferenceTask.getFullMetadata()
-    return diffim_metadata
-
-
 def _setupDatabase(configurable):
     '''
     Set up a database according to a configuration.
@@ -307,48 +457,12 @@ def _deStringDataId(dataId):
             dataId[key] = int(value)
 
 
-# TODO: dbFile is a workaround for DM-11767
-def doAssociation(sensorRef, dbFile):
-    '''
-    Do source association.
-
-    Parameters
-    ----------
-    sensorRef: `lsst.daf.persistence.ButlerDataRef`
-        Data reference for multiple input dataset types.
-    dbFile: `str`
-        The filename where the source database lives.
-
-    Returns
-    -------
-    assoc_metadata: `PropertySet` or None
-        Metadata from the AssociationTask for use by ap_verify
-    '''
-    log = lsst.log.Log.getLogger('ap.pipe.doAssociation')
-    log.info('Running Association...')
-    config = ApPipeConfig().associator.value
-    # TODO: workaround for DM-13602
-    config.level1_db.db_name = dbFile
-
-    _setupDatabase(config.level1_db)
-
-    associationTask = AssociationTask(config=config)
-    try:
-        catalog = sensorRef.get('deepDiff_diaSrc')
-        exposure = sensorRef.get('deepDiff_differenceExp')
-        associationTask.run(catalog, exposure)
-    finally:
-        associationTask.level1_db.close()
-
-    return associationTask.getFullMetadata()
-
-
 def _parseDataId(rawDataId):
     """Convert a dataId from a command-line string to a dict.
 
     Parameters
     ----------
-    rawDataId: `str`
+    rawDataId : `str`
         A string in a format like "visit=54321 ccdnum=7".
 
     Returns
@@ -403,28 +517,15 @@ def runPipelineAlone():
     database = os.path.join(output_repo, 'association.db')
 
     if templateType == 'visit':
-        template_dict = rawRef.dataId.copy()
-        template_dict.update(_parseDataId(template))
-        templateRaw = rawRef.getButler().dataRef('raw', dataId=template_dict)
-        templateProcessed = processedRef.getButler().dataRef('calexp', dataId=template_dict)
-        if not skip or not templateProcessed.datasetExists('calexp', write=True):
-            doProcessCcd(templateRaw)
-    elif templateType != 'coadd':
+        templateIds = [_parseDataId(template)]
+    elif templateType == 'coadd':
+        templateIds = None
+    else:
         raise ValueError('templateType must be "coadd" or "visit", gave "%s" instead' % templateType)
 
     # Run all the tasks in order
-    if skip and processedRef.datasetExists('calexp', write=True):
-        log.info('ProcessCcd has already been run for {0}, skipping...'.format(rawRef.dataId))
-    else:
-        doProcessCcd(rawRef)
-
-    if skip and processedRef.datasetExists('deepDiff_diaSrc', write=True):
-        log.info('DiffIm has already been run for {0}, skipping...'.format(processedRef.dataId))
-    else:
-        doDiffIm(processedRef, templateType, template)
-
-    # No reasonable way to check if Association finished successfully
-    doAssociation(processedRef, database)
+    task = ApPipeTask(butler=butler)
+    task.run(rawRef, processedRef, database, templateIds, skip=skip)
 
     log.info('Prototype AP Pipeline run complete.')
 
