@@ -199,9 +199,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
             self.log.info('DiffIm has already been run for {0}, skipping...'.format(calexpRef.dataId))
             diffImResults = None
         else:
-            diffImResults = self.runDiffIm(calexpRef,
-                                           'coadd' if templateIds is None else 'visit',
-                                           templateIds)
+            diffImResults = self.runDiffIm(calexpRef, templateIds)
 
         # No reasonable way to check if Association can be skipped
         associationResults = self.runAssociation(calexpRef, database)
@@ -239,18 +237,15 @@ class ApPipeTask(pipeBase.CmdLineTask):
         -----
         The input repository corresponding to ``sensorRef`` must already contain the refcats.
         """
-        log = lsst.log.Log.getLogger('ap.pipe.doProcessCcd')
-        log.info('Running ProcessCcd...')
-        config = ApPipeConfig().ccdProcessor.value
-        processCcdTask = ProcessCcdTask(butler=sensorRef.getButler(), config=config)
-        result = processCcdTask.run(sensorRef)
+        self.log.info('Running ProcessCcd...')
+        result = self.ccdProcessor.run(sensorRef)
         return pipeBase.Struct(
-            fullMetadata = processCcdTask.getFullMetadata(),
+            fullMetadata = self.ccdProcessor.getFullMetadata(),
             taskResults = result
         )
 
     @pipeBase.timeMethod
-    def runDiffIm(self, sensorRef, templateType, template):
+    def runDiffIm(self, sensorRef, templateIds=None):
         """Do difference imaging with a template and a science image
 
         The output repository associated with ``sensorRef`` will be populated with difference images
@@ -260,12 +255,10 @@ class ApPipeTask(pipeBase.CmdLineTask):
         ----------
         sensorRef: `lsst.daf.persistence.ButlerDataRef`
             Data reference for multiple dataset types, both input and output.
-        templateType: 'coadd' | 'visit'
-            The type of template to use for difference imaging.
-        template: `list` of `dict`, or `None`
-            Ignored if `templateType` is 'coadd'.
-            If `templateType` is 'visit', the DECam data ID which will be used as a
-            template for difference imaging.
+        templateIds : `list` of `dict`, optional
+            A list of parsed data IDs for templates to use. Only used if
+            ``config.differencer`` is configured to do so. ``differencer`` or
+            its subtasks may restrict the allowed IDs.
 
         Returns
         -------
@@ -276,24 +269,10 @@ class ApPipeTask(pipeBase.CmdLineTask):
                 for ap_verify, and may be removed later (`lsst.daf.base.PropertySet`).
             - taskResults : output of `config.differencer.run` (`lsst.pipe.base.Struct`).
         """
-        log = lsst.log.Log.getLogger('ap.pipe.doDiffIm')
-        config = ApPipeConfig().differencer.value
-
-        if templateType == 'coadd':
-            templateIdList = None
-            pass  # This mode is assumed by ApPipeConfig
-        elif templateType == 'visit':
-            templateIdList = template
-            config.getTemplate.retarget(GetCalexpAsTemplateTask)
-            config.doSelectSources = True
-        else:
-            raise ValueError('templateType must be "coadd" or "visit", gave "%s" instead' % templateType)
-
-        log.info('Running ImageDifference...')
-        imageDifferenceTask = ImageDifferenceTask(butler=sensorRef.getButler(), config=config)
-        result = imageDifferenceTask.run(sensorRef, templateIdList=templateIdList)
+        self.log.info('Running ImageDifference...')
+        result = self.differencer.run(sensorRef, templateIdList=templateIds)
         return pipeBase.Struct(
-            fullMetadata = imageDifferenceTask.getFullMetadata(),
+            fullMetadata = self.differencer.getFullMetadata(),
             taskResults = result
         )
 
@@ -320,8 +299,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
                 `ap_association`'s DB access API
             - taskResults : output of `config.associator.run` (`lsst.pipe.base.Struct`).
         """
-        log = lsst.log.Log.getLogger('ap.pipe.doAssociation')
-        log.info('Running Association...')
+        self.log.info('Running Association...')
         config = ApPipeConfig().associator.value
         # TODO: workaround for DM-13602
         config.level1_db.db_name = dbFile
@@ -333,6 +311,8 @@ class ApPipeTask(pipeBase.CmdLineTask):
             catalog = sensorRef.get('deepDiff_diaSrc')
             exposure = sensorRef.get('deepDiff_differenceExp')
             result = associationTask.run(catalog, exposure)
+            # Hack to make sure self.getFullMetadata gives correct results
+            self.associator.metadata = associationTask.metadata
         finally:
             associationTask.level1_db.close()
 
@@ -516,15 +496,21 @@ def runPipelineAlone():
     # TODO: workaround for DM-11767
     database = os.path.join(output_repo, 'association.db')
 
+    config = ApPipeConfig()
+
     if templateType == 'visit':
         templateIds = [_parseDataId(template)]
+        config.differencer.getTemplate.retarget(GetCalexpAsTemplateTask)
+        config.differencer.doSelectSources = True
     elif templateType == 'coadd':
         templateIds = None
+        # Default assumed by ApPipeConfig, no changes needed
     else:
         raise ValueError('templateType must be "coadd" or "visit", gave "%s" instead' % templateType)
+    config.freeze()
 
     # Run all the tasks in order
-    task = ApPipeTask(butler=butler)
+    task = ApPipeTask(butler=butler, config=config)
     task.run(rawRef, processedRef, database, templateIds, skip=skip)
 
     log.info('Prototype AP Pipeline run complete.')
