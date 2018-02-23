@@ -18,7 +18,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# salong with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
 from __future__ import absolute_import, division, print_function
@@ -28,7 +28,6 @@ __all__ = ['ApPipeConfig', 'ApPipeTask',
 
 import os
 import argparse
-import re
 
 import lsst.log
 import lsst.pex.config as pexConfig
@@ -40,6 +39,7 @@ from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask
 from lsst.utils import getPackageDir
 from lsst.pipe.tasks.imageDifference import ImageDifferenceTask
 from lsst.ap.association import AssociationDBSqliteTask, AssociationTask
+from lsst.ap.pipe.apPipeTaskRunner import ApPipeTaskRunner
 
 
 class ApPipeConfig(pexConfig.Config):
@@ -137,7 +137,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
     """
 
     ConfigClass = ApPipeConfig
-    RunnerClass = pipeBase.ButlerInitializedTaskRunner
+    RunnerClass = ApPipeTaskRunner
     _DefaultName = "apPipe"
 
     # TODO: dbFile is a workaround for DM-11767
@@ -426,45 +426,6 @@ def _setupDatabase(configurable):
         db.close()
 
 
-# TODO: duplication of ArgumentParser's internal functionality; remove this in DM-11372
-def _deStringDataId(dataId):
-    '''
-    Replace a dataId's values with numbers, where appropriate.
-
-    Parameters
-    ----------
-    dataId: `dict`
-        The dataId to be cleaned up.
-    '''
-    try:
-        basestring
-    except NameError:
-        basestring = str
-    integer = re.compile('^\s*[+-]?\d+\s*$')
-    for key, value in dataId.items():
-        if isinstance(value, basestring) and integer.match(value) is not None:
-            dataId[key] = int(value)
-
-
-def _parseDataId(rawDataId):
-    """Convert a dataId from a command-line string to a dict.
-
-    Parameters
-    ----------
-    rawDataId : `str`
-        A string in a format like "visit=54321 ccdnum=7".
-
-    Returns
-    -------
-    dataId: `dict` from `str` to any type
-        A dataId ready for passing to Stack operations.
-    """
-    dataIdItems = re.split('[ +=]', rawDataId)
-    dataId = dict(zip(dataIdItems[::2], dataIdItems[1::2]))
-    _deStringDataId(dataId)
-    return dataId
-
-
 def runPipelineAlone():
     '''
     Run each step of the pipeline. NOT used by ap_verify.
@@ -475,51 +436,9 @@ def runPipelineAlone():
     '''
     lsst.log.configure()
     log = lsst.log.Log.getLogger('ap.pipe.runPipelineAlone')
-    parsed = parsePipelineArgs()
-
-    repo = os.path.abspath(parsed['repo'])
-    calib_repo = os.path.abspath(parsed['calib_repo'])
-    output_repo = os.path.abspath(parsed['processed_repo'])
-
-    skip = parsed['skip']
-
-    dataId = parsed['dataId']
-    templateType = parsed['template_type']
-    template = parsed['template']
-
-    # Set up repos
-    dataId_dict = _parseDataId(dataId)
-
-    mapperArgs = {'calibRoot': calib_repo}
-    inputs = [{'root': repo, 'mapperArgs': mapperArgs}]
-    if templateType == 'coadd':
-        # samefile is a workaround for DM-13626, blocks DM-11482
-        if not os.path.samefile(template, repo):
-            inputs.append({'root': template, 'mode': 'r', 'mapperArgs': mapperArgs})
-
-    butler = dafPersist.Butler(inputs=inputs,
-                               outputs={'root': output_repo, 'mode': 'rw', 'mapperArgs': mapperArgs})
-
-    rawRef = butler.dataRef('raw', dataId=dataId_dict)
-    processedRef = butler.dataRef('calexp', dataId=dataId_dict)
-    # TODO: workaround for DM-11767
-    database = os.path.join(output_repo, 'association.db')
-
-    config = ApPipeConfig()
-
-    if templateType == 'visit':
-        templateIds = [_parseDataId(template)]
-        config.load(os.path.join(getPackageDir('ap_pipe'), 'config', 'calexpTemplates.py'))
-    elif templateType == 'coadd':
-        templateIds = None
-        # Default assumed by ApPipeConfig, no changes needed
-    else:
-        raise ValueError('templateType must be "coadd" or "visit", gave "%s" instead' % templateType)
-    config.freeze()
 
     # Run all the tasks in order
-    task = ApPipeTask(butler=butler, config=config, dbFile=database)
-    task.run(rawRef, processedRef, templateIds, skip=skip)
+    ApPipeTask.parseAndRun()
 
     log.info('Prototype AP Pipeline run complete.')
 
