@@ -38,7 +38,6 @@ import lsst.pipe.base as pipeBase
 from lsst.pipe.tasks.processCcd import ProcessCcdTask
 from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask
 from lsst.utils import getPackageDir
-from lsst.ip.diffim.getTemplate import GetCalexpAsTemplateTask
 from lsst.pipe.tasks.imageDifference import ImageDifferenceTask
 from lsst.ap.association import AssociationDBSqliteTask, AssociationTask
 
@@ -508,8 +507,7 @@ def runPipelineAlone():
 
     if templateType == 'visit':
         templateIds = [_parseDataId(template)]
-        config.differencer.getTemplate.retarget(GetCalexpAsTemplateTask)
-        config.differencer.doSelectSources = True
+        config.load(os.path.join(getPackageDir('ap_pipe'), 'config', 'calexpTemplates.py'))
     elif templateType == 'coadd':
         templateIds = None
         # Default assumed by ApPipeConfig, no changes needed
