@@ -211,7 +211,8 @@ class ApPipeTask(pipeBase.CmdLineTask):
         else:
             processResults = self.runProcessCcd(rawRef)
 
-        if skip and calexpRef.datasetExists('deepDiff_diaSrc', write=True):
+        diffType = self.config.differencer.coaddName
+        if skip and calexpRef.datasetExists(diffType + 'Diff_diaSrc', write=True):
             self.log.info('DiffIm has already been run for {0}, skipping...'.format(calexpRef.dataId))
             diffImResults = None
         else:
@@ -314,9 +315,10 @@ class ApPipeTask(pipeBase.CmdLineTask):
         """
         self.log.info('Running Association...')
 
+        diffType = self.config.differencer.coaddName
         try:
-            catalog = sensorRef.get('deepDiff_diaSrc')
-            exposure = sensorRef.get('deepDiff_differenceExp')
+            catalog = sensorRef.get(diffType + 'Diff_diaSrc')
+            exposure = sensorRef.get(diffType + 'Diff_differenceExp')
             result = self.associator.run(catalog, exposure)
         finally:
             # Stateful AssociationTask will work for now because TaskRunner
