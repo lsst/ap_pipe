@@ -130,21 +130,40 @@ class ApPipeTask(pipeBase.CmdLineTask):
         ``config.differencer.getTemplate`` is overridden) template data to
         be processed. Its output repository must be both readable
         and writable.
+    dbFile : `str`
+        The filename where the source association database lives. Will be
+        created if it does not yet exist.
+    config : `ApPipeConfig`, optional
+        A configuration for this task.
     """
 
     ConfigClass = ApPipeConfig
     RunnerClass = pipeBase.ButlerInitializedTaskRunner
     _DefaultName = "apPipe"
 
-    def __init__(self, butler, *args, **kwargs):
-        pipeBase.CmdLineTask.__init__(self, *args, **kwargs)
+    # TODO: dbFile is a workaround for DM-11767
+    def __init__(self, butler, dbFile, config=None, *args, **kwargs):
+        # TODO: hacky workaround for DM-13602
+        modConfig = ApPipeTask._copyConfig(config) if config is not None else ApPipeTask.ConfigClass()
+        modConfig.associator.level1_db.db_name = dbFile
+        modConfig.freeze()
+        pipeBase.CmdLineTask.__init__(self, *args, config=modConfig, **kwargs)
 
         self.makeSubtask("ccdProcessor", butler=butler)
         self.makeSubtask("differencer", butler=butler)
+        # Must be called before AssociationTask.__init__
+        _setupDatabase(self.config.associator.level1_db)
         self.makeSubtask("associator")
 
+    # TODO: hack for modifying frozen configs; delete once DM-13602 resolved
+    @staticmethod
+    def _copyConfig(config):
+        configClass = type(config)
+        contents = {key: value for (key, value) in config.items()}  # Force non-recursive conversion
+        return configClass(**contents)
+
     @pipeBase.timeMethod
-    def run(self, rawRef, calexpRef, database, templateIds=None, skip=False):
+    def run(self, rawRef, calexpRef, templateIds=None, skip=False):
         """Execute the ap_pipe pipeline on a single image.
 
         Parameters
@@ -153,8 +172,6 @@ class ApPipeTask(pipeBase.CmdLineTask):
             A reference to the raw data to process.
         calexpRef : `lsst.daf.persistence.ButlerDataRef`
             A reference to the calibrated data corresponding to ``rawRef``.
-        database : `str`
-            The filename where the source database lives.
         templateIds : `list` of `dict`, optional
             A list of parsed data IDs for templates to use. Only used if
             ``config.differencer`` is configured to do so. ``differencer`` or
@@ -202,7 +219,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
             diffImResults = self.runDiffIm(calexpRef, templateIds)
 
         # No reasonable way to check if Association can be skipped
-        associationResults = self.runAssociation(calexpRef, database)
+        associationResults = self.runAssociation(calexpRef)
 
         return pipeBase.Struct(
             fullMetadata = self.getFullMetadata(),
@@ -277,16 +294,13 @@ class ApPipeTask(pipeBase.CmdLineTask):
         )
 
     @pipeBase.timeMethod
-    # TODO: dbFile is a workaround for DM-11767
-    def runAssociation(self, sensorRef, dbFile):
+    def runAssociation(self, sensorRef):
         """Do source association.
 
         Parameters
         ----------
         sensorRef : `lsst.daf.persistence.ButlerDataRef`
             Data reference for multiple input dataset types.
-        dbFile : `str`
-            The filename where the source database lives.
 
         Returns
         -------
@@ -300,25 +314,19 @@ class ApPipeTask(pipeBase.CmdLineTask):
             - taskResults : output of `config.associator.run` (`lsst.pipe.base.Struct`).
         """
         self.log.info('Running Association...')
-        config = ApPipeConfig().associator.value
-        # TODO: workaround for DM-13602
-        config.level1_db.db_name = dbFile
 
-        _setupDatabase(config.level1_db)
-
-        associationTask = AssociationTask(config=config)
         try:
             catalog = sensorRef.get('deepDiff_diaSrc')
             exposure = sensorRef.get('deepDiff_differenceExp')
-            result = associationTask.run(catalog, exposure)
-            # Hack to make sure self.getFullMetadata gives correct results
-            self.associator.metadata = associationTask.metadata
+            result = self.associator.run(catalog, exposure)
         finally:
-            associationTask.level1_db.close()
+            # Stateful AssociationTask will work for now because TaskRunner
+            # uses task-oriented parallelism. Will not be necessary after DM-13672
+            self.associator.level1_db.close()
 
         return pipeBase.Struct(
-            fullMetadata = associationTask.getFullMetadata(),
-            l1Database = config.level1_db.apply(),
+            fullMetadata = self.associator.getFullMetadata(),
+            l1Database = self.associator.level1_db,
             taskResults = result
         )
 
@@ -510,8 +518,8 @@ def runPipelineAlone():
     config.freeze()
 
     # Run all the tasks in order
-    task = ApPipeTask(butler=butler, config=config)
-    task.run(rawRef, processedRef, database, templateIds, skip=skip)
+    task = ApPipeTask(butler=butler, config=config, dbFile=database)
+    task.run(rawRef, processedRef, templateIds, skip=skip)
 
     log.info('Prototype AP Pipeline run complete.')
 
