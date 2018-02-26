@@ -1,9 +1,11 @@
 #
-# LSST Data Management System
-# Copyright 2017 LSST Corporation.
+# This file is part of ap_pipe.
 #
-# This product includes software developed by the
-# LSST Project (http://www.lsst.org/).
+# Developed for the LSST Data Management System.
+# This product includes software developed by the LSST Project
+# (http://www.lsst.org).
+# See the COPYRIGHT file at the top-level directory of this distribution
+# for details of code ownership.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,9 +17,8 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# You should have received a copy of the LSST License Statement and
-# the GNU General Public License along with this program.  If not,
-# see <http://www.lsstcorp.org/LegalNotices/>.
+# You should have received a copy of the GNU General Public License
+# salong with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
 '''
@@ -195,33 +196,7 @@ def doIngestTemplates(repo, templateRepo, inputTemplates):
         return None
 
 
-def doProcessCcd(base_repo, dataId):
-    '''
-    Perform ISR with ingested images and calibrations via processCcd
-
-    By default, the configuration for astrometric reference catalogs uses Gaia
-    and the configuration for photometry reference catalogs uses Pan-STARRS.
-
-    Parameters
-    ----------
-    base_repo: `str`
-        The output repository location on disk.
-    dataId: `str`
-        Butler identifier naming the data to be processed (e.g., visit and ccdnum)
-        formatted in the usual way (e.g., 'visit=54321 ccdnum=7').
-
-    Returns
-    -------
-    process_metadata: `PropertySet` or None
-        Metadata from the ProcessCcdTask for use by ap_verify
-    '''
-    raw_repo = get_output_repo(base_repo, INGESTED_DIR)
-    calib_repo = get_output_repo(base_repo, CALIBINGESTED_DIR)
-    processed_repo = get_output_repo(base_repo, PROCESSED_DIR)
-    return _doProcessCcd(raw_repo, calib_repo, processed_repo, dataId, skip=False)
-
-
-def _doProcessCcd(repo, calib_repo, processed_repo, dataId, skip=True):
+def doProcessCcd(repo, calib_repo, processed_repo, dataId, skip=True):
     '''
     Perform ISR with ingested images and calibrations via processCcd
 
@@ -237,7 +212,7 @@ def _doProcessCcd(repo, calib_repo, processed_repo, dataId, skip=True):
         Butler identifier naming the data to be processed (e.g., visit and ccdnum)
         formatted in the usual way (e.g., 'visit=54321 ccdnum=7').
     skip: `bool`
-        If set, _doProcessCcd will skip processing if data have already been processed.
+        If set, doProcessCcd will skip processing if data have already been processed.
 
     Returns
     -------
@@ -260,7 +235,7 @@ def _doProcessCcd(repo, calib_repo, processed_repo, dataId, skip=True):
     By default, the configuration for astrometric reference catalogs uses Gaia
     and the configuration for photometry reference catalogs uses Pan-STARRS.
     '''
-    log = lsst.log.Log.getLogger('ap.pipe._doProcessCcd')
+    log = lsst.log.Log.getLogger('ap.pipe.doProcessCcd')
     dataId_items = re.split('[ +=]', dataId)
     dataId_dict = dict(zip(dataId_items[::2], dataId_items[1::2]))
     if 'visit' not in dataId_dict.keys():
@@ -310,30 +285,7 @@ def _doProcessCcd(repo, calib_repo, processed_repo, dataId, skip=True):
     return process_metadata
 
 
-def doDiffIm(base_repo, dataId):
-    '''
-    Do difference imaging with an automatically selected template.
-
-    Parameters
-    ----------
-    base_repo: `str`
-        The output repository location on disk.
-    dataId: `str`
-        Butler identifier naming the data to be processed (e.g., visit and ccdnum)
-        formatted in the usual way (e.g., 'visit=54321 ccdnum=7').
-
-    Returns
-    -------
-    diffim_metadata: `PropertySet` or None
-        Metadata from the ImageDifferenceTask for use by ap_verify
-    '''
-    repo = get_output_repo(base_repo, INGESTED_DIR)
-    processed_repo = get_output_repo(base_repo, PROCESSED_DIR)
-    diffim_repo = get_output_repo(base_repo, DIFFIM_DIR)
-    return _doDiffIm(processed_repo, dataId, 'coadd', repo, diffim_repo, skip=False)
-
-
-def _doDiffIm(processed_repo, dataId, templateType, template, diffim_repo, skip=True):
+def doDiffIm(processed_repo, dataId, templateType, template, diffim_repo, skip=True):
     '''
     Do difference imaging with a template and one or more visits as science
 
@@ -354,7 +306,7 @@ def _doDiffIm(processed_repo, dataId, templateType, template, diffim_repo, skip=
     diffim_repo: `str`
         The output repository location on disk where difference images live.
     skip: `bool`
-        If set, _doDiffIm will skip processing if data have already been processed.
+        If set, doDiffIm will skip processing if data have already been processed.
 
     Returns
     -------
@@ -375,7 +327,7 @@ def _doDiffIm(processed_repo, dataId, templateType, template, diffim_repo, skip=
     diffim_repo/deepDiff/v+visit populated with difference images
     and catalogs of detected sources (diaSrc, diffexp, and metadata files)
     '''
-    log = lsst.log.Log.getLogger('ap.pipe._doDiffIm')
+    log = lsst.log.Log.getLogger('ap.pipe.doDiffIm')
     dataId_items = re.split('[ +=]', dataId)
     dataId_dict = dict(zip(dataId_items[::2], dataId_items[1::2]))
     if 'visit' not in dataId_dict.keys():
@@ -457,29 +409,7 @@ def _deStringDataId(dataId):
             dataId[key] = int(value)
 
 
-def doAssociation(base_repo, dataId):
-    '''
-    Do source association.
-
-    Parameters
-    ----------
-    base_repo: `str`
-        The output repository location on disk.
-    dataId: `str`
-        Butler identifier naming the data to be processed (e.g., visit and ccdnum)
-        formatted in the usual way (e.g., 'visit=54321 ccdnum=7').
-
-    Returns
-    -------
-    assoc_metadata: `PropertySet` or None
-        Metadata from the AssociationTask for use by ap_verify
-    '''
-    diffim_repo = get_output_repo(base_repo, DIFFIM_DIR)
-    db_repo = get_output_repo(base_repo, DB_DIR)
-    return _doAssociation(diffim_repo, dataId, db_repo, skip=False)
-
-
-def _doAssociation(diffim_repo, dataId, db_repo, skip=True):
+def doAssociation(diffim_repo, dataId, db_repo, skip=True):
     '''
     Do source association.
 
@@ -493,14 +423,14 @@ def _doAssociation(diffim_repo, dataId, db_repo, skip=True):
     db_repo: `str`
         The output repository location on disk where the source database lives.
     skip: `bool`
-        If set, _doAssociation will skip processing if data have already been processed.
+        If set, doAssociation will skip processing if data have already been processed.
 
     Returns
     -------
     assoc_metadata: `PropertySet` or None
         Metadata from the AssociationTask for use by ap_verify
     '''
-    log = lsst.log.Log.getLogger('ap.pipe._doAssociation')
+    log = lsst.log.Log.getLogger('ap.pipe.doAssociation')
     dataId_items = re.split('[ +=]', dataId)
     dataId_dict = dict(zip(dataId_items[::2], dataId_items[1::2]))
     if 'visit' not in dataId_dict.keys():
@@ -556,7 +486,7 @@ def runPipelineAlone():
     template = parsed['template']
 
     # Run all the tasks in order
-    _doProcessCcd(repo, calib_repo, processed_repo, dataId, skip=skip)
+    doProcessCcd(repo, calib_repo, processed_repo, dataId, skip=skip)
     if templateType == 'coadd':
         if not os.path.samefile(template, repo):
             # TODO: should be unneccessary once DM-11865 is resolved
@@ -567,11 +497,11 @@ def runPipelineAlone():
         if 'ccdnum' not in dataId_dict.keys():
             raise RuntimeError('The dataId string is missing \'ccdnum\'')
         ccdTemplate = template + (' ccdnum=%s' % dataId_dict['ccdnum'])
-        _doProcessCcd(repo, calib_repo, processed_repo, ccdTemplate, skip=skip)
+        doProcessCcd(repo, calib_repo, processed_repo, ccdTemplate, skip=skip)
     else:
         raise ValueError('templateType must be "coadd" or "visit", gave "%s" instead' % templateType)
-    _doDiffIm(processed_repo, dataId, templateType, template, diffim_repo, skip=skip)
-    _doAssociation(diffim_repo, dataId, db_repo, skip=skip)
+    doDiffIm(processed_repo, dataId, templateType, template, diffim_repo, skip=skip)
+    doAssociation(diffim_repo, dataId, db_repo, skip=skip)
     log.info('Prototype AP Pipeline run complete.')
 
     return
