@@ -35,10 +35,10 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
     '''
 
 #    def testDoProcessCcd(self):
-        # test something
+#        # test something
 
 #    def testDoDiffIm(self):
-        # test something
+#        # test something
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):

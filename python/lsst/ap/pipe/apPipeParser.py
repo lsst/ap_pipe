@@ -23,7 +23,7 @@
 
 from __future__ import absolute_import, division, print_function
 
-__all__ = ['ApPipeParser']
+__all__ = ["ApPipeParser"]
 
 import argparse
 import fnmatch
@@ -49,20 +49,20 @@ class ApPipeParser(pipeBase.ArgumentParser):
     def __init__(self, *args, **kwargs):
         pipeBase.ArgumentParser.__init__(
             self,
-            description='Process raw decam images with MasterCals '
-                        'from basic processing --> source association',
+            description = "Process raw decam images with MasterCals "
+                          "from basic processing --> source association",
             *args,
             **kwargs)
-        inputDataset = 'raw'
+        inputDataset = "raw"
         self.add_id_argument("--id", inputDataset,
-                             help="data IDs, e.g. --id visit=12345 ccd=1,2^0,3")
+                             help = "data IDs, e.g. --id visit=12345 ccd=1,2^0,3")
 
-        self.add_argument('--template', dest='rawTemplate',
-                          help="path to input template repository, relative to $%s" % DEFAULT_INPUT_NAME)
-        self.add_id_argument("--templateId", inputDataset, doMakeDataRefList=True,
-                             help="Optional template data ID (visit only), e.g. --templateId visit=410929")
+        self.add_argument("--template", dest = "rawTemplate",
+                          help = "path to input template repository, relative to $%s" % DEFAULT_INPUT_NAME)
+        self.add_id_argument("--templateId", inputDataset, doMakeDataRefList = True,
+                             help = "Optional template data ID (visit only), e.g. --templateId visit=410929")
 
-        self.addReuseOption(['ccdProcessor', 'differencer', 'associator'])
+        self.addReuseOption(["ccdProcessor", "differencer", "associator"])
 
     # TODO: workaround for lack of support for multi-input butlers; see DM-11865
     # Can't delegate to pipeBase.ArgumentParser.parse_args because creating the
@@ -214,17 +214,17 @@ log4j.appender.A1.layout.ConversionPattern=%-5p %d{yyyy-MM-ddThh:mm:ss.sss} %c (
         """
         butlerArgs = {}  # common arguments for butler elements
         if namespace.calib:
-            butlerArgs = {'mapperArgs': {'calibRoot': namespace.calib}}
+            butlerArgs = {"mapperArgs": {"calibRoot": namespace.calib}}
 
         if namespace.output:
-            inputs = [{'root': namespace.input}]
-            outputs = [{'root': namespace.output, 'mode': 'rw'}]
+            inputs = [{"root": namespace.input}]
+            outputs = [{"root": namespace.output, "mode": "rw"}]
         else:
-            inputs = [{'root': namespace.input, 'mode': 'rw'}]
+            inputs = [{"root": namespace.input, "mode": "rw"}]
             outputs = []
 
         if namespace.template:
-            ApPipeParser._addRepo(inputs, {'root': namespace.template, 'mode': 'r'})
+            ApPipeParser._addRepo(inputs, {"root": namespace.template, "mode": "r"})
 
         for repoList in inputs, outputs:
             for repo in repoList:
@@ -252,7 +252,7 @@ log4j.appender.A1.layout.ConversionPattern=%-5p %d{yyyy-MM-ddThh:mm:ss.sss} %c (
         # workaround for DM-13626, blocks DM-11482
         duplicate = False
         for repo in repos:
-            if os.path.samefile(repo['root'], newRepo['root']):
+            if os.path.samefile(repo["root"], newRepo["root"]):
                 duplicate = True
 
         if not duplicate:

@@ -23,7 +23,7 @@
 
 from __future__ import absolute_import, division, print_function
 
-__all__ = ['ApPipeTaskRunner']
+__all__ = ["ApPipeTaskRunner"]
 
 import os
 import sys
@@ -54,12 +54,12 @@ class ApPipeTaskRunner(pipeBase.ButlerInitializedTaskRunner):
         """
         if parsedCmd is not None:
             butler = parsedCmd.butler
-            dbFile = os.path.join(parsedCmd.output, 'association.db')
+            dbFile = os.path.join(parsedCmd.output, "association.db")
         elif args is not None:
             dbFile, dataRef, _ = args
             butler = dataRef.butlerSubset.butler
         else:
-            raise RuntimeError('parsedCmd or args must be specified')
+            raise RuntimeError("parsedCmd or args must be specified")
         return self.TaskClass(config=self.config, log=self.log, butler=butler, dbFile=dbFile)
 
     @staticmethod
@@ -67,7 +67,7 @@ class ApPipeTaskRunner(pipeBase.ButlerInitializedTaskRunner):
         """Get a list of (dbFile, rawRef, calexpRef, kwargs) for `TaskRunner.__call__`.
         """
         # Hack to allow makeTask(args). Remove once DM-11767 (or possibly DM-13672) resolved
-        dbFile = os.path.join(parsedCmd.output, 'association.db')
+        dbFile = os.path.join(parsedCmd.output, "association.db")
         argDict = dict(
             templateIds = parsedCmd.templateId.idList,
             reuse = parsedCmd.reuse,
@@ -75,8 +75,8 @@ class ApPipeTaskRunner(pipeBase.ButlerInitializedTaskRunner):
         )
         butler = parsedCmd.butler
         return [(dbFile,
-                 butler.dataRef('raw', **dataId),
-                 dict(calexpRef=butler.dataRef('calexp', **dataId), **argDict))
+                 butler.dataRef("raw", **dataId),
+                 dict(calexpRef=butler.dataRef("calexp", **dataId), **argDict))
                 for dataId in parsedCmd.id.idList]
 
     # TODO: workaround for DM-11767 or DM-13672; can remove once ApPipeTask.__init__ no longer needs dbFile
@@ -142,12 +142,12 @@ class ApPipeTaskRunner(pipeBase.ButlerInitializedTaskRunner):
 
         if self.doReturnResults:
             return pipeBase.Struct(
-                exitStatus=exitStatus,
-                dataRef=dataRef,
-                metadata=task.metadata,
-                result=result,
+                exitStatus = exitStatus,
+                dataRef = dataRef,
+                metadata = task.metadata,
+                result = result,
             )
         else:
             return pipeBase.Struct(
-                exitStatus=exitStatus,
+                exitStatus = exitStatus,
             )

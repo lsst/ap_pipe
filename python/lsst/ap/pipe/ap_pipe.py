@@ -23,7 +23,7 @@
 
 from __future__ import absolute_import, division, print_function
 
-__all__ = ['ApPipeConfig', 'ApPipeTask']
+__all__ = ["ApPipeConfig", "ApPipeTask"]
 
 import os
 
@@ -44,25 +44,25 @@ class ApPipeConfig(pexConfig.Config):
     """
 
     ccdProcessor = pexConfig.ConfigurableField(
-        target=ProcessCcdTask,
-        doc="Task used to perform basic image reduction and characterization.",
+        target = ProcessCcdTask,
+        doc = "Task used to perform basic image reduction and characterization.",
     )
     differencer = pexConfig.ConfigurableField(
-        target=ImageDifferenceTask,
-        doc="Task used to do image subtraction and DiaSource detection.",
+        target = ImageDifferenceTask,
+        doc = "Task used to do image subtraction and DiaSource detection.",
     )
     associator = pexConfig.ConfigurableField(
-        target=AssociationTask,
-        doc="Task used to associate DiaSources with DiaObjects.",
+        target = AssociationTask,
+        doc = "Task used to associate DiaSources with DiaObjects.",
     )
 
     def setDefaults(self):
         """Settings assumed in baseline ap_pipe runs.
         """
         # TODO: remove explicit DECam reference in DM-12315
-        obsDecamDir = getPackageDir('obs_decam')
-        self.ccdProcessor.load(os.path.join(obsDecamDir, 'config/processCcd.py'))
-        self.ccdProcessor.load(os.path.join(obsDecamDir, 'config/processCcdCpIsr.py'))
+        obsDecamDir = getPackageDir("obs_decam")
+        self.ccdProcessor.load(os.path.join(obsDecamDir, "config/processCcd.py"))
+        self.ccdProcessor.load(os.path.join(obsDecamDir, "config/processCcdCpIsr.py"))
 
         self.ccdProcessor.calibrate.doAstrometry = True
         self.ccdProcessor.calibrate.doPhotoCal = True
@@ -73,31 +73,31 @@ class ApPipeConfig(pexConfig.Config):
                              self.ccdProcessor.calibrate.photoRefObjLoader,
                              self.ccdProcessor.charImage.refObjLoader,):
             refObjLoader.retarget(LoadIndexedReferenceObjectsTask)
-        self.ccdProcessor.calibrate.astromRefObjLoader.ref_dataset_name = 'gaia'
+        self.ccdProcessor.calibrate.astromRefObjLoader.ref_dataset_name = "gaia"
         self.ccdProcessor.calibrate.astromRefObjLoader.filterMap = {
-            'u': 'phot_g_mean_mag',
-            'g': 'phot_g_mean_mag',
-            'r': 'phot_g_mean_mag',
-            'i': 'phot_g_mean_mag',
-            'z': 'phot_g_mean_mag',
-            'y': 'phot_g_mean_mag',
-            'VR': 'phot_g_mean_mag'}
-        self.ccdProcessor.calibrate.photoRefObjLoader.ref_dataset_name = 'pan-starrs'
+            "u": "phot_g_mean_mag",
+            "g": "phot_g_mean_mag",
+            "r": "phot_g_mean_mag",
+            "i": "phot_g_mean_mag",
+            "z": "phot_g_mean_mag",
+            "y": "phot_g_mean_mag",
+            "VR": "phot_g_mean_mag"}
+        self.ccdProcessor.calibrate.photoRefObjLoader.ref_dataset_name = "pan-starrs"
         self.ccdProcessor.calibrate.photoRefObjLoader.filterMap = {
-            'u': 'g',
-            'g': 'g',
-            'r': 'r',
-            'i': 'i',
-            'z': 'z',
-            'y': 'y',
-            'VR': 'g'}
+            "u": "g",
+            "g": "g",
+            "r": "r",
+            "i": "i",
+            "z": "z",
+            "y": "y",
+            "VR": "g"}
 
         # TODO: single-template support now done by retargeting self.differencer.getTemplate
         # Document how to do this in DM-13164
         self.differencer.detection.thresholdValue = 5.0
         self.differencer.doDecorrelation = True
-        self.differencer.coaddName = 'deep'  # TODO: generalize in DM-12315
-        self.differencer.getTemplate.warpType = 'psfMatched'
+        self.differencer.coaddName = "deep"  # TODO: generalize in DM-12315
+        self.differencer.getTemplate.warpType = "psfMatched"
         self.differencer.doSelectSources = False
 
         self.associator.level1_db.retarget(AssociationDBSqliteTask)
@@ -192,22 +192,20 @@ class ApPipeTask(pipeBase.CmdLineTask):
         # TODO: treat as independent jobs (may need SuperTask framework?)
         if templateIds is not None:
             for templateId in templateIds:
-                rawTemplateRef = rawRef.getButler().dataRef(
-                    'raw', dataId=rawRef.dataId, **templateId)
-                calexpTemplateRef = calexpRef.getButler().dataRef(
-                    'calexp', dataId=calexpRef.dataId, **templateId)
-                if 'ccdProcessor' not in reuse or not calexpTemplateRef.datasetExists('calexp', write=True):
+                rawTemplateRef = _siblingRef(rawRef, "raw", templateId)
+                calexpTemplateRef = _siblingRef(calexpRef, "calexp", templateId)
+                if "ccdProcessor" not in reuse or not calexpTemplateRef.datasetExists("calexp", write=True):
                     self.runProcessCcd(rawTemplateRef)
 
-        if 'ccdProcessor' in reuse and calexpRef.datasetExists('calexp', write=True):
-            self.log.info('ProcessCcd has already been run for {0}, skipping...'.format(rawRef.dataId))
+        if "ccdProcessor" in reuse and calexpRef.datasetExists("calexp", write=True):
+            self.log.info("ProcessCcd has already been run for {0}, skipping...".format(rawRef.dataId))
             processResults = None
         else:
             processResults = self.runProcessCcd(rawRef)
 
         diffType = self.config.differencer.coaddName
-        if 'differencer' in reuse and calexpRef.datasetExists(diffType + 'Diff_diaSrc', write=True):
-            self.log.info('DiffIm has already been run for {0}, skipping...'.format(calexpRef.dataId))
+        if "differencer" in reuse and calexpRef.datasetExists(diffType + "Diff_diaSrc", write=True):
+            self.log.info("DiffIm has already been run for {0}, skipping...".format(calexpRef.dataId))
             diffImResults = None
         else:
             diffImResults = self.runDiffIm(calexpRef, templateIds)
@@ -248,7 +246,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
         -----
         The input repository corresponding to ``sensorRef`` must already contain the refcats.
         """
-        self.log.info('Running ProcessCcd...')
+        self.log.info("Running ProcessCcd...")
         result = self.ccdProcessor.run(sensorRef)
         return pipeBase.Struct(
             fullMetadata = self.ccdProcessor.getFullMetadata(),
@@ -280,7 +278,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
                 for ap_verify, and may be removed later (`lsst.daf.base.PropertySet`).
             - taskResults : output of `config.differencer.run` (`lsst.pipe.base.Struct`).
         """
-        self.log.info('Running ImageDifference...')
+        self.log.info("Running ImageDifference...")
         result = self.differencer.run(sensorRef, templateIdList=templateIds)
         return pipeBase.Struct(
             fullMetadata = self.differencer.getFullMetadata(),
@@ -307,12 +305,12 @@ class ApPipeTask(pipeBase.CmdLineTask):
                 `ap_association`'s DB access API
             - taskResults : output of `config.associator.run` (`lsst.pipe.base.Struct`).
         """
-        self.log.info('Running Association...')
+        self.log.info("Running Association...")
 
         diffType = self.config.differencer.coaddName
         try:
-            catalog = sensorRef.get(diffType + 'Diff_diaSrc')
-            exposure = sensorRef.get(diffType + 'Diff_differenceExp')
+            catalog = sensorRef.get(diffType + "Diff_diaSrc")
+            exposure = sensorRef.get(diffType + "Diff_differenceExp")
             result = self.associator.run(catalog, exposure)
         finally:
             # Stateful AssociationTask will work for now because TaskRunner
@@ -333,7 +331,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
 
 
 def _setupDatabase(configurable):
-    '''
+    """
     Set up a database according to a configuration.
 
     Takes no action if the database already exists.
@@ -344,9 +342,27 @@ def _setupDatabase(configurable):
         A ConfigurableInstance with a database-managing class in its `target`
         field. The API of `target` must expose a `create_tables` method taking
         no arguments.
-    '''
+    """
     db = configurable.apply()
     try:
         db.create_tables()
     finally:
         db.close()
+
+
+def _siblingRef(original, datasetType, dataId):
+    """Construct a new dataRef from an old one.
+
+    Parameters
+    ----------
+    original : `lsst.daf.persistence.ButlerDataRef`
+        A dataRef related to the desired one.
+    datasetType : `str`
+        The desired type of the new dataRef. Must be compatible
+        with ``original``.
+    dataId : `dict` from `str` to any
+        A possibly partial data ID for the new dataRef. Any properties left
+        unspecified shall be copied from ``original``.
+    """
+    butler = original.getButler()
+    return butler.dataRef(datasetType, dataId=original.dataId, **dataId)

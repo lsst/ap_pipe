@@ -47,13 +47,12 @@ class MaxPsfWcsSelectImagesTask(WcsSelectImagesTask):
     """
     ConfigClass = MaxPsfWcsSelectImageConfig
 
-    def runDataRef(self, dataRef, coordList, makeDataRefList=True, 
-                   selectDataList=[]):
+    def runDataRef(self, dataRef, coordList, makeDataRefList=True, selectDataList=[]):
         """Select images in the selectDataList that overlap the patch.
 
         Parameters
         ----------
-        coordList : `list` of `Coord` 
+        coordList : `list` of `Coord`
             List of Coord specifying boundary of patch
         selectDataList : `list` of `SelectStruct`
             List of SelectStruct, to consider for selection
@@ -62,7 +61,7 @@ class MaxPsfWcsSelectImagesTask(WcsSelectImagesTask):
 
         Returns
         -------
-        pipe.base.Struct with filtered exposureList and dataRefList 
+        pipe.base.Struct with filtered exposureList and dataRefList
         (if makeDataRefList is True).
 
         Notes
@@ -87,7 +86,7 @@ class MaxPsfWcsSelectImagesTask(WcsSelectImagesTask):
         for data in selectDataList:
             dataRef = data.dataRef
             imageWcs = data.wcs
-            cal = dataRef.get('calexp', immediate=True)
+            cal = dataRef.get("calexp", immediate=True)
             psf_size = cal.getPsf().computeShape().getDeterminantRadius()
             nx, ny = cal.getDimensions()
 
@@ -114,7 +113,7 @@ class MaxPsfWcsSelectImagesTask(WcsSelectImagesTask):
             # size_sigma is in sigma.  Convert to FWHM
             size_fwhm = size_sigma * np.sqrt(8.*np.log(2.))
             if size_fwhm < self.config.maxPsfFwhm and size_fwhm > self.config.minPsfFwhm:
-                self.log.info("%s selected with FWHM of %f pixels"%(dataRef.dataId, size_fwhm))
+                self.log.info("%s selected with FWHM of %f pixels" % (dataRef.dataId, size_fwhm))
                 filteredDataRefList.append(dataRef)
                 filteredExposureInfoList.append(expInfo)
         return pipeBase.Struct(
