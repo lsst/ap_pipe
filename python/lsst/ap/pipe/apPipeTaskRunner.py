@@ -69,8 +69,8 @@ class ApPipeTaskRunner(pipeBase.ButlerInitializedTaskRunner):
         # Hack to allow makeTask(args). Remove once DM-11767 (or possibly DM-13672) resolved
         dbFile = os.path.join(parsedCmd.output, 'association.db')
         argDict = dict(
-            templateIds=parsedCmd.templateId.idList,
-            skip=parsedCmd.skip,
+            templateIds = parsedCmd.templateId.idList,
+            reuse = parsedCmd.reuse,
             **kwargs
         )
         butler = parsedCmd.butler

@@ -62,9 +62,7 @@ class ApPipeParser(pipeBase.ArgumentParser):
         self.add_id_argument("--templateId", inputDataset, doMakeDataRefList=True,
                              help="Optional template data ID (visit only), e.g. --templateId visit=410929")
 
-        self.add_argument('--skip', action='store_true',
-                          help="Skip pipeline steps that have already been started. "
-                          "Only useful if --clobber-output not used.")
+        self.addReuseOption(['ccdProcessor', 'differencer', 'associator'])
 
     # TODO: workaround for lack of support for multi-input butlers; see DM-11865
     # Can't delegate to pipeBase.ArgumentParser.parse_args because creating the

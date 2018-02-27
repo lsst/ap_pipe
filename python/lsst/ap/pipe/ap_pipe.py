@@ -159,7 +159,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
         return configClass(**contents)
 
     @pipeBase.timeMethod
-    def run(self, rawRef, calexpRef, templateIds=None, skip=False):
+    def run(self, rawRef, calexpRef, templateIds=None, reuse=[]):
         """Execute the ap_pipe pipeline on a single image.
 
         Parameters
@@ -172,11 +172,8 @@ class ApPipeTask(pipeBase.CmdLineTask):
             A list of parsed data IDs for templates to use. Only used if
             ``config.differencer`` is configured to do so. ``differencer`` or
             its subtasks may restrict the allowed IDs.
-        skip : `bool`, optional
-            If set, the pipeline will attempt to determine if the products for
-            a particular step are already provided in the output repository,
-            and if so skip that step. If unset (the default), calls will
-            attempt to re-run the entire pipeline.
+        reuse : `list` of `str`
+            The names of all subtasks that may be skipped if their output is present.
 
         Returns
         -------
@@ -199,17 +196,17 @@ class ApPipeTask(pipeBase.CmdLineTask):
                     'raw', dataId=rawRef.dataId, **templateId)
                 calexpTemplateRef = calexpRef.getButler().dataRef(
                     'calexp', dataId=calexpRef.dataId, **templateId)
-                if not skip or not calexpTemplateRef.datasetExists('calexp', write=True):
+                if 'ccdProcessor' not in reuse or not calexpTemplateRef.datasetExists('calexp', write=True):
                     self.runProcessCcd(rawTemplateRef)
 
-        if skip and calexpRef.datasetExists('calexp', write=True):
+        if 'ccdProcessor' in reuse and calexpRef.datasetExists('calexp', write=True):
             self.log.info('ProcessCcd has already been run for {0}, skipping...'.format(rawRef.dataId))
             processResults = None
         else:
             processResults = self.runProcessCcd(rawRef)
 
         diffType = self.config.differencer.coaddName
-        if skip and calexpRef.datasetExists(diffType + 'Diff_diaSrc', write=True):
+        if 'differencer' in reuse and calexpRef.datasetExists(diffType + 'Diff_diaSrc', write=True):
             self.log.info('DiffIm has already been run for {0}, skipping...'.format(calexpRef.dataId))
             diffImResults = None
         else:
