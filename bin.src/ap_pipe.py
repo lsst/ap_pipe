@@ -21,7 +21,7 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 
-from lsst.ap.pipe import runPipelineAlone
+from lsst.ap.pipe import ApPipeTask
 
 if __name__ == '__main__':
-    runPipelineAlone()
+    ApPipeTask.parseAndRun()

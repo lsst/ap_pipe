@@ -23,15 +23,11 @@
 
 from __future__ import absolute_import, division, print_function
 
-__all__ = ['ApPipeConfig', 'ApPipeTask',
-           'runPipelineAlone']
+__all__ = ['ApPipeConfig', 'ApPipeTask']
 
 import os
-import argparse
 
-import lsst.log
 import lsst.pex.config as pexConfig
-import lsst.daf.persistence as dafPersist
 import lsst.pipe.base as pipeBase
 
 from lsst.pipe.tasks.processCcd import ProcessCcdTask
@@ -39,6 +35,7 @@ from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask
 from lsst.utils import getPackageDir
 from lsst.pipe.tasks.imageDifference import ImageDifferenceTask
 from lsst.ap.association import AssociationDBSqliteTask, AssociationTask
+from lsst.ap.pipe.apPipeParser import ApPipeParser
 from lsst.ap.pipe.apPipeTaskRunner import ApPipeTaskRunner
 
 
@@ -331,79 +328,11 @@ class ApPipeTask(pipeBase.CmdLineTask):
             taskResults = result
         )
 
-
-def parsePipelineArgs():
-    '''
-    Parse command-line arguments to run the pipeline. NOT used by ap_verify.
-
-    Returns
-    -------
-    `dict`
-        Includes the names of new repos that will be written to disk
-        following ingestion, calib ingestion, processing, and difference imaging
-        ('repo', 'calib_repo', 'processed_repo', 'diffim_repo')
-        Includes the data ID of the data to process ('dataID')
-        Includes the type of template ('templateType', can be 'coadd' or 'visit'),
-        and the repository or dataId of the template, respectively ('template')
-    '''
-
-    # Parse command line arguments with argparse
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawTextHelpFormatter,
-        description='Process raw decam images with MasterCals from basic processing --> source association')
-    parser.add_argument('input',
-                        help="Location on disk of input data repository.")
-    parser.add_argument('--calib',
-                        help="Location on disk of input calib repository. Defaults to input.")
-    parser.add_argument('-o', '--output',
-                        help="Location on disk where output repos will live. May be the same as input.")
-    parser.add_argument('-i', '--dataId',
-                        help="Butler identifier naming the data to be processed (e.g., visit and ccdnum) "
-                             "formatted in the usual way (e.g., 'visit=54321 ccdnum=7').")
-    parser.add_argument('--no-skip', dest='skip', action='store_false',
-                        help="Do not skip pipeline steps that have already been started. Necessary for "
-                             "processing multiple data IDs in the same repository.")
-    templateFlags = parser.add_mutually_exclusive_group()
-    templateFlags.add_argument('--templateId',
-                               help="A Butler identifier naming a visit to use as the template "
-                                    "(e.g., 'visit=101').")
-    templateFlags.add_argument('-t', '--templateRepo',
-                               help="A URI to a Butler repository that will be searched for coadd "
-                                    "templates. Defaults to input if neither --templateId "
-                                    "nor --templateRepo provided.")
-    args = parser.parse_args()
-
-    # Define input repo locations on disk
-    repo = args.input
-
-    if args.calib is not None:
-        calib_repo = args.calib
-    else:
-        calib_repo = repo
-
-    # Stringly typed code, but I don't see a safer way to do this in Python
-    if args.templateRepo is not None:
-        templateType = 'coadd'
-        template = args.templateRepo
-    elif args.templateId is not None:
-        templateType = 'visit'
-        template = args.templateId
-    else:
-        templateType = 'coadd'
-        template = repo
-
-    # Define output repo locations on disk
-    processed_repo = args.output
-
-    skip = args.skip
-
-    repos_and_files = {'repo': repo, 'calib_repo': calib_repo,
-                       'processed_repo': processed_repo,
-                       'dataId': args.dataId,
-                       'template_type': templateType, 'template': template,
-                       'skip': skip}
-
-    return repos_and_files
+    @classmethod
+    def _makeArgumentParser(cls):
+        """A parser that can handle extra arguments for ap_pipe.
+        """
+        return ApPipeParser(name=cls._DefaultName)
 
 
 def _setupDatabase(configurable):
@@ -424,22 +353,3 @@ def _setupDatabase(configurable):
         db.create_tables()
     finally:
         db.close()
-
-
-def runPipelineAlone():
-    '''
-    Run each step of the pipeline. NOT used by ap_verify.
-
-    This function is solely for the purpose of running ap_pipe alone,
-    from the command line, on a dataset intended for ap_verify. It is useful
-    for testing or standalone image processing independently from verification.
-    '''
-    lsst.log.configure()
-    log = lsst.log.Log.getLogger('ap.pipe.runPipelineAlone')
-
-    # Run all the tasks in order
-    ApPipeTask.parseAndRun()
-
-    log.info('Prototype AP Pipeline run complete.')
-
-    return
