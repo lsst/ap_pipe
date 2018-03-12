@@ -24,7 +24,6 @@
 from __future__ import absolute_import, division, print_function
 import unittest
 import lsst.utils.tests
-import lsst.ap.pipe as ap_pipe
 
 
 class PipelineTestSuite(lsst.utils.tests.TestCase):
