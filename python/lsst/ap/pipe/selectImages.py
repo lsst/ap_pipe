@@ -52,8 +52,8 @@ class MaxPsfWcsSelectImagesTask(WcsSelectImagesTask):
 
         Parameters
         ----------
-        coordList : `list` of `Coord`
-            List of Coord specifying boundary of patch
+        coordList : `list` of `lsst.afw.geom.SpherePoint`
+            List of ICRS sky coordinates specifying boundary of patch
         selectDataList : `list` of `SelectStruct`
             List of SelectStruct, to consider for selection
         makeDataRefList : `boolean`, optional
