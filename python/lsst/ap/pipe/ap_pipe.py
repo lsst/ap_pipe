@@ -414,12 +414,12 @@ def runPipelineAlone():
 
     # Run all the tasks in order
     if skip and processedRef.datasetExists('calexp', write=True):
-        log.warn('ProcessCcd has already been run for {0}, skipping...'.format(rawRef.dataId))
+        log.info('ProcessCcd has already been run for {0}, skipping...'.format(rawRef.dataId))
     else:
         doProcessCcd(rawRef)
 
     if skip and processedRef.datasetExists('deepDiff_diaSrc', write=True):
-        log.warn('DiffIm has already been run for {0}, skipping...'.format(processedRef.dataId))
+        log.info('DiffIm has already been run for {0}, skipping...'.format(processedRef.dataId))
     else:
         doDiffIm(processedRef, templateType, template)
 
