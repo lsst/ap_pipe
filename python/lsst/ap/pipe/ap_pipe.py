@@ -180,8 +180,6 @@ class ApPipeTask(pipeBase.CmdLineTask):
         result : `lsst.pipe.base.Struct`
             Result struct with components:
 
-            - fullMetadata : metadata produced by the run. Intended as a transitional API
-                for ap_verify, and may be removed later (`lsst.daf.base.PropertySet`).
             - l1Database : handle for accessing the final association database, conforming to
                 `ap_association`'s DB access API
             - ccdProcessor : output of `config.ccdProcessor.run` (`lsst.pipe.base.Struct` or `None`).
@@ -214,10 +212,9 @@ class ApPipeTask(pipeBase.CmdLineTask):
         associationResults = self.runAssociation(calexpRef)
 
         return pipeBase.Struct(
-            fullMetadata = self.getFullMetadata(),
             l1Database = associationResults.l1Database,
-            ccdProcessor = processResults.taskResults if processResults else None,
-            differencer = diffImResults.taskResults if diffImResults else None,
+            ccdProcessor = processResults if processResults else None,
+            differencer = diffImResults if diffImResults else None,
             associator = associationResults.taskResults if associationResults else None
         )
 
@@ -236,22 +233,14 @@ class ApPipeTask(pipeBase.CmdLineTask):
         Returns
         -------
         result : `lsst.pipe.base.Struct`
-            Result struct with components:
-
-            - fullMetadata : metadata produced by the Task. Intended as a transitional API
-                for ap_verify, and may be removed later (`lsst.daf.base.PropertySet`).
-            - taskResults : output of `config.ccdProcessor.run` (`lsst.pipe.base.Struct`).
+            Output of `config.ccdProcessor.run`.
 
         Notes
         -----
         The input repository corresponding to ``sensorRef`` must already contain the refcats.
         """
         self.log.info("Running ProcessCcd...")
-        result = self.ccdProcessor.run(sensorRef)
-        return pipeBase.Struct(
-            fullMetadata = self.ccdProcessor.getFullMetadata(),
-            taskResults = result
-        )
+        return self.ccdProcessor.run(sensorRef)
 
     @pipeBase.timeMethod
     def runDiffIm(self, sensorRef, templateIds=None):
@@ -272,18 +261,10 @@ class ApPipeTask(pipeBase.CmdLineTask):
         Returns
         -------
         result : `lsst.pipe.base.Struct`
-            Result struct with components:
-
-            - fullMetadata : metadata produced by the run. Intended as a transitional API
-                for ap_verify, and may be removed later (`lsst.daf.base.PropertySet`).
-            - taskResults : output of `config.differencer.run` (`lsst.pipe.base.Struct`).
+            Output of `config.differencer.run`.
         """
         self.log.info("Running ImageDifference...")
-        result = self.differencer.run(sensorRef, templateIdList=templateIds)
-        return pipeBase.Struct(
-            fullMetadata = self.differencer.getFullMetadata(),
-            taskResults = result
-        )
+        return self.differencer.run(sensorRef, templateIdList=templateIds)
 
     @pipeBase.timeMethod
     def runAssociation(self, sensorRef):
@@ -299,8 +280,6 @@ class ApPipeTask(pipeBase.CmdLineTask):
         result : `lsst.pipe.base.Struct`
             Result struct with components:
 
-            - fullMetadata : metadata produced by the run. Intended as a transitional API
-                for ap_verify, and may be removed later (`lsst.daf.base.PropertySet`).
             - l1Database : handle for accessing the final association database, conforming to
                 `ap_association`'s DB access API
             - taskResults : output of `config.associator.run` (`lsst.pipe.base.Struct`).
@@ -318,7 +297,6 @@ class ApPipeTask(pipeBase.CmdLineTask):
             self.associator.level1_db.close()
 
         return pipeBase.Struct(
-            fullMetadata = self.associator.getFullMetadata(),
             l1Database = self.associator.level1_db,
             taskResults = result
         )
