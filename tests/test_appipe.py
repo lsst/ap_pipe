@@ -18,13 +18,12 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# salong with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
 from __future__ import absolute_import, division, print_function
 import unittest
 import lsst.utils.tests
-import lsst.ap.pipe as ap_pipe
 
 
 class PipelineTestSuite(lsst.utils.tests.TestCase):
@@ -34,31 +33,11 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
     TODO: write more tests for DM-11422.
     '''
 
-    INGESTED_DIR = 'ingested'
-    CALIBINGESTED_DIR = 'calibingested'
-    PROCESSED_DIR = 'processed'
-    DIFFIM_DIR = 'diffim'
-
-    def testGetOutputRepos(self):
-        '''
-        Test that the output repos are constructed properly
-        '''
-        self.assertEqual(ap_pipe.get_output_repo('.', self.INGESTED_DIR), './ingested')
-        self.assertEqual(ap_pipe.get_output_repo('.', self.CALIBINGESTED_DIR), './calibingested')
-        self.assertEqual(ap_pipe.get_output_repo('.', self.PROCESSED_DIR), './processed')
-        self.assertEqual(ap_pipe.get_output_repo('.', self.DIFFIM_DIR), './diffim')
-
-#    def testDoIngest(self):
-        # test something
-
-#    def testDoIngestCalibs(self):
-        # test something
-
 #    def testDoProcessCcd(self):
-        # test something
+#        # test something
 
 #    def testDoDiffIm(self):
-        # test something
+#        # test something
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
