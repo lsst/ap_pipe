@@ -64,7 +64,7 @@ class ApPipeTaskRunner(pipeBase.ButlerInitializedTaskRunner):
 
     @staticmethod
     def getTargetList(parsedCmd, **kwargs):
-        """Get a list of (dbFile, rawRef, calexpRef, kwargs) for `TaskRunner.__call__`.
+        """Get a list of (dbFile, rawRef, kwargs) for `TaskRunner.__call__`.
         """
         # Hack to allow makeTask(args). Remove once DM-11767 (or possibly DM-13672) resolved
         dbFile = os.path.join(parsedCmd.output, "association.db")
@@ -76,7 +76,7 @@ class ApPipeTaskRunner(pipeBase.ButlerInitializedTaskRunner):
         butler = parsedCmd.butler
         return [(dbFile,
                  butler.dataRef("raw", **dataId),
-                 dict(calexpRef=butler.dataRef("calexp", **dataId), **argDict))
+                 argDict)
                 for dataId in parsedCmd.id.idList]
 
     # TODO: workaround for DM-11767 or DM-13672; can remove once ApPipeTask.__init__ no longer needs dbFile
