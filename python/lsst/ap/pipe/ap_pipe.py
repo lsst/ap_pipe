@@ -159,7 +159,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
         return configClass(**contents)
 
     @pipeBase.timeMethod
-    def run(self, rawRef, templateIds=None, reuse=[]):
+    def run(self, rawRef, templateIds=None, reuse=None):
         """Execute the ap_pipe pipeline on a single image.
 
         Parameters
@@ -170,8 +170,9 @@ class ApPipeTask(pipeBase.CmdLineTask):
             A list of parsed data IDs for templates to use. Only used if
             ``config.differencer`` is configured to do so. ``differencer`` or
             its subtasks may restrict the allowed IDs.
-        reuse : `list` of `str`
-            The names of all subtasks that may be skipped if their output is present.
+        reuse : `list` of `str`, optional
+            The names of all subtasks that may be skipped if their output is
+            present. Defaults to skipping nothing.
 
         Returns
         -------
@@ -184,6 +185,8 @@ class ApPipeTask(pipeBase.CmdLineTask):
             - differencer : output of `config.differencer.run` (`lsst.pipe.base.Struct` or `None`).
             - associator : output of `config.associator.run` (`lsst.pipe.base.Struct` or `None`).
         """
+        if reuse is None:
+            reuse = []
         # Work around mismatched HDU lists for raw and processed data
         calexpId = rawRef.dataId.copy()
         if 'hdu' in calexpId:
