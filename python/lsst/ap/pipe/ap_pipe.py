@@ -44,16 +44,16 @@ class ApPipeConfig(pexConfig.Config):
     """
 
     ccdProcessor = pexConfig.ConfigurableField(
-        target = ProcessCcdTask,
-        doc = "Task used to perform basic image reduction and characterization.",
+        target=ProcessCcdTask,
+        doc="Task used to perform basic image reduction and characterization.",
     )
     differencer = pexConfig.ConfigurableField(
-        target = ImageDifferenceTask,
-        doc = "Task used to do image subtraction and DiaSource detection.",
+        target=ImageDifferenceTask,
+        doc="Task used to do image subtraction and DiaSource detection.",
     )
     associator = pexConfig.ConfigurableField(
-        target = AssociationTask,
-        doc = "Task used to associate DiaSources with DiaObjects.",
+        target=AssociationTask,
+        doc="Task used to associate DiaSources with DiaObjects.",
     )
 
     def setDefaults(self):
@@ -217,10 +217,10 @@ class ApPipeTask(pipeBase.CmdLineTask):
         associationResults = self.runAssociation(calexpRef)
 
         return pipeBase.Struct(
-            l1Database = associationResults.l1Database,
-            ccdProcessor = processResults if processResults else None,
-            differencer = diffImResults if diffImResults else None,
-            associator = associationResults.taskResults if associationResults else None
+            l1Database=associationResults.l1Database,
+            ccdProcessor=processResults if processResults else None,
+            differencer=diffImResults if diffImResults else None,
+            associator=associationResults.taskResults if associationResults else None
         )
 
     @pipeBase.timeMethod
@@ -302,8 +302,8 @@ class ApPipeTask(pipeBase.CmdLineTask):
             self.associator.level1_db.close()
 
         return pipeBase.Struct(
-            l1Database = self.associator.level1_db,
-            taskResults = result
+            l1Database=self.associator.level1_db,
+            taskResults=result
         )
 
     @classmethod
@@ -322,9 +322,9 @@ def _setupDatabase(configurable):
     Parameters
     ----------
     configurable: `lsst.pex.config.ConfigurableInstance`
-        A ConfigurableInstance with a database-managing class in its `target`
-        field. The API of `target` must expose a `create_tables` method taking
-        no arguments.
+        A ConfigurableInstance with a database-managing class in its ``target``
+        field. The API of ``target`` must expose a ``create_tables`` method
+        taking no arguments.
     """
     db = configurable.apply()
     try:

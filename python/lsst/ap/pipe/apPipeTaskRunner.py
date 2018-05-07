@@ -69,8 +69,8 @@ class ApPipeTaskRunner(pipeBase.ButlerInitializedTaskRunner):
         # Hack to allow makeTask(args). Remove once DM-11767 (or possibly DM-13672) resolved
         dbFile = os.path.join(parsedCmd.output, "association.db")
         argDict = dict(
-            templateIds = parsedCmd.templateId.idList,
-            reuse = parsedCmd.reuse,
+            templateIds=parsedCmd.templateId.idList,
+            reuse=parsedCmd.reuse,
             **kwargs
         )
         return [(dbFile, dataRef, argDict) for dataRef in parsedCmd.id.refList]
@@ -107,8 +107,8 @@ class ApPipeTaskRunner(pipeBase.ButlerInitializedTaskRunner):
         elif isinstance(dataRef, (list, tuple)):
             self.log.MDC("LABEL", str([ref.dataId for ref in dataRef if hasattr(ref, "dataId")]))
         task = self.makeTask(args=args)
-        result = None                   # in case the task fails
-        exitStatus = 0                  # exit status for the shell
+        result = None  # in case the task fails
+        exitStatus = 0  # exit status for the shell
         if self.doRaise:
             result = task.run(dataRef, **kwargs)
         else:
@@ -138,12 +138,12 @@ class ApPipeTaskRunner(pipeBase.ButlerInitializedTaskRunner):
 
         if self.doReturnResults:
             return pipeBase.Struct(
-                exitStatus = exitStatus,
-                dataRef = dataRef,
-                metadata = task.metadata,
-                result = result,
+                exitStatus=exitStatus,
+                dataRef=dataRef,
+                metadata=task.metadata,
+                result=result,
             )
         else:
             return pipeBase.Struct(
-                exitStatus = exitStatus,
+                exitStatus=exitStatus,
             )

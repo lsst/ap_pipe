@@ -117,6 +117,6 @@ class MaxPsfWcsSelectImagesTask(WcsSelectImagesTask):
                 filteredDataRefList.append(dataRef)
                 filteredExposureInfoList.append(expInfo)
         return pipeBase.Struct(
-            dataRefList = filteredDataRefList if makeDataRefList else None,
-            exposureInfoList = filteredExposureInfoList,
+            dataRefList=filteredDataRefList if makeDataRefList else None,
+            exposureInfoList=filteredExposureInfoList,
         )
