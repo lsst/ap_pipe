@@ -73,11 +73,7 @@ class ApPipeTaskRunner(pipeBase.ButlerInitializedTaskRunner):
             reuse = parsedCmd.reuse,
             **kwargs
         )
-        butler = parsedCmd.butler
-        return [(dbFile,
-                 butler.dataRef("raw", **dataId),
-                 argDict)
-                for dataId in parsedCmd.id.idList]
+        return [(dbFile, dataRef, argDict) for dataRef in parsedCmd.id.refList]
 
     # TODO: workaround for DM-11767 or DM-13672; can remove once ApPipeTask.__init__ no longer needs dbFile
     # TODO: find a way to pass the DB argument that doesn't require duplicating TaskRunner.__call__
