@@ -190,6 +190,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
         # TODO: treat as independent jobs (may need SuperTask framework?)
         if templateIds is not None:
             for templateId in templateIds:
+                # templateId is typically visit-only; consider only the same raft/CCD/etc. as rawRef
                 rawTemplateRef = _siblingRef(rawRef, "raw", templateId)
                 calexpTemplateRef = _siblingRef(calexpRef, "calexp", templateId)
                 if "ccdProcessor" not in reuse or not calexpTemplateRef.datasetExists("calexp", write=True):
@@ -329,7 +330,11 @@ def _setupDatabase(configurable):
 
 
 def _siblingRef(original, datasetType, dataId):
-    """Construct a new dataRef from an old one.
+    """Construct a new dataRef using an existing dataRef as a template.
+
+    The typical application is to construct a data ID that differs from an
+    existing ID in one or two keys, but is more specific than expanding a
+    partial data ID would be.
 
     Parameters
     ----------
