@@ -21,8 +21,6 @@
 # salong with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import absolute_import, division, print_function
-
 __all__ = ["ApPipeParser"]
 
 import argparse
@@ -49,18 +47,18 @@ class ApPipeParser(pipeBase.ArgumentParser):
     def __init__(self, *args, **kwargs):
         pipeBase.ArgumentParser.__init__(
             self,
-            description = "Process raw decam images with MasterCals "
-                          "from basic processing --> source association",
+            description="Process raw decam images with MasterCals "
+                        "from basic processing --> source association",
             *args,
             **kwargs)
         inputDataset = "raw"
         self.add_id_argument("--id", inputDataset,
-                             help = "data IDs, e.g. --id visit=12345 ccd=1,2^0,3")
+                             help="data IDs, e.g. --id visit=12345 ccd=1,2^0,3")
 
-        self.add_argument("--template", dest = "rawTemplate",
-                          help = "path to input template repository, relative to $%s" % DEFAULT_INPUT_NAME)
-        self.add_id_argument("--templateId", inputDataset, doMakeDataRefList = True,
-                             help = "Optional template data ID (visit only), e.g. --templateId visit=410929")
+        self.add_argument("--template", dest="rawTemplate",
+                          help="path to input template repository, relative to $%s" % DEFAULT_INPUT_NAME)
+        self.add_id_argument("--templateId", inputDataset, doMakeDataRefList=True,
+                             help="Optional template data ID (visit only), e.g. --templateId visit=410929")
 
         self.addReuseOption(["ccdProcessor", "differencer", "associator"])
 

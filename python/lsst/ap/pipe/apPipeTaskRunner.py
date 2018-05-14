@@ -21,8 +21,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import absolute_import, division, print_function
-
 __all__ = ["ApPipeTaskRunner"]
 
 import os
@@ -64,20 +62,16 @@ class ApPipeTaskRunner(pipeBase.ButlerInitializedTaskRunner):
 
     @staticmethod
     def getTargetList(parsedCmd, **kwargs):
-        """Get a list of (dbFile, rawRef, calexpRef, kwargs) for `TaskRunner.__call__`.
+        """Get a list of (dbFile, rawRef, kwargs) for `TaskRunner.__call__`.
         """
         # Hack to allow makeTask(args). Remove once DM-11767 (or possibly DM-13672) resolved
         dbFile = os.path.join(parsedCmd.output, "association.db")
         argDict = dict(
-            templateIds = parsedCmd.templateId.idList,
-            reuse = parsedCmd.reuse,
+            templateIds=parsedCmd.templateId.idList,
+            reuse=parsedCmd.reuse,
             **kwargs
         )
-        butler = parsedCmd.butler
-        return [(dbFile,
-                 butler.dataRef("raw", **dataId),
-                 dict(calexpRef=butler.dataRef("calexp", **dataId), **argDict))
-                for dataId in parsedCmd.id.idList]
+        return [(dbFile, dataRef, argDict) for dataRef in parsedCmd.id.refList]
 
     # TODO: workaround for DM-11767 or DM-13672; can remove once ApPipeTask.__init__ no longer needs dbFile
     # TODO: find a way to pass the DB argument that doesn't require duplicating TaskRunner.__call__
@@ -111,8 +105,8 @@ class ApPipeTaskRunner(pipeBase.ButlerInitializedTaskRunner):
         elif isinstance(dataRef, (list, tuple)):
             self.log.MDC("LABEL", str([ref.dataId for ref in dataRef if hasattr(ref, "dataId")]))
         task = self.makeTask(args=args)
-        result = None                   # in case the task fails
-        exitStatus = 0                  # exit status for the shell
+        result = None  # in case the task fails
+        exitStatus = 0  # exit status for the shell
         if self.doRaise:
             result = task.run(dataRef, **kwargs)
         else:
@@ -142,12 +136,12 @@ class ApPipeTaskRunner(pipeBase.ButlerInitializedTaskRunner):
 
         if self.doReturnResults:
             return pipeBase.Struct(
-                exitStatus = exitStatus,
-                dataRef = dataRef,
-                metadata = task.metadata,
-                result = result,
+                exitStatus=exitStatus,
+                dataRef=dataRef,
+                metadata=task.metadata,
+                result=result,
             )
         else:
             return pipeBase.Struct(
-                exitStatus = exitStatus,
+                exitStatus=exitStatus,
             )

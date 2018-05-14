@@ -21,8 +21,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import absolute_import, division, print_function
-from builtins import zip
 import numpy as np
 
 import lsst.pex.config as pexConfig
@@ -117,6 +115,6 @@ class MaxPsfWcsSelectImagesTask(WcsSelectImagesTask):
                 filteredDataRefList.append(dataRef)
                 filteredExposureInfoList.append(expInfo)
         return pipeBase.Struct(
-            dataRefList = filteredDataRefList if makeDataRefList else None,
-            exposureInfoList = filteredExposureInfoList,
+            dataRefList=filteredDataRefList if makeDataRefList else None,
+            exposureInfoList=filteredExposureInfoList,
         )

@@ -21,8 +21,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import absolute_import, division, print_function
-
 __all__ = ["ApPipeConfig", "ApPipeTask"]
 
 import os
@@ -44,16 +42,16 @@ class ApPipeConfig(pexConfig.Config):
     """
 
     ccdProcessor = pexConfig.ConfigurableField(
-        target = ProcessCcdTask,
-        doc = "Task used to perform basic image reduction and characterization.",
+        target=ProcessCcdTask,
+        doc="Task used to perform basic image reduction and characterization.",
     )
     differencer = pexConfig.ConfigurableField(
-        target = ImageDifferenceTask,
-        doc = "Task used to do image subtraction and DiaSource detection.",
+        target=ImageDifferenceTask,
+        doc="Task used to do image subtraction and DiaSource detection.",
     )
     associator = pexConfig.ConfigurableField(
-        target = AssociationTask,
-        doc = "Task used to associate DiaSources with DiaObjects.",
+        target=AssociationTask,
+        doc="Task used to associate DiaSources with DiaObjects.",
     )
 
     def setDefaults(self):
@@ -159,21 +157,20 @@ class ApPipeTask(pipeBase.CmdLineTask):
         return configClass(**contents)
 
     @pipeBase.timeMethod
-    def run(self, rawRef, calexpRef, templateIds=None, reuse=[]):
+    def run(self, rawRef, templateIds=None, reuse=None):
         """Execute the ap_pipe pipeline on a single image.
 
         Parameters
         ----------
         rawRef : `lsst.daf.persistence.ButlerDataRef`
             A reference to the raw data to process.
-        calexpRef : `lsst.daf.persistence.ButlerDataRef`
-            A reference to the calibrated data corresponding to ``rawRef``.
         templateIds : `list` of `dict`, optional
             A list of parsed data IDs for templates to use. Only used if
             ``config.differencer`` is configured to do so. ``differencer`` or
             its subtasks may restrict the allowed IDs.
-        reuse : `list` of `str`
-            The names of all subtasks that may be skipped if their output is present.
+        reuse : `list` of `str`, optional
+            The names of all subtasks that may be skipped if their output is
+            present. Defaults to skipping nothing.
 
         Returns
         -------
@@ -186,10 +183,19 @@ class ApPipeTask(pipeBase.CmdLineTask):
             - differencer : output of `config.differencer.run` (`lsst.pipe.base.Struct` or `None`).
             - associator : output of `config.associator.run` (`lsst.pipe.base.Struct` or `None`).
         """
+        if reuse is None:
+            reuse = []
+        # Work around mismatched HDU lists for raw and processed data
+        calexpId = rawRef.dataId.copy()
+        if 'hdu' in calexpId:
+            del calexpId['hdu']
+        calexpRef = rawRef.getButler().dataRef("calexp", dataId=calexpId)
+
         # Ensure that templateIds make it through basic data reduction
         # TODO: treat as independent jobs (may need SuperTask framework?)
         if templateIds is not None:
             for templateId in templateIds:
+                # templateId is typically visit-only; consider only the same raft/CCD/etc. as rawRef
                 rawTemplateRef = _siblingRef(rawRef, "raw", templateId)
                 calexpTemplateRef = _siblingRef(calexpRef, "calexp", templateId)
                 if "ccdProcessor" not in reuse or not calexpTemplateRef.datasetExists("calexp", write=True):
@@ -212,10 +218,10 @@ class ApPipeTask(pipeBase.CmdLineTask):
         associationResults = self.runAssociation(calexpRef)
 
         return pipeBase.Struct(
-            l1Database = associationResults.l1Database,
-            ccdProcessor = processResults if processResults else None,
-            differencer = diffImResults if diffImResults else None,
-            associator = associationResults.taskResults if associationResults else None
+            l1Database=associationResults.l1Database,
+            ccdProcessor=processResults if processResults else None,
+            differencer=diffImResults if diffImResults else None,
+            associator=associationResults.taskResults if associationResults else None
         )
 
     @pipeBase.timeMethod
@@ -297,8 +303,8 @@ class ApPipeTask(pipeBase.CmdLineTask):
             self.associator.level1_db.close()
 
         return pipeBase.Struct(
-            l1Database = self.associator.level1_db,
-            taskResults = result
+            l1Database=self.associator.level1_db,
+            taskResults=result
         )
 
     @classmethod
@@ -317,9 +323,9 @@ def _setupDatabase(configurable):
     Parameters
     ----------
     configurable: `lsst.pex.config.ConfigurableInstance`
-        A ConfigurableInstance with a database-managing class in its `target`
-        field. The API of `target` must expose a `create_tables` method taking
-        no arguments.
+        A ConfigurableInstance with a database-managing class in its ``target``
+        field. The API of ``target`` must expose a ``create_tables`` method
+        taking no arguments.
     """
     db = configurable.apply()
     try:
@@ -329,18 +335,29 @@ def _setupDatabase(configurable):
 
 
 def _siblingRef(original, datasetType, dataId):
-    """Construct a new dataRef from an old one.
+    """Construct a new dataRef using an existing dataRef as a template.
+
+    The typical application is to construct a data ID that differs from an
+    existing ID in one or two keys, but is more specific than expanding a
+    partial data ID would be.
 
     Parameters
     ----------
     original : `lsst.daf.persistence.ButlerDataRef`
-        A dataRef related to the desired one.
+        A dataRef related to the desired one. Assumed to represent a unique dataset.
     datasetType : `str`
         The desired type of the new dataRef. Must be compatible
         with ``original``.
     dataId : `dict` from `str` to any
         A possibly partial data ID for the new dataRef. Any properties left
         unspecified shall be copied from ``original``.
+
+    Returns
+    -------
+    dataRef : `lsst.daf.persistence.ButlerDataRef`
+        A dataRef to the same butler as ``original``, but of type
+        ``datasetType`` and with data ID equivalent to
+        ``original.dataId.update(dataId)``.
     """
     butler = original.getButler()
     return butler.dataRef(datasetType, dataId=original.dataId, **dataId)
