@@ -59,8 +59,14 @@ class MaxPsfWcsSelectImagesTask(WcsSelectImagesTask):
 
         Returns
         -------
-        pipe.base.Struct with filtered exposureList and dataRefList
-        (if makeDataRefList is True).
+        result : `lsst.pipe.base.Struct`
+            Result struct with components:
+
+            - ``exposureList``: the selected exposures
+                (`list` of `lsst.pipe.tasks.selectImages.BaseExposureInfo`).
+            - ``dataRefList``: the optional data references corresponding to
+                each element of ``exposureList``
+                (`list` of `lsst.daf.persistence.ButlerDataRef`, or `None`).
 
         Notes
         -----
