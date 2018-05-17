@@ -22,4 +22,3 @@
 #
 
 from .ap_pipe import *
-from .selectImages import *
