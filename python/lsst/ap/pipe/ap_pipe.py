@@ -99,6 +99,8 @@ class ApPipeConfig(pexConfig.Config):
         self.differencer.doSelectSources = False
 
         self.associator.level1_db.retarget(AssociationDBSqliteTask)
+        # TODO: generalize in DM-12315
+        self.associator.level1_db.filter_names = ['u', 'g', 'r', 'i', 'z', 'y', 'VR', 'N964']
 
     def validate(self):
         pexConfig.Config.validate(self)
