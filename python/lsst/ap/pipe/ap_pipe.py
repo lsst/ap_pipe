@@ -99,9 +99,17 @@ class ApPipeConfig(pexConfig.Config):
         self.differencer.doSelectSources = False
 
         self.associator.level1_db.retarget(AssociationDBSqliteTask)
+        # TODO: generalize in DM-12315
+        self.associator.level1_db.filter_names = ['u', 'g', 'r', 'i', 'z', 'y', 'VR', 'N964']
 
     def validate(self):
         pexConfig.Config.validate(self)
+        if not self.differencer.doMeasurement:
+            raise ValueError("Source association needs diaSource fluxes.")
+        if not self.differencer.doWriteSources:
+            raise ValueError("Source association needs diaSource catalogs.")
+        if not self.differencer.doWriteSubtractedExp:
+            raise ValueError("Source association needs difference exposures.")
 
 
 class ApPipeTask(pipeBase.CmdLineTask):
