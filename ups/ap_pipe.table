@@ -13,10 +13,5 @@ setupRequired(ndarray)
 setupRequired(obs_decam)
 setupRequired(ap_association)
 
-# The following is boilerplate for all packages.
-# See Tech Note DMTN-001 for details on LSST_LIBRARY_PATH
-# Pure-Python packages only need the last line.
-#envPrepend(LD_LIBRARY_PATH, ${PRODUCT_DIR}/lib)
-#envPrepend(DYLD_LIBRARY_PATH, ${PRODUCT_DIR}/lib)
-#envPrepend(LSST_LIBRARY_PATH, ${PRODUCT_DIR}/lib)
 envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
+envPrepend(PATH, ${PRODUCT_DIR}/bin)

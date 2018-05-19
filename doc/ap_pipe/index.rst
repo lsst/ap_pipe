@@ -17,7 +17,7 @@ Repository
    https://github.com/lsst-dm/ap_pipe
 
 JIRA component
-   ``ap_pipe``
+   `ap_pipe <https://jira.lsstcorp.org/issues/?jql=project %3D DM AND component %3D ap_pipe>`_
 
 Modules
 =======

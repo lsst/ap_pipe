@@ -9,8 +9,8 @@ lsst.ap.pipe
 The ``lsst.ap.pipe`` module links together a set of common image processing
 tasks so that a user may run one Command-Line Task on a dataset of raw,
 ingested images rather than several. The Alert Production (AP) pipeline
-includes four key data processing Tasks for LSST Prompt Data Products:
-`~lsst.ip.isr.IsrTask`, `~lsst.pipe.tasks.ProcessCcdTask`, 
+includes three key data processing Tasks for LSST Prompt Data Products:
+`~lsst.pipe.tasks.ProcessCcdTask` (which includes `~lsst.ip.isr.IsrTask`), 
 `~lsst.ip.diffim.ImageDifferenceTask`, and
 `~lsst.ap.associate.AssociationTask`.
 

@@ -29,7 +29,7 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
     '''
     A set of tests for the functions in ap_pipe.
 
-    TODO: write more tests for DM-11422.
+    TODO: write tests for DM-13567.
     '''
 
 #    def testDoProcessCcd(self):
