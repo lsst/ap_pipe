@@ -8,7 +8,9 @@ pytest_session.txt
 .coverage
 .sconf_temp
 .sconsign.dblite
-bin/*.py
+bin/ap_pipe.py
+bin/*.conf
+bin/run_ap_pipe.*
 config.log
 doc/*.inc
 doc/*.tag
