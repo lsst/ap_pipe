@@ -31,4 +31,6 @@ to verify the output.
 `ap_pipe` is entirely written in Python. Key contents include:
 
 - `~lsst.ap.pipe.ApPipeTask`: a `~lsst.pipe.base.CmdLineTask` for running the entire AP Pipeline
+- `~lsst.ap.pipe.ApPipeConfig`: a config for customizing ``ApPipeTask`` for a particular dataset's needs.
+  Supported observatory packages should provide a :ref:`config override file <command-line-task-config-howto-obs>` that does most of the work.
 

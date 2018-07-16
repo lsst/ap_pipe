@@ -71,7 +71,9 @@ For the AP Pipeline to successfully process data, the following is required:
   ingested into a main Butler repository
 
   - The reference catalogs must be in a directory called `ref_cats` with subdirectories
-    called `gaia` and `pan-starrs` containing the appropriate catalog shards
+    for each catalog containing the appropriate catalog shards.
+    We recommend using Pan-STARRS for photometry and gaia for astrometry.
+    An example :ref:`config file <command-line-task-config-howto-configfile>` for using these two catalogs can be found in the `ap_verify_hits2015`_ repository.
     
 - **Calibration products** (biases, flats, and defects, if applicable)
   ingested into a Butler repository you must specify with the ``--calib`` flag on
@@ -85,19 +87,15 @@ For the AP Pipeline to successfully process data, the following is required:
   must be either in the main Butler repository or in another location you may
   specify with the ``--template`` flag on the command line at runtime
 
+.. TODO: update default for DM-14601
+
+.. _ap_verify_hits2015: https://github.com/lsst/ap_verify_hits2015/
+
 A sample dataset from the `DECam HiTS survey <http://iopscience.iop.org/article/10.3847/0004-637X/832/2/155/meta>`_ 
 that works with ``ap_pipe`` in the :ref:`ap-verify-datasets` format
-is available as `ap_verify_hits2015 
-<https://github.com/lsst/ap_verify_hits2015>`_. However, this dataset must be
+is available as `ap_verify_hits2015`_. However, this dataset must be
 ingested as described in :ref:`section-ap-pipe-ingesting-data-files`, and the reference
 catalog and defect files must be decompressed and extracted.
-
-.. warning::
-
-   `lsst.ap.pipe` has only been used on DECam (and, correspondingly, with
-   `lsst.obs.decam`) so far, and does not yet support data from other cameras.
-   This functionality is coming soon
-   (see `DM-12315 <https://jira.lsstcorp.org/browse/DM-12315>`_).
 
 Please continue to :doc:`Pipeline Tutorial <pipeline-tutorial>` for more
 details about running the AP Pipeline and interpreting the results.
