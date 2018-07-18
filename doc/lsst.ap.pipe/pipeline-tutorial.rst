@@ -166,7 +166,7 @@ A full command looks like
 .. _section-ap-pipe-supplemental-info:
 
 Supplemental information
-======================
+========================
 
 .. _subsection-ap-pipe-previewing-dataIds:
 
