@@ -81,7 +81,7 @@ class ApPipeTaskRunner(pipeBase.ButlerInitializedTaskRunner):
         Parameters
         ----------
         args
-            A path to the database file, followed by arguments for Task.run().
+            A Butler data reference, followed by option arguments for Task.runDataRef().
 
         Returns
         -------
@@ -108,10 +108,10 @@ class ApPipeTaskRunner(pipeBase.ButlerInitializedTaskRunner):
         result = None  # in case the task fails
         exitStatus = 0  # exit status for the shell
         if self.doRaise:
-            result = task.run(dataRef, **kwargs)
+            result = task.runDataRef(dataRef, **kwargs)
         else:
             try:
-                result = task.run(dataRef, **kwargs)
+                result = task.runDataRef(dataRef, **kwargs)
             except Exception as e:
                 # The shell exit value will be the number of dataRefs returning
                 # non-zero, so the actual value used here is lost.
