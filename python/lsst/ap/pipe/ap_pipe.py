@@ -105,11 +105,12 @@ class ApPipeConfig(pexConfig.Config):
     def validate(self):
         pexConfig.Config.validate(self)
         if not self.differencer.doMeasurement:
-            raise ValueError("Source association needs diaSource fluxes.")
+            raise ValueError("Source association needs diaSource fluxes [differencer.doMeasurement].")
         if not self.differencer.doWriteSources:
-            raise ValueError("Source association needs diaSource catalogs.")
+            raise ValueError("Source association needs diaSource catalogs [differencer.doWriteSources].")
         if not self.differencer.doWriteSubtractedExp:
-            raise ValueError("Source association needs difference exposures.")
+            raise ValueError("Source association needs difference exposures "
+                             "[differencer.doWriteSubtractedExp].")
 
 
 class ApPipeTask(pipeBase.CmdLineTask):
