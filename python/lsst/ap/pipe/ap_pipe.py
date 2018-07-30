@@ -112,6 +112,11 @@ class ApPipeConfig(pexConfig.Config):
             raise ValueError("Source association needs difference exposures "
                              "[differencer.doWriteSubtractedExp].")
 
+        # Not all level1_db implementations let you specify a DB location
+        if hasattr(self.associator.level1_db, "db_name") and self.associator.level1_db.db_name == ":memory:":
+            raise ValueError("Source association needs a persistent database [associator.level1_db.db_name]. "
+                             "Please provide a DB file (need not exist) or use a different level1_db Task.")
+
 
 class ApPipeTask(pipeBase.CmdLineTask):
     """Command-line task representing the entire AP pipeline.
@@ -133,37 +138,20 @@ class ApPipeTask(pipeBase.CmdLineTask):
         ``config.differencer.getTemplate`` is overridden) template data to
         be processed. Its output repository must be both readable
         and writable.
-    dbFile : `str`
-        The filename where the source association database lives. Will be
-        created if it does not yet exist.
-    config : `ApPipeConfig`, optional
-        A configuration for this task.
     """
 
     ConfigClass = ApPipeConfig
     RunnerClass = ApPipeTaskRunner
     _DefaultName = "apPipe"
 
-    # TODO: dbFile is a workaround for DM-11767
-    def __init__(self, butler, dbFile, config=None, *args, **kwargs):
-        # TODO: hacky workaround for DM-13602
-        modConfig = ApPipeTask._copyConfig(config) if config is not None else ApPipeTask.ConfigClass()
-        modConfig.associator.level1_db.db_name = dbFile
-        modConfig.freeze()
-        pipeBase.CmdLineTask.__init__(self, *args, config=modConfig, **kwargs)
+    def __init__(self, butler, *args, **kwargs):
+        pipeBase.CmdLineTask.__init__(self, *args, **kwargs)
 
         self.makeSubtask("ccdProcessor", butler=butler)
         self.makeSubtask("differencer", butler=butler)
         # Must be called before AssociationTask.__init__
         _setupDatabase(self.config.associator.level1_db)
         self.makeSubtask("associator")
-
-    # TODO: hack for modifying frozen configs; delete once DM-13602 resolved
-    @staticmethod
-    def _copyConfig(config):
-        configClass = type(config)
-        contents = {key: value for (key, value) in config.items()}  # Force non-recursive conversion
-        return configClass(**contents)
 
     @pipeBase.timeMethod
     def runDataRef(self, rawRef, templateIds=None, reuse=None):

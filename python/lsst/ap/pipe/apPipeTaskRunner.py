@@ -23,125 +23,18 @@
 
 __all__ = ["ApPipeTaskRunner"]
 
-import os
-import sys
-import traceback
-
-import lsst.log
 import lsst.pipe.base as pipeBase
 
 
 class ApPipeTaskRunner(pipeBase.ButlerInitializedTaskRunner):
 
-    def makeTask(self, parsedCmd=None, args=None):
-        """Construct an ApPipeTask with both a Butler and a database.
-
-        Parameters
-        ----------
-        parsedCmd : `argparse.Namespace`
-            Parsed command-line options, as returned by the `~lsst.pipe.base.ArgumentParser`; if specified
-            then args is ignored.
-        args
-            Args tuple passed to `TaskRunner.__call__`. First argument must be
-            a path to the database file and second argument must be a dataref.
-
-        Raises
-        ------
-        RuntimeError
-            Raised if ``parsedCmd`` and ``args`` are both `None`.
-        """
-        if parsedCmd is not None:
-            butler = parsedCmd.butler
-            dbFile = os.path.join(parsedCmd.output, "association.db")
-        elif args is not None:
-            dbFile, dataRef, _ = args
-            butler = dataRef.butlerSubset.butler
-        else:
-            raise RuntimeError("parsedCmd or args must be specified")
-        return self.TaskClass(config=self.config, log=self.log, butler=butler, dbFile=dbFile)
-
     @staticmethod
     def getTargetList(parsedCmd, **kwargs):
-        """Get a list of (dbFile, rawRef, kwargs) for `TaskRunner.__call__`.
+        """Get a list of (rawRef, kwargs) for `TaskRunner.__call__`.
         """
-        # Hack to allow makeTask(args). Remove once DM-11767 (or possibly DM-13672) resolved
-        dbFile = os.path.join(parsedCmd.output, "association.db")
-        argDict = dict(
+        return pipeBase.ButlerInitializedTaskRunner.getTargetList(
+            parsedCmd,
             templateIds=parsedCmd.templateId.idList,
             reuse=parsedCmd.reuse,
             **kwargs
         )
-        return [(dbFile, dataRef, argDict) for dataRef in parsedCmd.id.refList]
-
-    # TODO: workaround for DM-11767 or DM-13672; can remove once ApPipeTask.__init__ no longer needs dbFile
-    # TODO: find a way to pass the DB argument that doesn't require duplicating TaskRunner.__call__
-    def __call__(self, args):
-        """Run the Task on a single target.
-
-        Parameters
-        ----------
-        args
-            A Butler data reference, followed by option arguments for Task.runDataRef().
-
-        Returns
-        -------
-        struct : `lsst.pipe.base.Struct`
-            Contains these fields if ``doReturnResults`` is `True`:
-
-            - ``dataRef``: the provided data reference.
-            - ``metadata``: task metadata after execution of run.
-            - ``result``: result returned by task run, or `None` if the task fails.
-            - ``exitStatus`: 0 if the task completed successfully, 1 otherwise.
-
-            If ``doReturnResults`` is `False` the struct contains:
-
-            - ``exitStatus`: 0 if the task completed successfully, 1 otherwise.
-        """
-        _, dataRef, kwargs = args
-        if self.log is None:
-            self.log = lsst.log.Log.getDefaultLogger()
-        if hasattr(dataRef, "dataId"):
-            self.log.MDC("LABEL", str(dataRef.dataId))
-        elif isinstance(dataRef, (list, tuple)):
-            self.log.MDC("LABEL", str([ref.dataId for ref in dataRef if hasattr(ref, "dataId")]))
-        task = self.makeTask(args=args)
-        result = None  # in case the task fails
-        exitStatus = 0  # exit status for the shell
-        if self.doRaise:
-            result = task.runDataRef(dataRef, **kwargs)
-        else:
-            try:
-                result = task.runDataRef(dataRef, **kwargs)
-            except Exception as e:
-                # The shell exit value will be the number of dataRefs returning
-                # non-zero, so the actual value used here is lost.
-                exitStatus = 1
-
-                # don't use a try block as we need to preserve the original exception
-                eName = type(e).__name__
-                if hasattr(dataRef, "dataId"):
-                    task.log.fatal("Failed on dataId=%s: %s: %s", dataRef.dataId, eName, e)
-                elif isinstance(dataRef, (list, tuple)):
-                    task.log.fatal("Failed on dataIds=[%s]: %s: %s",
-                                   ", ".join(str(ref.dataId) for ref in dataRef), eName, e)
-                else:
-                    task.log.fatal("Failed on dataRef=%s: %s: %s", dataRef, eName, e)
-
-                if not isinstance(e, pipeBase.TaskError):
-                    traceback.print_exc(file=sys.stderr)
-        task.writeMetadata(dataRef)
-
-        # remove MDC so it does not show up outside of task context
-        self.log.MDCRemove("LABEL")
-
-        if self.doReturnResults:
-            return pipeBase.Struct(
-                exitStatus=exitStatus,
-                dataRef=dataRef,
-                metadata=task.metadata,
-                result=result,
-            )
-        else:
-            return pipeBase.Struct(
-                exitStatus=exitStatus,
-            )
