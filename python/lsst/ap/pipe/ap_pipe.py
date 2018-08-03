@@ -165,7 +165,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
         return configClass(**contents)
 
     @pipeBase.timeMethod
-    def run(self, rawRef, templateIds=None, reuse=None):
+    def runDataRef(self, rawRef, templateIds=None, reuse=None):
         """Execute the ap_pipe pipeline on a single image.
 
         Parameters
@@ -187,8 +187,8 @@ class ApPipeTask(pipeBase.CmdLineTask):
 
             - l1Database : handle for accessing the final association database, conforming to
                 `ap_association`'s DB access API
-            - ccdProcessor : output of `config.ccdProcessor.run` (`lsst.pipe.base.Struct` or `None`).
-            - differencer : output of `config.differencer.run` (`lsst.pipe.base.Struct` or `None`).
+            - ccdProcessor : output of `config.ccdProcessor.runDataRef` (`lsst.pipe.base.Struct` or `None`).
+            - differencer : output of `config.differencer.runDataRef` (`lsst.pipe.base.Struct` or `None`).
             - associator : output of `config.associator.run` (`lsst.pipe.base.Struct` or `None`).
         """
         if reuse is None:
@@ -247,14 +247,14 @@ class ApPipeTask(pipeBase.CmdLineTask):
         Returns
         -------
         result : `lsst.pipe.base.Struct`
-            Output of `config.ccdProcessor.run`.
+            Output of `config.ccdProcessor.runDataRef`.
 
         Notes
         -----
         The input repository corresponding to ``sensorRef`` must already contain the refcats.
         """
         self.log.info("Running ProcessCcd...")
-        return self.ccdProcessor.run(sensorRef)
+        return self.ccdProcessor.runDataRef(sensorRef)
 
     @pipeBase.timeMethod
     def runDiffIm(self, sensorRef, templateIds=None):
@@ -275,10 +275,10 @@ class ApPipeTask(pipeBase.CmdLineTask):
         Returns
         -------
         result : `lsst.pipe.base.Struct`
-            Output of `config.differencer.run`.
+            Output of `config.differencer.runDataRef`.
         """
         self.log.info("Running ImageDifference...")
-        return self.differencer.run(sensorRef, templateIdList=templateIds)
+        return self.differencer.runDataRef(sensorRef, templateIdList=templateIds)
 
     @pipeBase.timeMethod
     def runAssociation(self, sensorRef):
