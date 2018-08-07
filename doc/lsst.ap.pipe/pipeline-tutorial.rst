@@ -166,7 +166,7 @@ A full command looks like
 .. _section-ap-pipe-supplemental-info:
 
 Supplemental information
-======================
+========================
 
 .. _subsection-ap-pipe-previewing-dataIds:
 
@@ -189,8 +189,10 @@ running ap_pipe, try
 Running on other cameras
 ------------------------
 
-Only DECam data is supported for now. Please stay tuned!
+Running ap_pipe on cameras other than DECam works much the same way: you need to provide a raw repo and either a rerun or an output repo, and you may need to provide calib or template repos.
+The :ref:`calexp configuration file <section-ap-pipe-calexp-templates>` will work with any camera.
 
+You will need to use a dataId formatted appropriately for the camera; check the camera's obs package documentation or consult the :ref:`--show data<subsection-ap-pipe-previewing-dataIds>` flag.
 
 Common errors
 -------------

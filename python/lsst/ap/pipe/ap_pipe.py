@@ -23,16 +23,12 @@
 
 __all__ = ["ApPipeConfig", "ApPipeTask"]
 
-import os
-
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 
 from lsst.pipe.tasks.processCcd import ProcessCcdTask
-from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask
-from lsst.utils import getPackageDir
 from lsst.pipe.tasks.imageDifference import ImageDifferenceTask
-from lsst.ap.association import AssociationDBSqliteTask, AssociationTask
+from lsst.ap.association import AssociationTask
 from lsst.ap.pipe.apPipeParser import ApPipeParser
 from lsst.ap.pipe.apPipeTaskRunner import ApPipeTaskRunner
 
@@ -55,52 +51,14 @@ class ApPipeConfig(pexConfig.Config):
     )
 
     def setDefaults(self):
-        """Settings assumed in baseline ap_pipe runs.
+        """Settings appropriate for most or all ap_pipe runs.
         """
-        # TODO: remove explicit DECam reference in DM-12315
-        obsDecamDir = getPackageDir("obs_decam")
-        self.ccdProcessor.load(os.path.join(obsDecamDir, "config/processCcd.py"))
-        self.ccdProcessor.load(os.path.join(obsDecamDir, "config/processCcdCpIsr.py"))
-
-        self.ccdProcessor.calibrate.doAstrometry = True
-        self.ccdProcessor.calibrate.doPhotoCal = True
-
-        # Use gaia for astrometry (phot_g_mean_mag is only available DR1 filter)
-        # Use pan-starrs for photometry (grizy filters)
-        for refObjLoader in (self.ccdProcessor.calibrate.astromRefObjLoader,
-                             self.ccdProcessor.calibrate.photoRefObjLoader,
-                             self.ccdProcessor.charImage.refObjLoader,):
-            refObjLoader.retarget(LoadIndexedReferenceObjectsTask)
-        self.ccdProcessor.calibrate.astromRefObjLoader.ref_dataset_name = "gaia"
-        self.ccdProcessor.calibrate.astromRefObjLoader.filterMap = {
-            "u": "phot_g_mean_mag",
-            "g": "phot_g_mean_mag",
-            "r": "phot_g_mean_mag",
-            "i": "phot_g_mean_mag",
-            "z": "phot_g_mean_mag",
-            "y": "phot_g_mean_mag",
-            "VR": "phot_g_mean_mag"}
-        self.ccdProcessor.calibrate.photoRefObjLoader.ref_dataset_name = "pan-starrs"
-        self.ccdProcessor.calibrate.photoRefObjLoader.filterMap = {
-            "u": "g",
-            "g": "g",
-            "r": "r",
-            "i": "i",
-            "z": "z",
-            "y": "y",
-            "VR": "g"}
-
-        # TODO: single-template support now done by retargeting self.differencer.getTemplate
-        # Document how to do this in DM-13164
-        self.differencer.detection.thresholdValue = 5.0
+        # Always prefer decorrelation; may eventually become ImageDifferenceTask default
         self.differencer.doDecorrelation = True
-        self.differencer.coaddName = "deep"  # TODO: generalize in DM-12315
-        self.differencer.getTemplate.warpType = "psfMatched"
-        self.differencer.doSelectSources = False
+        self.differencer.detection.thresholdValue = 5.0  # needed with doDecorrelation
 
-        self.associator.level1_db.retarget(AssociationDBSqliteTask)
-        # TODO: generalize in DM-12315
-        self.associator.level1_db.filter_names = ['u', 'g', 'r', 'i', 'z', 'y', 'VR', 'N964']
+        # Don't have source catalogs for templates
+        self.differencer.doSelectSources = False
 
     def validate(self):
         pexConfig.Config.validate(self)
