@@ -5,12 +5,11 @@
 # included by low-level LSST packages such as utils or daf_base.
 # Any other package whose interface is used should be listed explicitly
 # rather than assuming it will be included recursively.
-setupRequired(boost >= 1.47.0)
-setupRequired(utils >= 4.6.0.0)
-setupRequired(pex_exceptions >= 4.6.0.0)
-setupRequired(ndarray)
+setupRequired(utils)
+setupRequired(pex_config)
+setupRequired(pipe_base)
+setupRequired(pipe_tasks)
 
-setupRequired(obs_decam)
 setupRequired(ap_association)
 
 envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
