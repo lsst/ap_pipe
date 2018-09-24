@@ -1,14 +1,20 @@
 # ap_pipe
 
-This package contains the Prototype AP Pipeline.
+This package contains the LSST Data Management Alert Production Pipeline.
 
-The main script is `ap_pipe.py`, which allows a user to run
-each step of the Prototype AP Pipeline on data from DECam.
+For up-to-date documentation, including a tutorial, see the `doc` directory.
 
-Individual functions in `ap_pipe.py` will be called by 
-[`ap_verify`](https://github.com/lsst-dm/ap_verify), but the 
-pipeline can also be run on its own without verification metrics using a dataset
-structured like [`ap_verify_hits2015`](https://github.com/lsst/ap_verify_hits2015).
+ap_pipe processes raw images that have been ingested into a Butler repository
+with corresponding calibration products and templates. It produces calexps,
+difference images and source catalogs, and an association database.
 
-For more detailed documentation, including a tutorial, 
-please see [DMTN-039](https://dmtn-039.lsst.io).
+The user must specify the main repository with ingested images (and the
+location of the calibration products and templates if they reside elsewhere),
+the name of the association database (may be either created from scratch or
+connected to for continued associating), and a Butler data ID.
+
+## Example command-line usage
+
+```
+ap_pipe.py repo --calib repo/calibs --rerun processed -c associator.level1_db.db_name=ppdb/association.db --id visit=123456 ccdnum=42 filter=g --template templates
+```
