@@ -6,6 +6,7 @@
 pytest_session.txt
 .cache
 .coverage
+.pytest_cache
 .sconf_temp
 .sconsign.dblite
 bin/ap_pipe.py
