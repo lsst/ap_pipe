@@ -10,16 +10,8 @@ Getting started with the AP Pipeline
 Installation
 ============
 
-`lsst.ap.pipe`, available `from GitHub <https://github.com/lsst-dm/ap_pipe>`_,
-is not yet included with the LSST Science Pipelines stack.
-You will need to clone, setup, and build it by following the
-`Science Pipelines documentation <https://pipelines.lsst.io/install/package-development.html>`_.
-
-.. note::
-
-   `lsst.ap.association`, available `here <https://github.com/lsst-dm/ap_association>`_,
-   is a prerequisite for `lsst.ap.pipe` and is also not currently part of the
-   LSST Stack. You must clone ``ap_association`` and set it up first.
+`lsst.ap.pipe` is available from the `LSST Science Pipelines <https://pipelines.lsst.io/>`_.
+It is installed as part of the ``lsst_apps`` and ``lsst_distrib`` metapackages.
 
 
 .. _section-ap-pipe-ingesting-data-files:

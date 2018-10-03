@@ -6,6 +6,7 @@
 pytest_session.txt
 .cache
 .coverage
+.pytest_cache
 .sconf_temp
 .sconsign.dblite
 bin/ap_pipe.py
@@ -17,6 +18,9 @@ doc/*.tag
 doc/doxygen.conf
 doc/html
 doc/xml
+doc/_build
+doc/py-api
+doc/api
 tests/.cache
 tests/.tests
 ups/*.cfgc
