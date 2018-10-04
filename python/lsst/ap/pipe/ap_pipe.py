@@ -212,7 +212,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
 
         Parameters
         ----------
-        sensorRef: `lsst.daf.persistence.ButlerDataRef`
+        sensorRef : `lsst.daf.persistence.ButlerDataRef`
             Data reference for multiple dataset types, both input and output.
         templateIds : `list` of `dict`, optional
             A list of parsed data IDs for templates to use. Only used if
@@ -277,7 +277,7 @@ def _setupDatabase(configurable):
 
     Parameters
     ----------
-    configurable: `lsst.pex.config.ConfigurableInstance`
+    configurable : `lsst.pex.config.ConfigurableInstance`
         A ConfigurableInstance with a database-managing class in its ``target``
         field. The API of ``target`` must expose a ``create_tables`` method
         taking no arguments.
