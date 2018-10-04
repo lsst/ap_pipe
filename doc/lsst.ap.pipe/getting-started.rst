@@ -1,7 +1,9 @@
+.. py:currentmodule:: lsst.ap.pipe
+
 .. _getting-started:
 
 ####################################
-Getting started with the AP Pipeline
+Getting started with the AP pipeline
 ####################################
 
 

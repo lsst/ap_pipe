@@ -1,8 +1,10 @@
+.. py:currentmodule:: lsst.ap.pipe
+
 .. _pipeline-tutorial:
 
-####################
-AP Pipeline Tutorial
-####################
+#######################
+Running the AP pipeline
+#######################
 
 Setup
 =====
@@ -54,11 +56,10 @@ Your directory structure should look something like
 
 .. _section-ap-pipe-command-line:
 
-AP Pipeline on the command line
+AP pipeline on the command line
 ===============================
 
-The executable to run for the AP Pipeline (`lsst.ap.pipe.ApPipeTask`) is
-in ``ap_pipe/bin/ap_pipe.py``.
+The executable to run for the AP Pipeline (`ApPipeTask`) is in ``ap_pipe/bin/ap_pipe.py``.
 
 To process your ingested data, run
 

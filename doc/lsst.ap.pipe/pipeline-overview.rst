@@ -1,13 +1,15 @@
+.. py:currentmodule:: lsst.ap.pipe
+
 .. _pipeline-overview:
 
 ###########################
-Overview of the AP Pipeline
+Overview of the AP pipeline
 ###########################
 
 :doc:`lsst.ap.pipe <index>` is a data processing pipeline for Prompt Data Products.
 It is a Command-Line Task which operates on ingested raw data in a Butler repository.
 It also requires appropriate calibration products and templates. As it runs,
-`lsst.ap.pipe.ApPipeTask` generates calibrated exposures, difference images,
+`ApPipeTask` generates calibrated exposures, difference images,
 difference image source catalogs, and a source association database.
 
 The initial motivation for `lsst.ap.pipe`, information about one of the original test datasets,
@@ -30,7 +32,7 @@ to verify the output.
 
 `ap_pipe` is entirely written in Python. Key contents include:
 
-- `~lsst.ap.pipe.ApPipeTask`: a `~lsst.pipe.base.CmdLineTask` for running the entire AP Pipeline
-- `~lsst.ap.pipe.ApPipeConfig`: a config for customizing ``ApPipeTask`` for a particular dataset's needs.
+- `ApPipeTask`: a `~lsst.pipe.base.CmdLineTask` for running the entire AP Pipeline
+- `ApPipeConfig`: a config for customizing ``ApPipeTask`` for a particular dataset's needs.
   Supported observatory packages should provide a :ref:`config override file <command-line-task-config-howto-obs>` that does most of the work.
 
