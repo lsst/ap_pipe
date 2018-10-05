@@ -95,7 +95,7 @@ somewhere in ``repo``.
 
 .. note::
 
-   If you are using the default (SQLite) association database, you must :ref:`configure <command-line-task-config-howto>` the database location, or ``ap_pipe`` will not run.
+   If you are using the default (SQLite) association database, you must :doc:`configure </modules/lsst.pipe.base/command-line-task-config-howto>` the database location, or ``ap_pipe`` will not run.
    The location is a path to a new or existing database file to be used for source associations (including associations with previously known objects, if the database already exists).
    In the examples above, it is configured with the ``-c`` option, but a personal config file may be more convenient if you intend to run ``ap_pipe`` many times.
 

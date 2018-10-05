@@ -17,7 +17,7 @@ Overview
 .. toctree::
    :maxdepth: 1
    
-   pipeline-overview.rst
+   pipeline-overview
 
 .. .. _lsst.ap.pipe-using:
 
@@ -27,8 +27,8 @@ Using lsst.ap.pipe
 .. toctree::
    :maxdepth: 1
    
-   getting-started.rst
-   pipeline-tutorial.rst
+   getting-started
+   pipeline-tutorial
 
 .. _lsst.ap.pipe-contributing:
 

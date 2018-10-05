@@ -30,8 +30,8 @@ can be somewhat camera-specific, and is outside the scope of the AP Pipeline.
 .. TODO: Cut or condense above paragraph and link to ingestion-related docs.
 
 A utility to ingest data before running `lsst.ap.pipe` 
-is available in :ref:`ap-verify-run-ingest`. However, this works
-only on datasets which adhere to the :ref:`ap-verify-datasets` format.
+is available in :ref:`ap_verify <ap-verify-run-ingest>`. However, this works
+only on datasets which adhere to the :doc:`ap_verify dataset </modules/lsst.ap.verify/datasets>` format.
 Alternately, you may use a pre-
 ingested dataset or manually ingest files yourself following the directions
 for a given ``obs_`` package, e.g.,
@@ -86,7 +86,7 @@ For the AP Pipeline to successfully process data, the following is required:
 .. _ap_verify_hits2015: https://github.com/lsst/ap_verify_hits2015/
 
 A sample dataset from the `DECam HiTS survey <http://iopscience.iop.org/article/10.3847/0004-637X/832/2/155/meta>`_ 
-that works with ``ap_pipe`` in the :ref:`ap-verify-datasets` format
+that works with ``ap_pipe`` in the :doc:`/modules/lsst.ap.verify/datasets` format
 is available as `ap_verify_hits2015`_. However, this dataset must be
 ingested as described in :ref:`section-ap-pipe-ingesting-data-files`, and the reference
 catalog and defect files must be decompressed and extracted.
