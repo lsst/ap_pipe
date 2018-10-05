@@ -82,9 +82,6 @@ class ApPipeTask(pipeBase.CmdLineTask):
     ``ApPipeTask`` processes raw DECam images from basic processing through
     source association. Other observatories will be supported in the future.
 
-    A tutorial for using ``ApPipeTask`` is available in
-    [DMTN-039](http://dmtn-039.lsst.io).
-
     ``ApPipeTask`` can be run from the command line, but it can also be called
     from other pipeline code. It provides public methods for executing each
     major step of the pipeline by itself.
