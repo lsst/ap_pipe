@@ -1,8 +1,10 @@
+.. py:currentmodule:: lsst.ap.pipe
+
 .. _pipeline-tutorial:
 
-####################
-AP Pipeline Tutorial
-####################
+#######################
+Running the AP pipeline
+#######################
 
 Setup
 =====
@@ -54,11 +56,10 @@ Your directory structure should look something like
 
 .. _section-ap-pipe-command-line:
 
-AP Pipeline on the command line
+AP pipeline on the command line
 ===============================
 
-The executable to run for the AP Pipeline (`lsst.ap.pipe.ApPipeTask`) is
-in ``ap_pipe/bin/ap_pipe.py``.
+The executable to run for the AP Pipeline (`ApPipeTask`) is in ``ap_pipe/bin/ap_pipe.py``.
 
 To process your ingested data, run
 
@@ -73,7 +74,7 @@ This example command only processes observations that have a
 :ref:`dataId<subsection-ap-pipe-previewing-dataIds>`
 corresponding to visit 123456 and ccdnum 42 in with a filter called g.
 
-`lsst.ap.pipe` supports ``dataId`` parsing, e.g., ``ccdnum=3^6..12`` will process
+:doc:`lsst.ap.pipe <index>` supports ``dataId`` parsing, e.g., ``ccdnum=3^6..12`` will process
 ``ccdnums`` 3, 6, 7, 8, 9, 10, 11, and 12.
 
 .. note::
@@ -94,7 +95,7 @@ somewhere in ``repo``.
 
 .. note::
 
-   If you are using the default (SQLite) association database, you must :ref:`configure <command-line-task-config-howto>` the database location, or ``ap_pipe`` will not run.
+   If you are using the default (SQLite) association database, you must :doc:`configure </modules/lsst.pipe.base/command-line-task-config-howto>` the database location, or ``ap_pipe`` will not run.
    The location is a path to a new or existing database file to be used for source associations (including associations with previously known objects, if the database already exists).
    In the examples above, it is configured with the ``-c`` option, but a personal config file may be more convenient if you intend to run ``ap_pipe`` many times.
 
@@ -211,7 +212,7 @@ Interpreting the results
 .. warning:: 
    
    The format of the ``ap_association`` Prompt Product Database is rapidly evolving. For
-   the latest information on how to interface with it, see `lsst.ap.associate`.
+   the latest information on how to interface with it, see :doc:`lsst.ap.association </modules/lsst.ap.association/index>`.
 
 Try these python commands to make some initial plots of your
 newly processed data. You can also use the Butler to display

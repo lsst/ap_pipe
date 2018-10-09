@@ -9,5 +9,4 @@ ap_pipe documentation preview
 .. toctree::
    :maxdepth: 1
 
-   ap_pipe/index
    lsst.ap.pipe/index
