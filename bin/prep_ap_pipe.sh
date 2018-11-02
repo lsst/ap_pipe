@@ -111,7 +111,7 @@ fi
 
 # Print what is happening for confirmation
 echo "The command to be slurmified is:"
-echo "ap_pipe.py ${REPO} --calib ${CALIB} --template ${TEMPLATE} --rerun ${RERUN} -c associator.level1_db.db_name=${PPDB}"
+echo "ap_pipe.py ${REPO} --calib ${CALIB} --template ${TEMPLATE} --rerun ${RERUN} -c associator.level1_db.db_name=${PPDB} -c differencer.getTemplate.warpType='psfMatched'"
 echo "For all CCDs and visits in the ${FILTERNAME} filter using the obs-camera ${OBSCAMERA}."
 
 # Create a directory to write slurm outfiles to if it doesn't exist yet
@@ -152,22 +152,11 @@ echo "">>${RUNFILE}
 echo "# This script is created by prep_ap_pipe.sh">>${RUNFILE}
 echo "# It is called by run_ap_pipe.conf, which is called by run_ap_pipe.sl">>${RUNFILE}
 echo "">>${RUNFILE}
-echo "# Set up the stack and necessary ap_packages">>${RUNFILE}
+echo "# Set up the stack, which now includes the needed ap_ packages">>${RUNFILE}
 echo "source /software/lsstsw/stack/loadLSST.bash">>${RUNFILE}
 echo "setup lsst_distrib">>${RUNFILE}
 echo "">>${RUNFILE}
-echo "# The following environment variables may be set ahead of time,">>${RUNFILE}
-echo "# but if they are not, the values below will be used">>${RUNFILE}
-echo "l1dbproto_dir=\${L1DBPROTO_DIR:-/project/mrawls/l1dbproto}">>${RUNFILE}
-echo "ap_association_dir=\${AP_ASSOCIATION_DIR:-/project/mrawls/ap_association}">>${RUNFILE}
-echo "ap_pipe_dir=\${AP_PIPE_DIR:-/project/mrawls/ap_pipe}">>${RUNFILE}
-echo "">>${RUNFILE}
-echo "# Set up the cloned and pre-sconsed ap_packages">>${RUNFILE}
-echo "setup -k -r \${l1dbproto_dir}">>${RUNFILE}
-echo "setup -k -r \${ap_association_dir}">>${RUNFILE}
-echo "setup -k -r \${ap_pipe_dir}">>${RUNFILE}
-echo "">>${RUNFILE}
-echo "ap_pipe.py ${REPO} --calib ${CALIB} --template ${TEMPLATE} --rerun ${RERUN} -c associator.level1_db.db_name=${PPDB} --id \$*">>${RUNFILE}
+echo "ap_pipe.py ${REPO} --calib ${CALIB} --template ${TEMPLATE} --rerun ${RERUN} -c associator.level1_db.db_name=${PPDB} -c differencer.getTemplate.warpType='psfMatched' --id \$*">>${RUNFILE}
 
 chmod +x ${RUNFILE}
 
