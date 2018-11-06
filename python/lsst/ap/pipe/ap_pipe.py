@@ -23,14 +23,22 @@
 
 __all__ = ["ApPipeConfig", "ApPipeTask"]
 
+import os
+
+import lsst.dax.ppdb as daxPpdb
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 
 from lsst.pipe.tasks.processCcd import ProcessCcdTask
 from lsst.pipe.tasks.imageDifference import ImageDifferenceTask
-from lsst.ap.association import AssociationTask
+from lsst.ap.association import (
+    AssociationTask,
+    MapDiaSourceTask,
+    make_dia_object_schema,
+    make_dia_source_schema)
 from lsst.ap.pipe.apPipeParser import ApPipeParser
 from lsst.ap.pipe.apPipeTaskRunner import ApPipeTaskRunner
+from lsst.utils import getPackageDir
 
 
 class ApPipeConfig(pexConfig.Config):
@@ -44,6 +52,15 @@ class ApPipeConfig(pexConfig.Config):
     differencer = pexConfig.ConfigurableField(
         target=ImageDifferenceTask,
         doc="Task used to do image subtraction and DiaSource detection.",
+    )
+    ppdb = pexConfig.ConfigField(
+        dtype=daxPpdb.PpdbConfig,
+        doc="Ppdb database configuration.",
+    )
+    diaSourceDpddifier = pexConfig.ConfigurableField(
+        target=MapDiaSourceTask,
+        doc="Task for assigning columns from the raw output of ip_diffim into "
+            "a schema that more closely resembles the DPDD.",
     )
     associator = pexConfig.ConfigurableField(
         target=AssociationTask,
@@ -60,6 +77,20 @@ class ApPipeConfig(pexConfig.Config):
         # Don't have source catalogs for templates
         self.differencer.doSelectSources = False
 
+        # make sure the db schema and config is set up for ap_association.
+        self.ppdb.dia_object_index = "baseline"
+        self.ppdb.dia_object_columns = []
+        self.ppdb.schema_file = os.path.join(
+            getPackageDir("dax_ppdb"), "data", "ppdb-schema.yaml")
+        self.ppdb.column_map = os.path.join(
+            getPackageDir("ap_association"),
+            "data",
+            "ppdb-ap-pipe-afw-map.yaml")
+        self.ppdb.extra_schema_file = os.path.join(
+            getPackageDir("ap_association"),
+            "data",
+            "ppdb-ap-pipe-schema-extra.yaml")
+
     def validate(self):
         pexConfig.Config.validate(self)
         if not self.differencer.doMeasurement:
@@ -69,11 +100,9 @@ class ApPipeConfig(pexConfig.Config):
         if not self.differencer.doWriteSubtractedExp:
             raise ValueError("Source association needs difference exposures "
                              "[differencer.doWriteSubtractedExp].")
-
-        # Not all level1_db implementations let you specify a DB location
-        if hasattr(self.associator.level1_db, "db_name") and self.associator.level1_db.db_name == ":memory:":
-            raise ValueError("Source association needs a persistent database [associator.level1_db.db_name]. "
-                             "Please provide a DB file (need not exist) or use a different level1_db Task.")
+        if self.ppdb.isolation_level == "READ_COMMITTED" and self.ppdb.db_url[:6] == "sqlite":
+            raise ValueError("Attempting to run Ppdb with SQLITE and isolation level 'READ_COMMITTED.' "
+                             "Use 'READ_UNCOMMITTED' instead.")
 
 
 class ApPipeTask(pipeBase.CmdLineTask):
@@ -105,7 +134,9 @@ class ApPipeTask(pipeBase.CmdLineTask):
         self.makeSubtask("ccdProcessor", butler=butler)
         self.makeSubtask("differencer", butler=butler)
         # Must be called before AssociationTask.__init__
-        _setupDatabase(self.config.associator.level1_db)
+        self.ppdb = _connectToDatabase(self.config.ppdb)
+        self.makeSubtask("diaSourceDpddifier",
+                         inputSchema=self.differencer.schema)
         self.makeSubtask("associator")
 
     @pipeBase.timeMethod
@@ -245,17 +276,15 @@ class ApPipeTask(pipeBase.CmdLineTask):
         self.log.info("Running Association...")
 
         diffType = self.config.differencer.coaddName
-        try:
-            catalog = sensorRef.get(diffType + "Diff_diaSrc")
-            exposure = sensorRef.get(diffType + "Diff_differenceExp")
-            result = self.associator.run(catalog, exposure)
-        finally:
-            # Stateful AssociationTask will work for now because TaskRunner
-            # uses task-oriented parallelism. Will not be necessary after DM-13672
-            self.associator.level1_db.close()
+
+        catalog = sensorRef.get(diffType + "Diff_diaSrc")
+        exposure = sensorRef.get(diffType + "Diff_differenceExp")
+
+        dia_sources = self.diaSourceDpddifier.run(catalog, exposure)
+        result = self.associator.run(dia_sources, exposure, self.ppdb)
 
         return pipeBase.Struct(
-            l1Database=self.associator.level1_db,
+            l1Database=self.ppdb,
             taskResults=result
         )
 
@@ -266,7 +295,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
         return ApPipeParser(name=cls._DefaultName)
 
 
-def _setupDatabase(configurable):
+def _connectToDatabase(configurable):
     """
     Set up a database according to a configuration.
 
@@ -278,12 +307,16 @@ def _setupDatabase(configurable):
         A ConfigurableInstance with a database-managing class in its ``target``
         field. The API of ``target`` must expose a ``create_tables`` method
         taking no arguments.
+    Returns
+    -------
+    ppdb : `lsst.dax.ppdb.Ppdb`
+        Connection to an open and setup Ppdb.
     """
-    db = configurable.apply()
-    try:
-        db.create_tables()
-    finally:
-        db.close()
+    ppdb = daxPpdb.Ppdb(config=configurable,
+                        afw_schemas=dict(DiaObject=make_dia_object_schema(),
+                                         DiaSource=make_dia_source_schema()))
+    ppdb._schema.makeSchema()
+    return ppdb
 
 
 def _siblingRef(original, datasetType, dataId):
