@@ -53,9 +53,11 @@ class ApPipeConfig(pexConfig.Config):
         target=ImageDifferenceTask,
         doc="Task used to do image subtraction and DiaSource detection.",
     )
-    ppdb = pexConfig.ConfigField(
-        dtype=daxPpdb.PpdbConfig,
-        doc="Ppdb database configuration.",
+    ppdb = pexConfig.ConfigurableField(
+        target=daxPpdb.Ppdb,
+        ConfigClass=daxPpdb.PpdbConfig,
+        doc="Database connection for storing associated DiaSources and "
+            "DiaObjects.",
     )
     diaSourceDpddifier = pexConfig.ConfigurableField(
         target=MapDiaSourceTask,
@@ -80,12 +82,6 @@ class ApPipeConfig(pexConfig.Config):
         # make sure the db schema and config is set up for ap_association.
         self.ppdb.dia_object_index = "baseline"
         self.ppdb.dia_object_columns = []
-        self.ppdb.schema_file = os.path.join(
-            getPackageDir("dax_ppdb"), "data", "ppdb-schema.yaml")
-        self.ppdb.column_map = os.path.join(
-            getPackageDir("ap_association"),
-            "data",
-            "ppdb-ap-pipe-afw-map.yaml")
         self.ppdb.extra_schema_file = os.path.join(
             getPackageDir("ap_association"),
             "data",
@@ -100,9 +96,6 @@ class ApPipeConfig(pexConfig.Config):
         if not self.differencer.doWriteSubtractedExp:
             raise ValueError("Source association needs difference exposures "
                              "[differencer.doWriteSubtractedExp].")
-        if self.ppdb.isolation_level == "READ_COMMITTED" and self.ppdb.db_url[:6] == "sqlite":
-            raise ValueError("Attempting to run Ppdb with SQLITE and isolation level 'READ_COMMITTED.' "
-                             "Use 'READ_UNCOMMITTED' instead.")
 
 
 class ApPipeTask(pipeBase.CmdLineTask):
@@ -134,7 +127,10 @@ class ApPipeTask(pipeBase.CmdLineTask):
         self.makeSubtask("ccdProcessor", butler=butler)
         self.makeSubtask("differencer", butler=butler)
         # Must be called before AssociationTask.__init__
-        self.ppdb = _connectToDatabase(self.config.ppdb)
+        self.ppdb = self.config.ppdb.apply(
+            afw_schemas=dict(DiaObject=make_dia_object_schema(),
+                             DiaSource=make_dia_source_schema()))
+        self.ppdb.makeSchema()
         self.makeSubtask("diaSourceDpddifier",
                          inputSchema=self.differencer.schema)
         self.makeSubtask("associator")
@@ -269,8 +265,8 @@ class ApPipeTask(pipeBase.CmdLineTask):
         result : `lsst.pipe.base.Struct`
             Result struct with components:
 
-            - l1Database : handle for accessing the final association database, conforming to
-                `ap_association`'s DB access API
+            - ppdb : `lsst.dax.ppdb.Ppdb` Initialized association database containing final association
+                results.
             - taskResults : output of `config.associator.run` (`lsst.pipe.base.Struct`).
         """
         self.log.info("Running Association...")
@@ -293,30 +289,6 @@ class ApPipeTask(pipeBase.CmdLineTask):
         """A parser that can handle extra arguments for ap_pipe.
         """
         return ApPipeParser(name=cls._DefaultName)
-
-
-def _connectToDatabase(configurable):
-    """
-    Set up a database according to a configuration.
-
-    Takes no action if the database already exists.
-
-    Parameters
-    ----------
-    configurable : `lsst.pex.config.ConfigurableInstance`
-        A ConfigurableInstance with a database-managing class in its ``target``
-        field. The API of ``target`` must expose a ``create_tables`` method
-        taking no arguments.
-    Returns
-    -------
-    ppdb : `lsst.dax.ppdb.Ppdb`
-        Connection to an open and setup Ppdb.
-    """
-    ppdb = daxPpdb.Ppdb(config=configurable,
-                        afw_schemas=dict(DiaObject=make_dia_object_schema(),
-                                         DiaSource=make_dia_source_schema()))
-    ppdb._schema.makeSchema()
-    return ppdb
 
 
 def _siblingRef(original, datasetType, dataId):
