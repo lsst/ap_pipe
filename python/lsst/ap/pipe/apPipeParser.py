@@ -47,8 +47,8 @@ class ApPipeParser(pipeBase.ArgumentParser):
     def __init__(self, *args, **kwargs):
         pipeBase.ArgumentParser.__init__(
             self,
-            description="Process raw decam images with MasterCals "
-                        "from basic processing --> source association",
+            description="Process raw images through the AP pipeline "
+                        "from ISR through source association",
             *args,
             **kwargs)
         inputDataset = "raw"
