@@ -193,11 +193,15 @@ class ApPipeTask(pipeBase.CmdLineTask):
         else:
             diffImResults = self.runDiffIm(calexpRef, templateIds)
 
-        # No reasonable way to check if Association can be skipped
-        associationResults = self.runAssociation(calexpRef)
+        if "associator" in reuse and \
+                daxPpdb.isVisitProcessed(self.ppdb, calexpRef.get("calexp_visitInfo")):
+            self.log.info("Association has already been run for {0}, skipping...".format(calexpRef.dataId))
+            associationResults = None
+        else:
+            associationResults = self.runAssociation(calexpRef)
 
         return pipeBase.Struct(
-            l1Database=associationResults.l1Database,
+            l1Database=self.ppdb,
             ccdProcessor=processResults if processResults else None,
             differencer=diffImResults if diffImResults else None,
             associator=associationResults.taskResults if associationResults else None
