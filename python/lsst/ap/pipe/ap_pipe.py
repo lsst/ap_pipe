@@ -24,6 +24,7 @@
 __all__ = ["ApPipeConfig", "ApPipeTask"]
 
 import os
+import warnings
 
 import lsst.dax.ppdb as daxPpdb
 import lsst.pex.config as pexConfig
@@ -200,6 +201,13 @@ class ApPipeTask(pipeBase.CmdLineTask):
         else:
             diffImResults = self.runDiffIm(calexpRef, templateIds)
 
+        if "associator" in reuse:
+            warnings.warn(
+                "Reusing association results for some images while rerunning "
+                "others may change the associations. If exact reproducibility "
+                "matters, please clear the association database and run "
+                "ap_pipe.py with --reuse-output-from=differencer to redo all "
+                "association results consistently.")
         if "associator" in reuse and \
                 daxPpdb.isVisitProcessed(self.ppdb, calexpRef.get("calexp_visitInfo")):
             self.log.info("Association has already been run for {0}, skipping...".format(calexpRef.dataId))
