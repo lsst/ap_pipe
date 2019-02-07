@@ -33,6 +33,7 @@ from lsst.pipe.tasks.processCcd import ProcessCcdTask
 from lsst.pipe.tasks.imageDifference import ImageDifferenceTask
 from lsst.ap.association import (
     AssociationTask,
+    DiaForcedSourceTask,
     MapDiaSourceTask,
     make_dia_object_schema,
     make_dia_source_schema)
@@ -67,6 +68,11 @@ class ApPipeConfig(pexConfig.Config):
     associator = pexConfig.ConfigurableField(
         target=AssociationTask,
         doc="Task used to associate DiaSources with DiaObjects.",
+    )
+    diaForcedSource = pexConfig.ConfigurableField(
+        target=DiaForcedSourceTask,
+        doc="Task used for force photometer DiaObject locations in direct and "
+            "difference images.",
     )
 
     def setDefaults(self):
@@ -278,10 +284,14 @@ class ApPipeTask(pipeBase.CmdLineTask):
         diffType = self.config.differencer.coaddName
 
         catalog = sensorRef.get(diffType + "Diff_diaSrc")
-        exposure = sensorRef.get(diffType + "Diff_differenceExp")
+        diffim = sensorRef.get(diffType + "Diff_differenceExp")
 
-        dia_sources = self.diaSourceDpddifier.run(catalog, exposure)
-        result = self.associator.run(dia_sources, exposure, self.ppdb)
+        dia_sources = self.diaSourceDpddifier.run(catalog, diffim)
+        result = self.associator.run(dia_sources, diffim, self.ppdb)
+        self.diaForcedSource(result.dia_objects,
+                             sensorRef.get("ccdExposureId_bits"),
+                             sensorRef.get("calexp"),
+                             diffim)
 
         return pipeBase.Struct(
             l1Database=self.ppdb,
