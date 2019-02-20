@@ -24,6 +24,7 @@
 __all__ = ["ApPipeConfig", "ApPipeTask"]
 
 import os
+import warnings
 
 import lsst.dax.ppdb as daxPpdb
 import lsst.pex.config as pexConfig
@@ -140,6 +141,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
         self.makeSubtask("diaSourceDpddifier",
                          inputSchema=self.differencer.schema)
         self.makeSubtask("associator")
+        self.makeSubtask("diaForcedSource")
 
     @pipeBase.timeMethod
     def runDataRef(self, rawRef, templateIds=None, reuse=None):
@@ -199,6 +201,13 @@ class ApPipeTask(pipeBase.CmdLineTask):
         else:
             diffImResults = self.runDiffIm(calexpRef, templateIds)
 
+        if "associator" in reuse:
+            warnings.warn(
+                "Reusing association results for some images while rerunning "
+                "others may change the associations. If exact reproducibility "
+                "matters, please clear the association database and run "
+                "ap_pipe.py with --reuse-output-from=differencer to redo all "
+                "association results consistently.")
         if "associator" in reuse and \
                 daxPpdb.isVisitProcessed(self.ppdb, calexpRef.get("calexp_visitInfo")):
             self.log.info("Association has already been run for {0}, skipping...".format(calexpRef.dataId))
@@ -288,10 +297,10 @@ class ApPipeTask(pipeBase.CmdLineTask):
 
         dia_sources = self.diaSourceDpddifier.run(catalog, diffim)
         result = self.associator.run(dia_sources, diffim, self.ppdb)
-        self.diaForcedSource(result.dia_objects,
-                             sensorRef.get("ccdExposureId_bits"),
-                             sensorRef.get("calexp"),
-                             diffim)
+        self.diaForcedSource.run(result.dia_objects,
+                                 sensorRef.get("ccdExposureId_bits"),
+                                 sensorRef.get("calexp"),
+                                 diffim)
 
         return pipeBase.Struct(
             l1Database=self.ppdb,
