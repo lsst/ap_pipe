@@ -140,6 +140,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
         self.makeSubtask("diaSourceDpddifier",
                          inputSchema=self.differencer.schema)
         self.makeSubtask("associator")
+        self.makeSubtask("diaForcedSource")
 
     @pipeBase.timeMethod
     def runDataRef(self, rawRef, templateIds=None, reuse=None):
@@ -288,10 +289,10 @@ class ApPipeTask(pipeBase.CmdLineTask):
 
         dia_sources = self.diaSourceDpddifier.run(catalog, diffim)
         result = self.associator.run(dia_sources, diffim, self.ppdb)
-        self.diaForcedSource(result.dia_objects,
-                             sensorRef.get("ccdExposureId_bits"),
-                             sensorRef.get("calexp"),
-                             diffim)
+        self.diaForcedSource.run(result.dia_objects,
+                                 sensorRef.get("ccdExposureId_bits"),
+                                 sensorRef.get("calexp"),
+                                 diffim)
 
         return pipeBase.Struct(
             l1Database=self.ppdb,
