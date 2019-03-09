@@ -65,6 +65,8 @@ To process your ingested data, run
 
 .. prompt:: bash
 
+   mkdir ppdb/
+   make_ppdb.py -c ppdb.isolation_level=READ_UNCOMMITTED -c ppdb.db_url="sqlite:///ppdb/association.db"
    ap_pipe.py repo --calib repo/calibs --rerun processed -c ppdb.isolation_level=READ_UNCOMMITTED -c ppdb.db_url="sqlite:///ppdb/association.db" --id visit=123456 ccdnum=42 filter=g --template templates
 
 In this case, a ``processed`` directory will be created within
