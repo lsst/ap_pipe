@@ -26,6 +26,8 @@ __all__ = ["ApPipeConfig", "ApPipeTask"]
 import os
 import warnings
 
+from sqlalchemy.exc import OperationalError, ProgrammingError
+
 import lsst.dax.ppdb as daxPpdb
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
@@ -59,7 +61,7 @@ class ApPipeConfig(pexConfig.Config):
         target=daxPpdb.Ppdb,
         ConfigClass=daxPpdb.PpdbConfig,
         doc="Database connection for storing associated DiaSources and "
-            "DiaObjects.",
+            "DiaObjects. Must already be initialized.",
     )
     diaSourceDpddifier = pexConfig.ConfigurableField(
         target=MapDiaSourceTask,
@@ -133,11 +135,9 @@ class ApPipeTask(pipeBase.CmdLineTask):
 
         self.makeSubtask("ccdProcessor", butler=butler)
         self.makeSubtask("differencer", butler=butler)
-        # Must be called before AssociationTask.__init__
         self.ppdb = self.config.ppdb.apply(
             afw_schemas=dict(DiaObject=make_dia_object_schema(),
                              DiaSource=make_dia_source_schema()))
-        self.ppdb.makeSchema()
         self.makeSubtask("diaSourceDpddifier",
                          inputSchema=self.differencer.schema)
         self.makeSubtask("associator")
@@ -201,19 +201,24 @@ class ApPipeTask(pipeBase.CmdLineTask):
         else:
             diffImResults = self.runDiffIm(calexpRef, templateIds)
 
-        if "associator" in reuse:
-            warnings.warn(
-                "Reusing association results for some images while rerunning "
-                "others may change the associations. If exact reproducibility "
-                "matters, please clear the association database and run "
-                "ap_pipe.py with --reuse-output-from=differencer to redo all "
-                "association results consistently.")
-        if "associator" in reuse and \
-                daxPpdb.isVisitProcessed(self.ppdb, calexpRef.get("calexp_visitInfo")):
-            self.log.info("Association has already been run for {0}, skipping...".format(calexpRef.dataId))
-            associationResults = None
-        else:
-            associationResults = self.runAssociation(calexpRef)
+        try:
+            if "associator" in reuse:
+                warnings.warn(
+                    "Reusing association results for some images while rerunning "
+                    "others may change the associations. If exact reproducibility "
+                    "matters, please clear the association database and run "
+                    "ap_pipe.py with --reuse-output-from=differencer to redo all "
+                    "association results consistently.")
+            if "associator" in reuse and \
+                    daxPpdb.isVisitProcessed(self.ppdb, calexpRef.get("calexp_visitInfo")):
+                message = "Association has already been run for {0}, skipping...".format(calexpRef.dataId)
+                self.log.info(message)
+                associationResults = None
+            else:
+                associationResults = self.runAssociation(calexpRef)
+        except (OperationalError, ProgrammingError) as e:
+            # Don't use lsst.pipe.base.TaskError because it mixes poorly with exception chaining
+            raise RuntimeError("Database query failed; did you call make_ppdb.py first?") from e
 
         return pipeBase.Struct(
             l1Database=self.ppdb,
