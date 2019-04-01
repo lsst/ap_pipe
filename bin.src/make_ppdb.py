@@ -22,7 +22,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from lsst.ap.pipe import ApPipeTask
+from lsst.ap.pipe.make_ppdb import makePpdb
 
 if __name__ == '__main__':
-    ApPipeTask.parseAndRun()
+    makePpdb()
