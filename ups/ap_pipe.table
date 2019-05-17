@@ -12,5 +12,7 @@ setupRequired(pipe_tasks)
 
 setupRequired(ap_association)
 
+setupOptional(ap_pipe_testdata)
+
 envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
 envPrepend(PATH, ${PRODUCT_DIR}/bin)
