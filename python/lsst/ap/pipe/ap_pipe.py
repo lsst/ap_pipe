@@ -300,12 +300,17 @@ class ApPipeTask(pipeBase.CmdLineTask):
         catalog = sensorRef.get(diffType + "Diff_diaSrc")
         diffim = sensorRef.get(diffType + "Diff_differenceExp")
 
-        dia_sources = self.diaSourceDpddifier.run(catalog, diffim)
+        dia_sources = self.diaSourceDpddifier.run(catalog,
+                                                  diffim,
+                                                  return_pandas=True)
         result = self.associator.run(dia_sources, diffim, self.ppdb)
-        self.diaForcedSource.run(result.dia_objects,
-                                 sensorRef.get("ccdExposureId_bits"),
-                                 sensorRef.get("calexp"),
-                                 diffim)
+        # TODO: DM-19906
+        #    Need to convert diaFourcedSource task to accept pandas.DataFrame
+        #    as an input.
+        # self.diaForcedSource.run(result.dia_objects,
+        #                          sensorRef.get("ccdExposureId_bits"),
+        #                          sensorRef.get("calexp"),
+        #                          diffim)
 
         return pipeBase.Struct(
             l1Database=self.ppdb,

@@ -117,7 +117,10 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
             subtasks.ccdProcessor.runDataRef.assert_called_once()
             subtasks.differencer.runDataRef.assert_called_once()
             subtasks.associator.run.assert_called_once()
-            subtasks.forcedSource.run.assert_called_once()
+            # TODO: DM-19906
+            #     Disable this test until forcedSource can be used with
+            #     pandas.
+            # subtasks.forcedSource.run.assert_called_once()
 
     def testReuseExistingOutput(self):
         """Test reuse keyword to ApPipeTask.runDataRef.
@@ -166,7 +169,10 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
             self.assertEqual(subtasks.ccdProcessor.runDataRef.call_count, 2)
             subtasks.differencer.runDataRef.assert_called_once()
             subtasks.associator.run.assert_called_once()
-            subtasks.forcedSource.run.assert_called_once()
+            # TODO: DM-19906
+            #     Disable this test until forcedSource can be used with
+            #     pandas.
+            # subtasks.forcedSource.run.assert_called_once()
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
