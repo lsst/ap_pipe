@@ -101,12 +101,14 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
                 patch.object(task, "differencer") as mockDifferencer, \
                 patch.object(task, "diaSourceDpddifier") as mockDpddifier, \
                 patch.object(task, "associator") as mockAssociator, \
-                patch.object(task, "diaForcedSource") as mockForcedSource:
+                patch.object(task, "diaForcedSource") as mockForcedSource, \
+                patch.object(task, "ppdb") as mockPpdb:
             yield pipeBase.Struct(ccdProcessor=mockCcdProcessor,
                                   differencer=mockDifferencer,
                                   dpddifier=mockDpddifier,
                                   associator=mockAssociator,
-                                  forcedSource=mockForcedSource)
+                                  diaForcedSource=mockForcedSource,
+                                  ppdb=mockPpdb)
 
     def testGenericRun(self):
         """Test the normal workflow of each ap_pipe step.
@@ -117,7 +119,7 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
             subtasks.ccdProcessor.runDataRef.assert_called_once()
             subtasks.differencer.runDataRef.assert_called_once()
             subtasks.associator.run.assert_called_once()
-            subtasks.forcedSource.run.assert_called_once()
+            subtasks.diaForcedSource.run.assert_called_once()
 
     def testReuseExistingOutput(self):
         """Test reuse keyword to ApPipeTask.runDataRef.
@@ -166,7 +168,7 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
             self.assertEqual(subtasks.ccdProcessor.runDataRef.call_count, 2)
             subtasks.differencer.runDataRef.assert_called_once()
             subtasks.associator.run.assert_called_once()
-            subtasks.forcedSource.run.assert_called_once()
+            subtasks.diaForcedSource.run.assert_called_once()
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
