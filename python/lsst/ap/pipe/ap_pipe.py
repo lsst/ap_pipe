@@ -210,7 +210,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
                     "ap_pipe.py with --reuse-output-from=differencer to redo all "
                     "association results consistently.")
             if "associator" in reuse and \
-                    daxPpdb.isVisitProcessed(self.ppdb, calexpRef.get("calexp_visitInfo")):
+                    self.ppdb.isVisitProcessed(calexpRef.get("calexp_visitInfo")):
                 message = "Association has already been run for {0}, skipping...".format(calexpRef.dataId)
                 self.log.info(message)
                 associationResults = None
