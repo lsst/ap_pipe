@@ -40,6 +40,14 @@ You can find Jira issues for this module under the `ap_pipe <https://jira.lsstco
 
 .. If there are topics related to developing this module (rather than using it), link to this from a toctree placed here.
 
+Script reference
+================
+
+.. toctree::
+   :maxdepth: 1
+
+   scripts/make_ppdb.py
+
 .. _lsst.ap.pipe-pyapi:
 
 Python API reference
