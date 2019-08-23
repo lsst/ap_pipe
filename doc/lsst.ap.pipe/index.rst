@@ -29,6 +29,7 @@ Using lsst.ap.pipe
    
    getting-started
    pipeline-tutorial
+   ppdb
 
 .. _lsst.ap.pipe-contributing:
 

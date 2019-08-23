@@ -69,8 +69,8 @@ To process your ingested data, run
    make_ppdb.py -c ppdb.isolation_level=READ_UNCOMMITTED -c ppdb.db_url="sqlite:///ppdb/association.db"
    ap_pipe.py repo --calib repo/calibs --rerun processed -c ppdb.isolation_level=READ_UNCOMMITTED -c ppdb.db_url="sqlite:///ppdb/association.db" --id visit=123456 ccdnum=42 filter=g --template templates
 
-In this case, a ``processed`` directory will be created within
-``repo/rerun`` and the results will be written there.
+In this case, a ``processed`` directory will be created within ``repo/rerun`` and the results will be written there.
+See :doc:`ppdb` for more information on :command:`make_ppdb.py`.
 
 This example command only processes observations that have a
 :ref:`dataId<subsection-ap-pipe-previewing-dataIds>`
