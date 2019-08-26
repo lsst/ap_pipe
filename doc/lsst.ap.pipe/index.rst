@@ -29,6 +29,7 @@ Using lsst.ap.pipe
    
    getting-started
    pipeline-tutorial
+   ppdb
 
 .. _lsst.ap.pipe-contributing:
 
@@ -39,6 +40,14 @@ Contributing
 You can find Jira issues for this module under the `ap_pipe <https://jira.lsstcorp.org/issues/?jql=project%20%3D%20DM%20AND%20component%20%3D%20ap_pipe>`_ component.
 
 .. If there are topics related to developing this module (rather than using it), link to this from a toctree placed here.
+
+Script reference
+================
+
+.. toctree::
+   :maxdepth: 1
+
+   scripts/make_ppdb.py
 
 .. _lsst.ap.pipe-pyapi:
 

@@ -35,16 +35,25 @@ class ConfigOnlyParser(argparse.ArgumentParser):
 
     def __init__(self, description=None, **kwargs):
         if description is None:
-            description = "Create a PPDB using config overrides. At the very " \
-                "least, the overrides must define ppdb.db_url, or the final " \
-                "config will not be valid."
+            # Description must be readable in both Sphinx and make_ppdb.py -h
+            description = """\
+Create a prompt products database using config overrides for
+`lsst.ap.pipe.ApPipeConfig`.
+
+This script takes the same ``--config`` and ``--configfile`` arguments as
+command-line tasks. Calling ``ap_pipe.py`` with the same arguments uses the
+newly created database.
+
+The config overrides must define ``ppdb.db_url`` to create a valid config.
+"""
 
         super().__init__(description=description, **kwargs)
 
         self.add_argument("-c", "--config", nargs="*", action=ConfigValueAction,
-                          help="config override(s), e.g. -c foo=newfoo bar.baz=3", metavar="NAME=VALUE")
+                          help="config override(s), e.g. ``-c ppdb.prefix=fancy ppdb.db_url=\"sqlite://\"``",
+                          metavar="NAME=VALUE")
         self.add_argument("-C", "--configfile", dest="configfile", nargs="*", action=ConfigFileAction,
-                          help="config override file(s)")
+                          help="config override file(s) for ApPipeConfig")
 
     def parse_args(self, args=None, namespace=None):
         """Parse arguments for an `ApPipeConfig`.
