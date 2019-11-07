@@ -138,6 +138,7 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
 
         self.checkReuseExistingOutput(task, ['ccdProcessor'])
         self.checkReuseExistingOutput(task, ['ccdProcessor', 'differencer'])
+        self.checkReuseExistingOutput(task, ['ccdProcessor', 'differencer', 'associator'])
 
     def checkReuseExistingOutput(self, task, skippable):
         """Check whether a task's subtasks are skipped when "reuse" is set.
