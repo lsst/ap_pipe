@@ -54,6 +54,19 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
         except pexExcept.NotFoundError:
             raise unittest.SkipTest("ap_pipe_testdata not set up")
 
+    def _setupObjPatch(self, *args, **kwargs):
+        """Create a patch in setUp that will be reverted once the test ends.
+
+        Parameters
+        ----------
+        *args
+        **kwargs
+            Inputs to `unittest.mock.patch.object`.
+        """
+        patcher = patch.object(*args, **kwargs)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def setUp(self):
         self.config = self._makeDefaultConfig()
         self.butler = dafPersist.Butler(inputs={'root': self.datadir})
@@ -63,10 +76,7 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
             mockDataRef.dataId = dict(dataId, **rest)
             return mockDataRef
 
-        butlerPatcher = patch.object(self.butler, "dataRef",
-                                     side_effect=makeMockDataRef)
-        butlerPatcher.start()
-        self.addCleanup(butlerPatcher.stop)
+        self._setupObjPatch(self.butler, "dataRef", side_effect=makeMockDataRef)
         self.dataId = {"visit": 413635, "ccdnum": 42}
         self.inputRef = self.butler.dataRef("raw", **self.dataId)
 
