@@ -209,8 +209,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
                     "matters, please clear the association database and run "
                     "ap_pipe.py with --reuse-output-from=differencer to redo all "
                     "association results consistently.")
-            if "associator" in reuse and \
-                    self.apdb.isVisitProcessed(calexpRef.get("calexp_visitInfo")):
+            if "associator" in reuse and calexpRef.datasetExists("apdb_marker", write=True):
                 message = "Association has already been run for {0}, skipping...".format(calexpRef.dataId)
                 self.log.info(message)
                 associationResults = None
