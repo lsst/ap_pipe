@@ -19,7 +19,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["makePpdb"]
+__all__ = ["makeApdb"]
 
 import argparse
 
@@ -35,7 +35,7 @@ class ConfigOnlyParser(argparse.ArgumentParser):
 
     def __init__(self, description=None, **kwargs):
         if description is None:
-            # Description must be readable in both Sphinx and make_ppdb.py -h
+            # Description must be readable in both Sphinx and make_apdb.py -h
             description = """\
 Create a prompt products database using config overrides for
 `lsst.ap.pipe.ApPipeConfig`.
@@ -44,13 +44,13 @@ This script takes the same ``--config`` and ``--configfile`` arguments as
 command-line tasks. Calling ``ap_pipe.py`` with the same arguments uses the
 newly created database.
 
-The config overrides must define ``ppdb.db_url`` to create a valid config.
+The config overrides must define ``apdb.db_url`` to create a valid config.
 """
 
         super().__init__(description=description, **kwargs)
 
         self.add_argument("-c", "--config", nargs="*", action=ConfigValueAction,
-                          help="config override(s), e.g. ``-c ppdb.prefix=fancy ppdb.db_url=\"sqlite://\"``",
+                          help="config override(s), e.g. ``-c apdb.prefix=fancy apdb.db_url=\"sqlite://\"``",
                           metavar="NAME=VALUE")
         self.add_argument("-C", "--configfile", dest="configfile", nargs="*", action=ConfigFileAction,
                           help="config override file(s) for ApPipeConfig")
@@ -87,8 +87,8 @@ The config overrides must define ``ppdb.db_url`` to create a valid config.
         return namespace
 
 
-def makePpdb(args=None):
-    """Create a PPDB according to a config.
+def makeApdb(args=None):
+    """Create a APDB according to a config.
 
     The command-line arguments should provide config values or a config file
     for `ApPipeConfig`.
@@ -100,15 +100,15 @@ def makePpdb(args=None):
 
     Returns
     -------
-    ppdb : `lsst.dax.ppdb.Ppdb`
-        The newly configured PPDB object.
+    apdb : `lsst.dax.apdb.Apdb`
+        The newly configured APDB object.
     """
 
     parser = ConfigOnlyParser()
     parsedCmd = parser.parse_args(args=args)
 
-    ppdb = parsedCmd.config.ppdb.apply(
+    apdb = parsedCmd.config.apdb.apply(
         afw_schemas=dict(DiaObject=make_dia_object_schema(),
                          DiaSource=make_dia_source_schema()))
-    ppdb.makeSchema()
-    return ppdb
+    apdb.makeSchema()
+    return apdb

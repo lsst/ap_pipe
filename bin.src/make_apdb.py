@@ -22,7 +22,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from lsst.ap.pipe.make_ppdb import makePpdb
+from lsst.ap.pipe.make_apdb import makeApdb
 
 if __name__ == '__main__':
-    makePpdb()
+    makeApdb()

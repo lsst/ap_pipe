@@ -43,8 +43,8 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
     def _makeDefaultConfig(cls):
         config = ApPipeTask.ConfigClass()
         config.load(os.path.join(cls.datadir, "config", "apPipe.py"))
-        config.ppdb.db_url = "sqlite://"
-        config.ppdb.isolation_level = "READ_UNCOMMITTED"
+        config.apdb.db_url = "sqlite://"
+        config.apdb.isolation_level = "READ_UNCOMMITTED"
         return config
 
     @classmethod
@@ -102,13 +102,13 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
                 patch.object(task, "diaSourceDpddifier") as mockDpddifier, \
                 patch.object(task, "associator") as mockAssociator, \
                 patch.object(task, "diaForcedSource") as mockForcedSource, \
-                patch.object(task, "ppdb") as mockPpdb:
+                patch.object(task, "apdb") as mockApdb:
             yield pipeBase.Struct(ccdProcessor=mockCcdProcessor,
                                   differencer=mockDifferencer,
                                   dpddifier=mockDpddifier,
                                   associator=mockAssociator,
                                   diaForcedSource=mockForcedSource,
-                                  ppdb=mockPpdb)
+                                  apdb=mockApdb)
 
     def testGenericRun(self):
         """Test the normal workflow of each ap_pipe step.

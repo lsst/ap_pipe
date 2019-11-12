@@ -1,3 +1,3 @@
-.. autoprogram:: lsst.ap.pipe.make_ppdb:ConfigOnlyParser()
-   :prog: make_ppdb.py
+.. autoprogram:: lsst.ap.pipe.make_apdb:ConfigOnlyParser()
+   :prog: make_apdb.py
    :groups:

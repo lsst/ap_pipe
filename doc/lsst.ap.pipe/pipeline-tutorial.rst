@@ -65,12 +65,12 @@ To process your ingested data, run
 
 .. prompt:: bash
 
-   mkdir ppdb/
-   make_ppdb.py -c ppdb.isolation_level=READ_UNCOMMITTED -c ppdb.db_url="sqlite:///ppdb/association.db"
-   ap_pipe.py repo --calib repo/calibs --rerun processed -c ppdb.isolation_level=READ_UNCOMMITTED -c ppdb.db_url="sqlite:///ppdb/association.db" --id visit=123456 ccdnum=42 filter=g --template templates
+   mkdir apdb/
+   make_apdb.py -c apdb.isolation_level=READ_UNCOMMITTED -c apdb.db_url="sqlite:///apdb/association.db"
+   ap_pipe.py repo --calib repo/calibs --rerun processed -c apdb.isolation_level=READ_UNCOMMITTED -c apdb.db_url="sqlite:///apdb/association.db" --id visit=123456 ccdnum=42 filter=g --template templates
 
 In this case, a ``processed`` directory will be created within ``repo/rerun`` and the results will be written there.
-See :doc:`ppdb` for more information on :command:`make_ppdb.py`.
+See :doc:`apdb` for more information on :command:`make_apdb.py`.
 
 This example command only processes observations that have a
 :ref:`dataId<subsection-ap-pipe-previewing-dataIds>`
@@ -89,7 +89,7 @@ If you prefer to have a standalone output repository, you may instead run
 
 .. prompt:: bash
 
-   ap_pipe.py repo --calib repo/calibs --output path/to/put/processed/data/in -c ppdb.isolation_level=READ_UNCOMMITTED -c ppdb.db_url="sqlite:///ppdb/association.db" --id visit=123456 ccdnum=42 filter=g --template path/to/templates
+   ap_pipe.py repo --calib repo/calibs --output path/to/put/processed/data/in -c apdb.isolation_level=READ_UNCOMMITTED -c apdb.db_url="sqlite:///apdb/association.db" --id visit=123456 ccdnum=42 filter=g --template path/to/templates
 
 In this case, the output directory will be created if it does not already exist.
 If you omit the ``--template`` flag, ``ap_pipe`` will assume the templates are
@@ -112,7 +112,7 @@ The result from running ``ap_pipe`` should look something like
 
 .. code-block:: none
 
-   ppdb/
+   apdb/
       association.db   <--- the Prompt Products Database with DIAObjects
    repo/
       rerun/
@@ -163,7 +163,7 @@ A full command looks like
 
 .. prompt:: bash
    
-   ap_pipe.py repo --calib repo/calibs --rerun processed -C $AP_PIPE_DIR/config/calexpTemplates.py -c ppdb.isolation_level=READ_UNCOMMITTED -c ppdb.db_url="sqlite:///ppdb/association.db" --id visit=123456 ccdnum=42 filter=g --template /path/to/calexp/templates --templateId visit=234567
+   ap_pipe.py repo --calib repo/calibs --rerun processed -C $AP_PIPE_DIR/config/calexpTemplates.py -c apdb.isolation_level=READ_UNCOMMITTED -c apdb.db_url="sqlite:///apdb/association.db" --id visit=123456 ccdnum=42 filter=g --template /path/to/calexp/templates --templateId visit=234567
 
 
 .. _section-ap-pipe-supplemental-info:
@@ -234,7 +234,7 @@ calibrated exposures, difference images, inspect DIAObjects and/or DIASources, e
    butler = dafPersist.Butler(os.path.join(workingDir))
 
    # Open and read all data from the association database
-   sqliteFile = os.path.join('ppdb', 'association.db')
+   sqliteFile = os.path.join('apdb', 'association.db')
    connection = sqlite3.connect(sqliteFile)
    tables = {'obj': 'dia_objects', 'src': 'dia_sources', 'con': 'dia_objects_to_dia_sources'}
    conTable = pd.read_sql_query('select * from {0};'.format(tables['con']), connection)
