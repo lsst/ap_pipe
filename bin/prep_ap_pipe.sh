@@ -102,7 +102,7 @@ if [ "$interactive" = "1" ]; then
     if [ -n "$response" ]; then
         FILTERNAME=$response
     fi
-    echo -n "Location for Prompt Products Database [$APDB] > "
+    echo -n "Location for Alert Production Database [$APDB] > "
     read response
     if [ -n "$response" ]; then
         APDB=$response

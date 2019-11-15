@@ -4,9 +4,9 @@
 
 .. _ap-pipe-apdb:
 
-###################################################
-Setting up the Prompt Products Database for ap_pipe
-###################################################
+####################################################
+Setting up the Alert Production Database for ap_pipe
+####################################################
 
 .. Centralized markup for program names
 
@@ -14,7 +14,7 @@ Setting up the Prompt Products Database for ap_pipe
 
 .. |ap_pipe| replace:: :command:`ap_pipe.py`
 
-|ap_pipe| needs an existing Prompt Products Database (APDB) in which to store its results.
+|ap_pipe| needs an existing Alert Production Database (APDB) in which to store its results.
 Such a database will be provided externally during operations, but developers can run |make_apdb| to set up their own database for testing.
 This page provides an overview of how to use |make_apdb|.
 

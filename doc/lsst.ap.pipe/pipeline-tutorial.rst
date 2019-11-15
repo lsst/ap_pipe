@@ -113,7 +113,7 @@ The result from running ``ap_pipe`` should look something like
 .. code-block:: none
 
    apdb/
-      association.db   <--- the Prompt Products Database with DIAObjects
+      association.db   <--- the Alert Production Database with DIAObjects
    repo/
       rerun/
          processed/
@@ -213,7 +213,7 @@ Interpreting the results
 
 .. warning:: 
    
-   The format of the ``ap_association`` Prompt Product Database is rapidly evolving. For
+   The format of the ``ap_association`` Alert Production Database is rapidly evolving. For
    the latest information on how to interface with it, see :doc:`lsst.ap.association </modules/lsst.ap.association/index>`.
 
 Try these python commands to make some initial plots of your

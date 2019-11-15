@@ -37,7 +37,7 @@ class ConfigOnlyParser(argparse.ArgumentParser):
         if description is None:
             # Description must be readable in both Sphinx and make_apdb.py -h
             description = """\
-Create a prompt products database using config overrides for
+Create a Alert Production Database using config overrides for
 `lsst.ap.pipe.ApPipeConfig`.
 
 This script takes the same ``--config`` and ``--configfile`` arguments as
@@ -88,7 +88,7 @@ The config overrides must define ``apdb.db_url`` to create a valid config.
 
 
 def makeApdb(args=None):
-    """Create a APDB according to a config.
+    """Create an APDB according to a config.
 
     The command-line arguments should provide config values or a config file
     for `ApPipeConfig`.
