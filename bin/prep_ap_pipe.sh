@@ -18,7 +18,7 @@
 # Print some info about how to use this script
 usage()
 {
-    echo "usage: prep_ap_pipe [ [[-r rerun] [-o obs-camera] [-R repo] [-c calib] [-t template] [-f filter] [-p ppdb] [-i]] | [-h] ]"
+    echo "usage: prep_ap_pipe [ [[-r rerun] [-o obs-camera] [-R repo] [-c calib] [-t template] [-f filter] [-p apdb] [-i]] | [-h] ]"
 }
 
 # Get directory of this shell script file
@@ -32,7 +32,7 @@ REPO=/project/mrawls/hits2015
 CALIB=/project/mrawls/hits2015/calib3
 TEMPLATE=/project/mrawls/hits2015/templates
 FILTERNAME=g
-PPDB=association.db
+APDB=association.db
 interactive=
 
 # Next, a way to change the defaults above
@@ -56,8 +56,8 @@ while [ "$1" != "" ]; do
         -f | --filtername )     shift
                                 FILTERNAME=$1
                                 ;;
-        -p | --ppdb )           shift
-                                PPDB=$1
+        -p | --apdb )           shift
+                                APDB=$1
                                 ;;
         -i | --interactive )    interactive=1
                                 ;;
@@ -102,16 +102,16 @@ if [ "$interactive" = "1" ]; then
     if [ -n "$response" ]; then
         FILTERNAME=$response
     fi
-    echo -n "Location for Prompt Products Database [$PPDB] > "
+    echo -n "Location for Alert Production Database [$APDB] > "
     read response
     if [ -n "$response" ]; then
-        PPDB=$response
+        APDB=$response
     fi
 fi
 
 # Print what is happening for confirmation
 echo "The command to be slurmified is:"
-echo "ap_pipe.py ${REPO} --calib ${CALIB} --template ${TEMPLATE} --rerun ${RERUN} -c associator.level1_db.db_name=${PPDB} -c differencer.getTemplate.warpType='psfMatched'"
+echo "ap_pipe.py ${REPO} --calib ${CALIB} --template ${TEMPLATE} --rerun ${RERUN} -c associator.level1_db.db_name=${APDB} -c differencer.getTemplate.warpType='psfMatched'"
 echo "For all CCDs and visits in the ${FILTERNAME} filter using the obs-camera ${OBSCAMERA}."
 
 # Create a directory to write slurm outfiles to if it doesn't exist yet
@@ -156,7 +156,7 @@ echo "# Set up the stack, which now includes the needed ap_ packages">>${RUNFILE
 echo "source /software/lsstsw/stack/loadLSST.bash">>${RUNFILE}
 echo "setup lsst_distrib">>${RUNFILE}
 echo "">>${RUNFILE}
-echo "ap_pipe.py ${REPO} --calib ${CALIB} --template ${TEMPLATE} --rerun ${RERUN} -c associator.level1_db.db_name=${PPDB} -c differencer.getTemplate.warpType='psfMatched' --id \$*">>${RUNFILE}
+echo "ap_pipe.py ${REPO} --calib ${CALIB} --template ${TEMPLATE} --rerun ${RERUN} -c associator.level1_db.db_name=${APDB} -c differencer.getTemplate.warpType='psfMatched' --id \$*">>${RUNFILE}
 
 chmod +x ${RUNFILE}
 

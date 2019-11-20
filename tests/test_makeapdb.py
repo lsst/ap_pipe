@@ -23,10 +23,10 @@ import shlex
 import unittest
 
 import lsst.utils.tests
-from lsst.ap.pipe.make_ppdb import ConfigOnlyParser
+from lsst.ap.pipe.make_apdb import ConfigOnlyParser
 
 
-class MakePpdbParserTestSuite(lsst.utils.tests.TestCase):
+class MakeApdbParserTestSuite(lsst.utils.tests.TestCase):
 
     def _parseString(self, commandLine):
         """Tokenize and parse a command line string.
@@ -50,17 +50,17 @@ class MakePpdbParserTestSuite(lsst.utils.tests.TestCase):
     def testExtras(self):
         """Verify that a command line containing extra arguments is rejected.
         """
-        args = '-c ppdb.db_url="dummy" --id visit=42'
+        args = '-c apdb.db_url="dummy" --id visit=42'
         with self.assertRaises(SystemExit):
             self._parseString(args)
 
     def testSetValue(self):
         """Verify that command-line arguments get propagated.
         """
-        args = '-c ppdb.db_url="dummy" -c ppdb.dia_object_index=pix_id_iov'
+        args = '-c apdb.db_url="dummy" -c apdb.dia_object_index=pix_id_iov'
         parsed = self._parseString(args)
-        self.assertEqual(parsed.config.ppdb.db_url, 'dummy')
-        self.assertEqual(parsed.config.ppdb.dia_object_index, 'pix_id_iov')
+        self.assertEqual(parsed.config.apdb.db_url, 'dummy')
+        self.assertEqual(parsed.config.apdb.dia_object_index, 'pix_id_iov')
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):

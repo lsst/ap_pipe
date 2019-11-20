@@ -29,7 +29,7 @@ Using lsst.ap.pipe
    
    getting-started
    pipeline-tutorial
-   ppdb
+   apdb
 
 .. _lsst.ap.pipe-contributing:
 
@@ -47,7 +47,7 @@ Script reference
 .. toctree::
    :maxdepth: 1
 
-   scripts/make_ppdb.py
+   scripts/make_apdb.py
 
 .. _lsst.ap.pipe-pyapi:
 

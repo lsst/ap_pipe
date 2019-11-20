@@ -16,5 +16,5 @@ connected to for continued associating), and a Butler data ID.
 ## Example command-line usage
 
 ```
-ap_pipe.py repo --calib repo/calibs --rerun processed -c associator.level1_db.db_name=ppdb/association.db --id visit=123456 ccdnum=42 filter=g --template templates
+ap_pipe.py repo --calib repo/calibs --rerun processed -c associator.level1_db.db_name=apdb/association.db --id visit=123456 ccdnum=42 filter=g --template templates
 ```
