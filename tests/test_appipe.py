@@ -24,7 +24,7 @@
 import contextlib
 import os
 import unittest
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, ANY
 
 import lsst.utils.tests
 import lsst.pex.exceptions as pexExcept
@@ -54,6 +54,19 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
         except pexExcept.NotFoundError:
             raise unittest.SkipTest("ap_pipe_testdata not set up")
 
+    def _setupObjPatch(self, *args, **kwargs):
+        """Create a patch in setUp that will be reverted once the test ends.
+
+        Parameters
+        ----------
+        *args
+        **kwargs
+            Inputs to `unittest.mock.patch.object`.
+        """
+        patcher = patch.object(*args, **kwargs)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def setUp(self):
         self.config = self._makeDefaultConfig()
         self.butler = dafPersist.Butler(inputs={'root': self.datadir})
@@ -63,10 +76,7 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
             mockDataRef.dataId = dict(dataId, **rest)
             return mockDataRef
 
-        butlerPatcher = patch.object(self.butler, "dataRef",
-                                     side_effect=makeMockDataRef)
-        butlerPatcher.start()
-        self.addCleanup(butlerPatcher.stop)
+        self._setupObjPatch(self.butler, "dataRef", side_effect=makeMockDataRef)
         self.dataId = {"visit": 413635, "ccdnum": 42}
         self.inputRef = self.butler.dataRef("raw", **self.dataId)
 
@@ -128,6 +138,7 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
 
         self.checkReuseExistingOutput(task, ['ccdProcessor'])
         self.checkReuseExistingOutput(task, ['ccdProcessor', 'differencer'])
+        self.checkReuseExistingOutput(task, ['ccdProcessor', 'differencer', 'associator'])
 
     def checkReuseExistingOutput(self, task, skippable):
         """Check whether a task's subtasks are skipped when "reuse" is set.
@@ -135,6 +146,11 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
         Mock guarantees that all "has this been made" tests pass,
         so skippable subtasks should actually be skipped.
         """
+        # extremely brittle because it depends on internal code of runDataRef
+        # but it only needs to work until DM-21886, then we can unit-test the subtask
+        internalRef = self.inputRef.getButler().dataRef()
+        internalRef.put.reset_mock()
+
         with self.mockPatchSubtasks(task) as subtasks:
             struct = task.runDataRef(self.inputRef, reuse=skippable)
             for subtaskName, runner in {
@@ -149,6 +165,11 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
                 else:
                     runner.assert_called_once()
                     self.assertIsNotNone(struct.getDict()[subtaskName], msg=msg)
+
+        if 'associator' in skippable:
+            internalRef.put.assert_not_called()
+        else:
+            internalRef.put.assert_called_once_with(ANY, "apdb_marker")
 
     def testCalexpRun(self):
         """Test the calexp template workflow of each ap_pipe step.

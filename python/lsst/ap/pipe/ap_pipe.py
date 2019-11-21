@@ -209,8 +209,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
                     "matters, please clear the association database and run "
                     "ap_pipe.py with --reuse-output-from=differencer to redo all "
                     "association results consistently.")
-            if "associator" in reuse and \
-                    self.apdb.isVisitProcessed(calexpRef.get("calexp_visitInfo")):
+            if "associator" in reuse and calexpRef.datasetExists("apdb_marker", write=True):
                 message = "Association has already been run for {0}, skipping...".format(calexpRef.dataId)
                 self.log.info(message)
                 associationResults = None
@@ -279,6 +278,9 @@ class ApPipeTask(pipeBase.CmdLineTask):
     def runAssociation(self, sensorRef):
         """Do source association.
 
+        This method writes an ``apdb_marker`` dataset once all changes related
+        to the current exposure have been committed.
+
         Parameters
         ----------
         sensorRef : `lsst.daf.persistence.ButlerDataRef`
@@ -303,13 +305,18 @@ class ApPipeTask(pipeBase.CmdLineTask):
         dia_sources = self.diaSourceDpddifier.run(catalog,
                                                   diffim,
                                                   return_pandas=True)
-        results = self.associator.run(dia_sources, diffim, self.apdb)
-        dia_forced_sources = self.diaForcedSource.run(
-            results.dia_objects,
-            sensorRef.get("ccdExposureId_bits"),
-            sensorRef.get("calexp"),
-            diffim)
-        self.apdb.storeDiaForcedSources(dia_forced_sources)
+        try:
+            results = self.associator.run(dia_sources, diffim, self.apdb)
+            dia_forced_sources = self.diaForcedSource.run(
+                results.dia_objects,
+                sensorRef.get("ccdExposureId_bits"),
+                sensorRef.get("calexp"),
+                diffim)
+            self.apdb.storeDiaForcedSources(dia_forced_sources)
+        finally:
+            # apdb_marker triggers metrics processing; let them try to read
+            # something even if association failed
+            sensorRef.put(self.config.apdb.value, "apdb_marker")
 
         return pipeBase.Struct(
             l1Database=self.apdb,
