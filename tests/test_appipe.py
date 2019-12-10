@@ -109,12 +109,14 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
         """
         with patch.object(task, "ccdProcessor") as mockCcdProcessor, \
                 patch.object(task, "differencer") as mockDifferencer, \
+                patch.object(task, "diaCatalogLoader") as mockDiaCatLoader, \
                 patch.object(task, "diaSourceDpddifier") as mockDpddifier, \
                 patch.object(task, "associator") as mockAssociator, \
                 patch.object(task, "diaForcedSource") as mockForcedSource, \
                 patch.object(task, "apdb") as mockApdb:
             yield pipeBase.Struct(ccdProcessor=mockCcdProcessor,
                                   differencer=mockDifferencer,
+                                  diaCatalogLoader=mockDiaCatLoader,
                                   dpddifier=mockDpddifier,
                                   associator=mockAssociator,
                                   diaForcedSource=mockForcedSource,
