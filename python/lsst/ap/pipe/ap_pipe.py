@@ -37,6 +37,7 @@ from lsst.pipe.tasks.imageDifference import ImageDifferenceTask
 from lsst.ap.association import (
     AssociationTask,
     DiaForcedSourceTask,
+    LoadDiaCatalogsTask,
     MapDiaSourceTask,
     make_dia_object_schema,
     make_dia_source_schema)
@@ -67,6 +68,10 @@ class ApPipeConfig(pexConfig.Config):
         target=MapDiaSourceTask,
         doc="Task for assigning columns from the raw output of ip_diffim into "
             "a schema that more closely resembles the DPDD.",
+    )
+    diaCatalogLoader = pexConfig.ConfigurableField(
+        target=LoadDiaCatalogsTask,
+        doc="Task to load DiaObjects and DiaSources from the Apdb.",
     )
     associator = pexConfig.ConfigurableField(
         target=AssociationTask,
@@ -105,6 +110,10 @@ class ApPipeConfig(pexConfig.Config):
         if not self.differencer.doWriteSubtractedExp:
             raise ValueError("Source association needs difference exposures "
                              "[differencer.doWriteSubtractedExp].")
+        if self.diaCatalogLoader.htmLevel != \
+           self.associator.diaCalculation.plugins["ap_HTMIndex"].htmLevel:
+            raise ValueError("HTM index level in LoadDiaCatalogsTask must be equal to "
+                             "HTMIndexDiaCalculationPlugin index level.")
 
 
 class ApPipeTask(pipeBase.CmdLineTask):
@@ -140,6 +149,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
                              DiaSource=make_dia_source_schema()))
         self.makeSubtask("diaSourceDpddifier",
                          inputSchema=self.differencer.schema)
+        self.makeSubtask("diaCatalogLoader")
         self.makeSubtask("associator")
         self.makeSubtask("diaForcedSource")
 
@@ -302,17 +312,25 @@ class ApPipeTask(pipeBase.CmdLineTask):
         catalog = sensorRef.get(diffType + "Diff_diaSrc")
         diffim = sensorRef.get(diffType + "Diff_differenceExp")
 
-        dia_sources = self.diaSourceDpddifier.run(catalog,
-                                                  diffim,
-                                                  return_pandas=True)
+        diaSources = self.diaSourceDpddifier.run(catalog,
+                                                 diffim,
+                                                 return_pandas=True)
+        # Load the DiaObjects and DiaSource history. If this values it is due
+        # to an improperly set up Apdb hence we don't want it caught by the
+        # try clause.
+        loaderResult = self.diaCatalogLoader.run(diffim, self.apdb)
         try:
-            results = self.associator.run(dia_sources, diffim, self.apdb)
-            dia_forced_sources = self.diaForcedSource.run(
+            results = self.associator.run(diaSources,
+                                          loaderResult.diaObjects,
+                                          loaderResult.diaSources,
+                                          diffim,
+                                          self.apdb)
+            self.diaForcedSource.run(
                 results.dia_objects,
                 sensorRef.get("ccdExposureId_bits"),
                 sensorRef.get("calexp"),
-                diffim)
-            self.apdb.storeDiaForcedSources(dia_forced_sources)
+                diffim,
+                self.apdb)
         finally:
             # apdb_marker triggers metrics processing; let them try to read
             # something even if association failed
