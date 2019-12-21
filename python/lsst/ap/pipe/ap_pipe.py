@@ -315,22 +315,28 @@ class ApPipeTask(pipeBase.CmdLineTask):
         diaSources = self.diaSourceDpddifier.run(catalog,
                                                  diffim,
                                                  return_pandas=True)
-        # Load the DiaObjects and DiaSource history. If this values it is due
+        # Load the DiaObjects and DiaSource history. If this fails it is due
         # to an improperly set up Apdb hence we don't want it caught by the
         # try clause.
         loaderResult = self.diaCatalogLoader.run(diffim, self.apdb)
+
         try:
             results = self.associator.run(diaSources,
                                           loaderResult.diaObjects,
-                                          loaderResult.diaSources,
-                                          diffim,
-                                          self.apdb)
-            self.diaForcedSource.run(
-                results.dia_objects,
+                                          loaderResult.diaSources)
+            diaForcedSources = self.diaForcedSource.run(
+                results.diaObjects,
                 sensorRef.get("ccdExposureId_bits"),
                 sensorRef.get("calexp"),
-                diffim,
-                self.apdb)
+                diffim)
+
+            # Store DiaSources, updated DiaObjects, and DiaForcedSources in the
+            # Apdb.
+            self.apdb.storeDiaSources(results.diaSources)
+            self.apdb.storeDiaObjects(
+                results.updatedDiaObjects,
+                diffim.getInfo().getVisitInfo().getDate().toPython())
+            self.apdb.storeDiaForcedSources(diaForcedSources)
         finally:
             # apdb_marker triggers metrics processing; let them try to read
             # something even if association failed
