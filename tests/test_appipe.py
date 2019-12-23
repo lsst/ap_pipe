@@ -43,8 +43,8 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
     def _makeDefaultConfig(cls):
         config = ApPipeTask.ConfigClass()
         config.load(os.path.join(cls.datadir, "config", "apPipe.py"))
-        config.apdb.db_url = "sqlite://"
-        config.apdb.isolation_level = "READ_UNCOMMITTED"
+        config.diaPipe.apdb.db_url = "sqlite://"
+        config.diaPipe.apdb.isolation_level = "READ_UNCOMMITTED"
         return config
 
     @classmethod
@@ -100,27 +100,17 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
 
             ``ccdProcessor``
             ``differencer``
-            ``dpddifier``
-            ``associator``
-            ``forcedSource``
+            ``diaPipe``
                 a mock for the corresponding subtask. Mocks do not return any
                 particular value, but have mocked methods that can be queried
                 for calls by ApPipeTask
         """
         with patch.object(task, "ccdProcessor") as mockCcdProcessor, \
                 patch.object(task, "differencer") as mockDifferencer, \
-                patch.object(task, "diaCatalogLoader") as mockDiaCatLoader, \
-                patch.object(task, "diaSourceDpddifier") as mockDpddifier, \
-                patch.object(task, "associator") as mockAssociator, \
-                patch.object(task, "diaForcedSource") as mockForcedSource, \
-                patch.object(task, "apdb") as mockApdb:
+                patch.object(task, "diaPipe") as mockDiaPipe:
             yield pipeBase.Struct(ccdProcessor=mockCcdProcessor,
                                   differencer=mockDifferencer,
-                                  diaCatalogLoader=mockDiaCatLoader,
-                                  dpddifier=mockDpddifier,
-                                  associator=mockAssociator,
-                                  diaForcedSource=mockForcedSource,
-                                  apdb=mockApdb)
+                                  diaPipe=mockDiaPipe)
 
     def testGenericRun(self):
         """Test the normal workflow of each ap_pipe step.
@@ -130,8 +120,7 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
             task.runDataRef(self.inputRef)
             subtasks.ccdProcessor.runDataRef.assert_called_once()
             subtasks.differencer.runDataRef.assert_called_once()
-            subtasks.associator.run.assert_called_once()
-            subtasks.diaForcedSource.run.assert_called_once()
+            subtasks.diaPipe.run.assert_called_once()
 
     def testReuseExistingOutput(self):
         """Test reuse keyword to ApPipeTask.runDataRef.
@@ -140,7 +129,7 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
 
         self.checkReuseExistingOutput(task, ['ccdProcessor'])
         self.checkReuseExistingOutput(task, ['ccdProcessor', 'differencer'])
-        self.checkReuseExistingOutput(task, ['ccdProcessor', 'differencer', 'associator'])
+        self.checkReuseExistingOutput(task, ['ccdProcessor', 'differencer', 'diaPipe'])
 
     def checkReuseExistingOutput(self, task, skippable):
         """Check whether a task's subtasks are skipped when "reuse" is set.
@@ -158,7 +147,7 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
             for subtaskName, runner in {
                 'ccdProcessor': subtasks.ccdProcessor.runDataRef,
                 'differencer': subtasks.differencer.runDataRef,
-                'associator': subtasks.associator.run,
+                'diaPipe': subtasks.diaPipe.run,
             }.items():
                 msg = "subtask = " + subtaskName
                 if subtaskName in skippable:
@@ -168,7 +157,7 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
                     runner.assert_called_once()
                     self.assertIsNotNone(struct.getDict()[subtaskName], msg=msg)
 
-        if 'associator' in skippable:
+        if 'diaPipe' in skippable:
             internalRef.put.assert_not_called()
         else:
             internalRef.put.assert_called_once_with(ANY, "apdb_marker")
@@ -190,8 +179,7 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
             task.runDataRef(self.inputRef, templateIds=[self.dataId])
             self.assertEqual(subtasks.ccdProcessor.runDataRef.call_count, 2)
             subtasks.differencer.runDataRef.assert_called_once()
-            subtasks.associator.run.assert_called_once()
-            subtasks.diaForcedSource.run.assert_called_once()
+            subtasks.diaPipe.run.assert_called_once()
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):

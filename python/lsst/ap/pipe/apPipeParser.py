@@ -60,7 +60,7 @@ class ApPipeParser(pipeBase.ArgumentParser):
         self.add_id_argument("--templateId", inputDataset, doMakeDataRefList=True,
                              help="Optional template data ID (visit only), e.g. --templateId visit=410929")
 
-        self.addReuseOption(["ccdProcessor", "differencer", "associator"])
+        self.addReuseOption(["ccdProcessor", "differencer", "diaPipe"])
 
     # TODO: workaround for lack of support for multi-input butlers; see DM-11865
     # Can't delegate to pipeBase.ArgumentParser.parse_args because creating the

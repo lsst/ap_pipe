@@ -50,17 +50,17 @@ class MakeApdbParserTestSuite(lsst.utils.tests.TestCase):
     def testExtras(self):
         """Verify that a command line containing extra arguments is rejected.
         """
-        args = '-c apdb.db_url="dummy" --id visit=42'
+        args = '-c diaPipe.apdb.db_url="dummy" --id visit=42'
         with self.assertRaises(SystemExit):
             self._parseString(args)
 
     def testSetValue(self):
         """Verify that command-line arguments get propagated.
         """
-        args = '-c apdb.db_url="dummy" -c apdb.dia_object_index=pix_id_iov'
+        args = '-c diaPipe.apdb.db_url="dummy" -c diaPipe.apdb.dia_object_index=pix_id_iov'
         parsed = self._parseString(args)
-        self.assertEqual(parsed.config.apdb.db_url, 'dummy')
-        self.assertEqual(parsed.config.apdb.dia_object_index, 'pix_id_iov')
+        self.assertEqual(parsed.config.diaPipe.apdb.db_url, 'dummy')
+        self.assertEqual(parsed.config.diaPipe.apdb.dia_object_index, 'pix_id_iov')
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
