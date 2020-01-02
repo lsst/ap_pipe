@@ -50,7 +50,8 @@ The config overrides must define ``apdb.db_url`` to create a valid config.
         super().__init__(description=description, **kwargs)
 
         self.add_argument("-c", "--config", nargs="*", action=ConfigValueAction,
-                          help="config override(s), e.g. ``-c apdb.prefix=fancy apdb.db_url=\"sqlite://\"``",
+                          help="config override(s), e.g. "
+                               "``-c apdb.prefix=fancy diaPipe.apdb.db_url=\"sqlite://\"``",
                           metavar="NAME=VALUE")
         self.add_argument("-C", "--configfile", dest="configfile", nargs="*", action=ConfigFileAction,
                           help="config override file(s) for ApPipeConfig")
@@ -107,7 +108,7 @@ def makeApdb(args=None):
     parser = ConfigOnlyParser()
     parsedCmd = parser.parse_args(args=args)
 
-    apdb = parsedCmd.config.apdb.apply(
+    apdb = parsedCmd.config.diaPipe.apdb.apply(
         afw_schemas=dict(DiaObject=make_dia_object_schema(),
                          DiaSource=make_dia_source_schema()))
     apdb.makeSchema()

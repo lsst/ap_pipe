@@ -23,27 +23,18 @@
 
 __all__ = ["ApPipeConfig", "ApPipeTask"]
 
-import os
 import warnings
 
 from sqlalchemy.exc import OperationalError, ProgrammingError
 
-import lsst.dax.apdb as daxApdb
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 
 from lsst.pipe.tasks.processCcd import ProcessCcdTask
 from lsst.pipe.tasks.imageDifference import ImageDifferenceTask
-from lsst.ap.association import (
-    AssociationTask,
-    DiaForcedSourceTask,
-    LoadDiaCatalogsTask,
-    MapDiaSourceTask,
-    make_dia_object_schema,
-    make_dia_source_schema)
+from lsst.ap.association import DiaPipelineTask
 from lsst.ap.pipe.apPipeParser import ApPipeParser
 from lsst.ap.pipe.apPipeTaskRunner import ApPipeTaskRunner
-from lsst.utils import getPackageDir
 
 
 class ApPipeConfig(pexConfig.Config):
@@ -58,29 +49,10 @@ class ApPipeConfig(pexConfig.Config):
         target=ImageDifferenceTask,
         doc="Task used to do image subtraction and DiaSource detection.",
     )
-    apdb = pexConfig.ConfigurableField(
-        target=daxApdb.Apdb,
-        ConfigClass=daxApdb.ApdbConfig,
-        doc="Database connection for storing associated DiaSources and "
-            "DiaObjects. Must already be initialized.",
-    )
-    diaSourceDpddifier = pexConfig.ConfigurableField(
-        target=MapDiaSourceTask,
-        doc="Task for assigning columns from the raw output of ip_diffim into "
-            "a schema that more closely resembles the DPDD.",
-    )
-    diaCatalogLoader = pexConfig.ConfigurableField(
-        target=LoadDiaCatalogsTask,
-        doc="Task to load DiaObjects and DiaSources from the Apdb.",
-    )
-    associator = pexConfig.ConfigurableField(
-        target=AssociationTask,
-        doc="Task used to associate DiaSources with DiaObjects.",
-    )
-    diaForcedSource = pexConfig.ConfigurableField(
-        target=DiaForcedSourceTask,
-        doc="Task used for force photometer DiaObject locations in direct and "
-            "difference images.",
+    diaPipe = pexConfig.ConfigurableField(
+        target=DiaPipelineTask,
+        doc="Pipeline task for loading/store DiaSources and DiaObjects and "
+            "spatially associating them.",
     )
 
     def setDefaults(self):
@@ -93,14 +65,6 @@ class ApPipeConfig(pexConfig.Config):
         # Don't have source catalogs for templates
         self.differencer.doSelectSources = False
 
-        # make sure the db schema and config is set up for ap_association.
-        self.apdb.dia_object_index = "baseline"
-        self.apdb.dia_object_columns = []
-        self.apdb.extra_schema_file = os.path.join(
-            getPackageDir("ap_association"),
-            "data",
-            "apdb-ap-pipe-schema-extra.yaml")
-
     def validate(self):
         pexConfig.Config.validate(self)
         if not self.differencer.doMeasurement:
@@ -110,10 +74,6 @@ class ApPipeConfig(pexConfig.Config):
         if not self.differencer.doWriteSubtractedExp:
             raise ValueError("Source association needs difference exposures "
                              "[differencer.doWriteSubtractedExp].")
-        if self.diaCatalogLoader.htmLevel != \
-           self.associator.diaCalculation.plugins["ap_HTMIndex"].htmLevel:
-            raise ValueError("HTM index level in LoadDiaCatalogsTask must be equal to "
-                             "HTMIndexDiaCalculationPlugin index level.")
 
 
 class ApPipeTask(pipeBase.CmdLineTask):
@@ -144,14 +104,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
 
         self.makeSubtask("ccdProcessor", butler=butler)
         self.makeSubtask("differencer", butler=butler)
-        self.apdb = self.config.apdb.apply(
-            afw_schemas=dict(DiaObject=make_dia_object_schema(),
-                             DiaSource=make_dia_source_schema()))
-        self.makeSubtask("diaSourceDpddifier",
-                         inputSchema=self.differencer.schema)
-        self.makeSubtask("diaCatalogLoader")
-        self.makeSubtask("associator")
-        self.makeSubtask("diaForcedSource")
+        self.makeSubtask("diaPipe", initInputs={"diaSourceSchema": self.differencer.schema})
 
     @pipeBase.timeMethod
     def runDataRef(self, rawRef, templateIds=None, reuse=None):
@@ -178,7 +131,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
                 `ap_association`'s DB access API
             - ccdProcessor : output of `config.ccdProcessor.runDataRef` (`lsst.pipe.base.Struct` or `None`).
             - differencer : output of `config.differencer.runDataRef` (`lsst.pipe.base.Struct` or `None`).
-            - associator : output of `config.associator.run` (`lsst.pipe.base.Struct` or `None`).
+            - diaPipe : output of `config.diaPipe.run` (`lsst.pipe.base.Struct` or `None`).
         """
         if reuse is None:
             reuse = []
@@ -212,28 +165,28 @@ class ApPipeTask(pipeBase.CmdLineTask):
             diffImResults = self.runDiffIm(calexpRef, templateIds)
 
         try:
-            if "associator" in reuse:
+            if "diaPipe" in reuse:
                 warnings.warn(
                     "Reusing association results for some images while rerunning "
                     "others may change the associations. If exact reproducibility "
                     "matters, please clear the association database and run "
                     "ap_pipe.py with --reuse-output-from=differencer to redo all "
                     "association results consistently.")
-            if "associator" in reuse and calexpRef.datasetExists("apdb_marker", write=True):
-                message = "Association has already been run for {0}, skipping...".format(calexpRef.dataId)
+            if "diaPipe" in reuse and calexpRef.datasetExists("apdb_marker", write=True):
+                message = "DiaPipeline has already been run for {0}, skipping...".format(calexpRef.dataId)
                 self.log.info(message)
-                associationResults = None
+                diaPipeResults = None
             else:
-                associationResults = self.runAssociation(calexpRef)
+                diaPipeResults = self.runAssociation(calexpRef)
         except (OperationalError, ProgrammingError) as e:
             # Don't use lsst.pipe.base.TaskError because it mixes poorly with exception chaining
             raise RuntimeError("Database query failed; did you call make_apdb.py first?") from e
 
         return pipeBase.Struct(
-            l1Database=self.apdb,
+            l1Database=self.diaPipe.apdb,
             ccdProcessor=processResults if processResults else None,
             differencer=diffImResults if diffImResults else None,
-            associator=associationResults.taskResults if associationResults else None
+            diaPipe=diaPipeResults.taskResults if diaPipeResults else None
         )
 
     @pipeBase.timeMethod
@@ -303,47 +256,22 @@ class ApPipeTask(pipeBase.CmdLineTask):
 
             - apdb : `lsst.dax.apdb.Apdb` Initialized association database containing final association
                 results.
-            - taskResults : output of `config.associator.run` (`lsst.pipe.base.Struct`).
+            - taskResults : output of `config.diaPipe.run` (`lsst.pipe.base.Struct`).
         """
-        self.log.info("Running Association...")
-
         diffType = self.config.differencer.coaddName
 
-        catalog = sensorRef.get(diffType + "Diff_diaSrc")
-        diffim = sensorRef.get(diffType + "Diff_differenceExp")
+        results = self.diaPipe.run(
+            diaSourceCat=sensorRef.get(diffType + "Diff_diaSrc"),
+            diffIm=sensorRef.get(diffType + "Diff_differenceExp"),
+            exposure=sensorRef.get("calexp"),
+            ccdExposureIdBits=sensorRef.get("ccdExposureId_bits"))
 
-        diaSources = self.diaSourceDpddifier.run(catalog,
-                                                 diffim,
-                                                 return_pandas=True)
-        # Load the DiaObjects and DiaSource history. If this fails it is due
-        # to an improperly set up Apdb hence we don't want it caught by the
-        # try clause.
-        loaderResult = self.diaCatalogLoader.run(diffim, self.apdb)
-
-        try:
-            results = self.associator.run(diaSources,
-                                          loaderResult.diaObjects,
-                                          loaderResult.diaSources)
-            diaForcedSources = self.diaForcedSource.run(
-                results.diaObjects,
-                sensorRef.get("ccdExposureId_bits"),
-                sensorRef.get("calexp"),
-                diffim)
-
-            # Store DiaSources, updated DiaObjects, and DiaForcedSources in the
-            # Apdb.
-            self.apdb.storeDiaSources(results.diaSources)
-            self.apdb.storeDiaObjects(
-                results.updatedDiaObjects,
-                diffim.getInfo().getVisitInfo().getDate().toPython())
-            self.apdb.storeDiaForcedSources(diaForcedSources)
-        finally:
-            # apdb_marker triggers metrics processing; let them try to read
-            # something even if association failed
-            sensorRef.put(self.config.apdb.value, "apdb_marker")
+        # apdb_marker triggers metrics processing; let them try to read
+        # something even if association failed
+        sensorRef.put(results.apdb_marker, "apdb_marker")
 
         return pipeBase.Struct(
-            l1Database=self.apdb,
+            l1Database=self.diaPipe.apdb,
             taskResults=results
         )
 
