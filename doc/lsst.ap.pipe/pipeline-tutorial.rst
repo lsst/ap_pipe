@@ -13,7 +13,7 @@ Pick up where you left off in :doc:`Getting Started <getting-started>`.
 This means you already have a repository of ingested DECam data and have setup
 the LSST Science Pipelines stack as well as ``ap_pipe`` and ``ap_association``.
 
-Your directory structure should look something like 
+Your directory structure should look something like
 
 .. code-block:: none
 
@@ -130,7 +130,7 @@ in the ``processed`` directory and access the data products that way.
 For example, in python
 
 .. code-block:: python
-   
+
    import lsst.daf.persistence as dafPersist
    butler = dafPersist.Butler('repo/rerun/processed')
    dataId = {'visit': 123456, 'ccdnum': 42, 'filter': 'g'}
@@ -149,7 +149,7 @@ as templates for difference imaging. However, the pipeline also supports
 using calibrated exposures (``calexps``) as templates instead. A configuration file
 ``config/calexpTemplates.py`` is included witha ``ap_pipe`` to enable this.
 
-To use ap_pipe in calexp template mode, point to the config file with the 
+To use ap_pipe in calexp template mode, point to the config file with the
 ``--configfile`` (``-C``) flag and additionally specify the ``dataId`` of the template
 with the ``--templateId`` flag, e.g.,
 
@@ -211,8 +211,8 @@ Common errors
 Interpreting the results
 ========================
 
-.. warning:: 
-   
+.. warning::
+
    The format of the ``ap_association`` Alert Production Database is rapidly evolving. For
    the latest information on how to interface with it, see :doc:`lsst.ap.association </modules/lsst.ap.association/index>`.
 
@@ -241,7 +241,7 @@ calibrated exposures, difference images, inspect DIAObjects and/or DIASources, e
    objTable = pd.read_sql_query('select * from {0};'.format(tables['obj']), connection)
    srcTable = pd.read_sql_query('select * from {0};'.format(tables['src']), connection)
    connection.close()
-   
+
    # Plot how many sourceIDs are attached to any given objectID
    obj_id = objTable['id'].values  # object ids from the objTable
    con_obj_id = conTable['obj_id'].values  # object ids from the conTable

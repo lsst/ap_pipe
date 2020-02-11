@@ -16,7 +16,7 @@ Overview
 
 .. toctree::
    :maxdepth: 1
-   
+
    pipeline-overview
 
 .. .. _lsst.ap.pipe-using:
@@ -26,7 +26,7 @@ Using lsst.ap.pipe
 
 .. toctree::
    :maxdepth: 1
-   
+
    getting-started
    pipeline-tutorial
    apdb
