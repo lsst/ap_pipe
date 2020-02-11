@@ -66,8 +66,8 @@ To process your ingested data, run
 .. prompt:: bash
 
    mkdir apdb/
-   make_apdb.py -c apdb.isolation_level=READ_UNCOMMITTED -c apdb.db_url="sqlite:///apdb/association.db"
-   ap_pipe.py repo --calib repo/calibs --rerun processed -c apdb.isolation_level=READ_UNCOMMITTED -c apdb.db_url="sqlite:///apdb/association.db" --id visit=123456 ccdnum=42 filter=g --template templates
+   make_apdb.py -c diaPipe.apdb.isolation_level=READ_UNCOMMITTED -c diaPipe.apdb.db_url="sqlite:///apdb/association.db"
+   ap_pipe.py repo --calib repo/calibs --rerun processed -c diaPipe.apdb.isolation_level=READ_UNCOMMITTED -c diaPipe.apdb.db_url="sqlite:///apdb/association.db" --id visit=123456 ccdnum=42 filter=g --template templates
 
 In this case, a ``processed`` directory will be created within ``repo/rerun`` and the results will be written there.
 See :doc:`apdb` for more information on :command:`make_apdb.py`.
@@ -89,7 +89,7 @@ If you prefer to have a standalone output repository, you may instead run
 
 .. prompt:: bash
 
-   ap_pipe.py repo --calib repo/calibs --output path/to/put/processed/data/in -c apdb.isolation_level=READ_UNCOMMITTED -c apdb.db_url="sqlite:///apdb/association.db" --id visit=123456 ccdnum=42 filter=g --template path/to/templates
+   ap_pipe.py repo --calib repo/calibs --output path/to/put/processed/data/in -c diaPipe.apdb.isolation_level=READ_UNCOMMITTED -c diaPipe.apdb.db_url="sqlite:///apdb/association.db" --id visit=123456 ccdnum=42 filter=g --template path/to/templates
 
 In this case, the output directory will be created if it does not already exist.
 If you omit the ``--template`` flag, ``ap_pipe`` will assume the templates are
@@ -162,8 +162,8 @@ with the ``--template`` flag if they are not in the main repo.
 A full command looks like
 
 .. prompt:: bash
-   
-   ap_pipe.py repo --calib repo/calibs --rerun processed -C $AP_PIPE_DIR/config/calexpTemplates.py -c apdb.isolation_level=READ_UNCOMMITTED -c apdb.db_url="sqlite:///apdb/association.db" --id visit=123456 ccdnum=42 filter=g --template /path/to/calexp/templates --templateId visit=234567
+
+   ap_pipe.py repo --calib repo/calibs --rerun processed -C $AP_PIPE_DIR/config/calexpTemplates.py -c diaPipe.apdb.isolation_level=READ_UNCOMMITTED -c diaPipe.apdb.db_url="sqlite:///apdb/association.db" --id visit=123456 ccdnum=42 filter=g --template /path/to/calexp/templates --templateId visit=234567
 
 
 .. _section-ap-pipe-supplemental-info:
