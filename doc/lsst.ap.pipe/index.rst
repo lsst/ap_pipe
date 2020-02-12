@@ -49,6 +49,18 @@ Script reference
 
    scripts/make_apdb.py
 
+Task reference
+==============
+
+.. _lsst.ap.pipe-command-line-tasks:
+
+Command-line tasks
+------------------
+
+.. lsst-cmdlinetasks::
+   :root: lsst.ap.pipe
+   :toctree: tasks
+
 .. _lsst.ap.pipe-pyapi:
 
 Python API reference
