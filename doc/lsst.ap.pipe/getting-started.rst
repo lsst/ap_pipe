@@ -47,7 +47,7 @@ A standard ingestion workflow for DECam looks something like
 
 .. note::
 
-   Defect ingestion is a step unique to DECam. It presently requires 
+   Defect ingestion is a step unique to DECam. It presently requires
    ``--mode=skip``, this mode interprets paths as relative to ``calib_loc``,
    and the validity value is not used (but must be included). This interface
    may change when `DM-5467 <https://jira.lsstcorp.org/browse/DM-5467>`_ is completed.
@@ -66,17 +66,17 @@ For the AP Pipeline to successfully process data, the following is required:
 
   - The reference catalogs must be in a directory called :file:`ref_cats` with subdirectories
     for each catalog containing the appropriate catalog shards.
-    We recommend using Pan-STARRS for photometry and gaia for astrometry.
+    We recommend using Pan-STARRS for photometry and Gaia for astrometry.
     An example :ref:`config file <command-line-task-config-howto-configfile>` for using these two catalogs can be found in the `ap_verify_hits2015`_ repository.
-    
+
 - **Calibration products** (biases, flats, and defects, if applicable)
   ingested into a Butler repository you must specify with the ``--calib`` flag on
   the command line at runtime
-  
+
   - To check if this requirement has been satisfied, you can inspect the
     :file:`calibRegistry.sqlite3` created in this repository and ensure the information
     in the flat, bias, and defect tables is accurate
-    
+
 - **Template images** (of type ``deepCoadd`` by default) for difference imaging
   must be either in the main Butler repository or in another location you may
   specify with the ``--template`` flag on the command line at runtime

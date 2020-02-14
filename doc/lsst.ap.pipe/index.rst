@@ -16,7 +16,7 @@ Overview
 
 .. toctree::
    :maxdepth: 1
-   
+
    pipeline-overview
 
 .. .. _lsst.ap.pipe-using:
@@ -26,7 +26,7 @@ Using lsst.ap.pipe
 
 .. toctree::
    :maxdepth: 1
-   
+
    getting-started
    pipeline-tutorial
    apdb
@@ -48,6 +48,18 @@ Script reference
    :maxdepth: 1
 
    scripts/make_apdb.py
+
+Task reference
+==============
+
+.. _lsst.ap.pipe-command-line-tasks:
+
+Command-line tasks
+------------------
+
+.. lsst-cmdlinetasks::
+   :root: lsst.ap.pipe
+   :toctree: tasks
 
 .. _lsst.ap.pipe-pyapi:
 

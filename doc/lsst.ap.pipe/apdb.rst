@@ -14,8 +14,10 @@ Setting up the Alert Production Database for ap_pipe
 
 .. |ap_pipe| replace:: :command:`ap_pipe.py`
 
-|ap_pipe| needs an existing Alert Production Database (APDB) in which to store its results.
-Such a database will be provided externally during operations, but developers can run |make_apdb| to set up their own database for testing.
+
+In its default configuration, the Alert Production Pipeline, as represented by :lsst-task:`lsst.ap.pipe.ApPipeTask` and executed by |ap_pipe|, relies on a database to save and load DIASources and DIAObjects.
+When running as part of the operational system, this database will be provided externally.
+However, during testing and development, developers can run |make_apdb| to set up their own database.
 This page provides an overview of how to use |make_apdb|.
 
 .. _section-ap-pipe-apdb-config:
@@ -23,13 +25,12 @@ This page provides an overview of how to use |make_apdb|.
 Configuring the database
 ========================
 
-|ap_pipe| includes information about the database location and schema in its `ApPipeConfig`, and most users pass this information to the script through the :option:`--config <ap_pipe.py --config>` and :option:`--configfile <ap_pipe.py --configfile>` command-line options.
-
+The database is configured using `~lsst.dax.apdb.ApdbConfig`.
+|ap_pipe| command line users can pass configuration information to the script through the :option:`--config <ap_pipe.py --config>` and :option:`--configfile <ap_pipe.py --configfile>` command-line options.
 |make_apdb| also uses `ApPipeConfig` and the :option:`--config` and :option:`--configfile` options, so users can pass exactly the same arguments to |make_apdb| and |ap_pipe|.
 Supporting identical command line arguments for both scripts makes it easy to keep the database settings in sync.
 
-For more information on the configuration options themselves, see `lsst.dax.apdb.ApdbConfig`.
-``apdb.db_url`` has no default and must be set to create a valid config.
+Note that ``apdb.db_url`` has no default; a value *must* be provided by the user.
 
 .. _section-ap-pipe-apdb-examples:
 
@@ -40,8 +41,8 @@ Databases can be configured using direct config overrides:
 
 .. prompt:: bash
 
-   make_apdb.py -c apdb.isolation_level=READ_UNCOMMITTED apdb.db_url="sqlite:///databases/apdb.db" differencer.coaddName=dcr
-   ap_pipe.py -c apdb.isolation_level=READ_UNCOMMITTED apdb.db_url="sqlite:///databases/apdb.db" differencer.coaddName=dcr repo --calib repo/calibs --rerun myrun --id
+   make_apdb.py -c diaPipe.apdb.isolation_level=READ_UNCOMMITTED diaPipe.apdb.db_url="sqlite:///databases/apdb.db" differencer.coaddName=dcr
+   ap_pipe.py -c diaPipe.apdb.isolation_level=READ_UNCOMMITTED diaPipe.apdb.db_url="sqlite:///databases/apdb.db" differencer.coaddName=dcr repo --calib repo/calibs --rerun myrun --id
 
 |make_apdb| ignores any `ApPipeConfig` fields not related to the APDB (in the example, ``differencer.coaddName``), so there is no need to filter them out.
 

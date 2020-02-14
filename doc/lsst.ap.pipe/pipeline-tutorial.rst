@@ -13,7 +13,7 @@ Pick up where you left off in :doc:`Getting Started <getting-started>`.
 This means you already have a repository of ingested DECam data and have setup
 the LSST Science Pipelines stack as well as ``ap_pipe`` and ``ap_association``.
 
-Your directory structure should look something like 
+Your directory structure should look something like
 
 .. code-block:: none
 
@@ -66,8 +66,8 @@ To process your ingested data, run
 .. prompt:: bash
 
    mkdir apdb/
-   make_apdb.py -c apdb.isolation_level=READ_UNCOMMITTED -c apdb.db_url="sqlite:///apdb/association.db"
-   ap_pipe.py repo --calib repo/calibs --rerun processed -c apdb.isolation_level=READ_UNCOMMITTED -c apdb.db_url="sqlite:///apdb/association.db" --id visit=123456 ccdnum=42 filter=g --template templates
+   make_apdb.py -c diaPipe.apdb.isolation_level=READ_UNCOMMITTED -c diaPipe.apdb.db_url="sqlite:///apdb/association.db"
+   ap_pipe.py repo --calib repo/calibs --rerun processed -c diaPipe.apdb.isolation_level=READ_UNCOMMITTED -c diaPipe.apdb.db_url="sqlite:///apdb/association.db" --id visit=123456 ccdnum=42 filter=g --template templates
 
 In this case, a ``processed`` directory will be created within ``repo/rerun`` and the results will be written there.
 See :doc:`apdb` for more information on :command:`make_apdb.py`.
@@ -89,7 +89,7 @@ If you prefer to have a standalone output repository, you may instead run
 
 .. prompt:: bash
 
-   ap_pipe.py repo --calib repo/calibs --output path/to/put/processed/data/in -c apdb.isolation_level=READ_UNCOMMITTED -c apdb.db_url="sqlite:///apdb/association.db" --id visit=123456 ccdnum=42 filter=g --template path/to/templates
+   ap_pipe.py repo --calib repo/calibs --output path/to/put/processed/data/in -c diaPipe.apdb.isolation_level=READ_UNCOMMITTED -c diaPipe.apdb.db_url="sqlite:///apdb/association.db" --id visit=123456 ccdnum=42 filter=g --template path/to/templates
 
 In this case, the output directory will be created if it does not already exist.
 If you omit the ``--template`` flag, ``ap_pipe`` will assume the templates are
@@ -130,7 +130,7 @@ in the ``processed`` directory and access the data products that way.
 For example, in python
 
 .. code-block:: python
-   
+
    import lsst.daf.persistence as dafPersist
    butler = dafPersist.Butler('repo/rerun/processed')
    dataId = {'visit': 123456, 'ccdnum': 42, 'filter': 'g'}
@@ -149,7 +149,7 @@ as templates for difference imaging. However, the pipeline also supports
 using calibrated exposures (``calexps``) as templates instead. A configuration file
 ``config/calexpTemplates.py`` is included witha ``ap_pipe`` to enable this.
 
-To use ap_pipe in calexp template mode, point to the config file with the 
+To use ap_pipe in calexp template mode, point to the config file with the
 ``--configfile`` (``-C``) flag and additionally specify the ``dataId`` of the template
 with the ``--templateId`` flag, e.g.,
 
@@ -162,8 +162,8 @@ with the ``--template`` flag if they are not in the main repo.
 A full command looks like
 
 .. prompt:: bash
-   
-   ap_pipe.py repo --calib repo/calibs --rerun processed -C $AP_PIPE_DIR/config/calexpTemplates.py -c apdb.isolation_level=READ_UNCOMMITTED -c apdb.db_url="sqlite:///apdb/association.db" --id visit=123456 ccdnum=42 filter=g --template /path/to/calexp/templates --templateId visit=234567
+
+   ap_pipe.py repo --calib repo/calibs --rerun processed -C $AP_PIPE_DIR/config/calexpTemplates.py -c diaPipe.apdb.isolation_level=READ_UNCOMMITTED -c diaPipe.apdb.db_url="sqlite:///apdb/association.db" --id visit=123456 ccdnum=42 filter=g --template /path/to/calexp/templates --templateId visit=234567
 
 
 .. _section-ap-pipe-supplemental-info:
@@ -211,8 +211,8 @@ Common errors
 Interpreting the results
 ========================
 
-.. warning:: 
-   
+.. warning::
+
    The format of the ``ap_association`` Alert Production Database is rapidly evolving. For
    the latest information on how to interface with it, see :doc:`lsst.ap.association </modules/lsst.ap.association/index>`.
 
@@ -241,7 +241,7 @@ calibrated exposures, difference images, inspect DIAObjects and/or DIASources, e
    objTable = pd.read_sql_query('select * from {0};'.format(tables['obj']), connection)
    srcTable = pd.read_sql_query('select * from {0};'.format(tables['src']), connection)
    connection.close()
-   
+
    # Plot how many sourceIDs are attached to any given objectID
    obj_id = objTable['id'].values  # object ids from the objTable
    con_obj_id = conTable['obj_id'].values  # object ids from the conTable
