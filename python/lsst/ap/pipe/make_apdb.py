@@ -55,6 +55,8 @@ The config overrides must define ``apdb.db_url`` to create a valid config.
                           metavar="NAME=VALUE")
         self.add_argument("-C", "--configfile", dest="configfile", nargs="*", action=ConfigFileAction,
                           help="config override file(s) for ApPipeConfig")
+        self.add_argument("--camera", dest="camera", action=_CameraAction,
+                          help="The camera from which to load ApPipe config files, as 'obs_package/camera'")
 
     def parse_args(self, args=None, namespace=None):
         """Parse arguments for an `ApPipeConfig`.
@@ -86,6 +88,24 @@ The config overrides must define ``apdb.db_url`` to create a valid config.
         namespace.config.freeze()
 
         return namespace
+
+
+class _CameraAction(argparse.Action):
+    """A parser for a user-provided camera specification.
+    """
+    def __call__(self, parser, namespace, values, option_string):
+        split = values.split("/")
+        if len(split) == 2:
+            setattr(namespace, "instrument", split[0])
+            setattr(namespace, self.dest, split[1])
+        elif len(split) == 1:
+            # assume e.g. "decam" -> "obs_decam/decam"
+            camera = split[0]
+            setattr(namespace, "instrument", "obs_" + camera)
+            setattr(namespace, self.dest, camera)
+        else:
+            raise ValueError(f"{option_string} should be observatory and camera separated by a single "
+                             f"slash, e.g. 'obs_foo/foocam'; got '{values}' instead")
 
 
 def makeApdb(args=None):
