@@ -268,7 +268,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
 
         # apdb_marker triggers metrics processing; let them try to read
         # something even if association failed
-        sensorRef.put(results.apdb_marker, "apdb_marker")
+        sensorRef.put(results.apdbMarker, "apdb_marker")
 
         return pipeBase.Struct(
             l1Database=self.diaPipe.apdb,
