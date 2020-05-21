@@ -104,7 +104,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
 
         self.makeSubtask("ccdProcessor", butler=butler)
         self.makeSubtask("differencer", butler=butler)
-        self.makeSubtask("diaPipe", initInputs={"diaSourceSchema": self.differencer.schema})
+        self.makeSubtask("diaPipe", initInputs={"diaSourceSchema": self.differencer.outputSchema})
 
     @pipeBase.timeMethod
     def runDataRef(self, rawRef, templateIds=None, reuse=None):
