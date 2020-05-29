@@ -19,3 +19,6 @@ contracts:
     - differencer.doMeasurement is True
     - differencer.doWriteSources is True
     - differencer.doWriteSubtractedExp is True
+    # Inputs and outputs must match
+    - differencer.connections.coaddName == diaPipe.connections.coaddName
+    - differencer.connections.fakesType == diaPipe.connections.fakesType
