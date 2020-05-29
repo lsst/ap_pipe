@@ -67,6 +67,8 @@ class ApPipeConfig(pexConfig.Config):
 
     def validate(self):
         pexConfig.Config.validate(self)
+        if not self.ccdProcessor.calibrate.doWrite or not self.ccdProcessor.calibrate.doWriteExposure:
+            raise ValueError("Differencing needs calexps [ccdProcessor.calibrate.doWrite, doWriteExposure]")
         if not self.differencer.doMeasurement:
             raise ValueError("Source association needs diaSource fluxes [differencer.doMeasurement].")
         if not self.differencer.doWriteSources:
