@@ -1,0 +1,21 @@
+# Gen 3 pipeline for Alert Production
+
+description: End to end AP pipeline
+inherits:
+  - location: $PIPE_TASKS_DIR/pipelines/ProcessCcd.yaml
+tasks:
+    differencer:
+        class: lsst.pipe.tasks.imageDifference.ImageDifferenceTask
+        config:
+            # Always prefer decorrelation; may eventually become ImageDifferenceTask default
+            doDecorrelation: True
+            detection.thresholdValue: 5.0  # needed with doDecorrelation
+            # Don't have source catalogs for templates
+            doSelectSources: False
+    diaPipe:
+        class: lsst.ap.association.DiaPipelineTask
+contracts:
+    # DiaPipelineTask needs diaSource fluxes, catalogs, and difference exposures
+    - differencer.doMeasurement is True
+    - differencer.doWriteSources is True
+    - differencer.doWriteSubtractedExp is True
