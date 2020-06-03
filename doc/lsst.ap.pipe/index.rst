@@ -27,8 +27,8 @@ Using lsst.ap.pipe
 .. toctree::
    :maxdepth: 1
 
-   getting-started
-   pipeline-tutorial
+   getting-started-gen2
+   pipeline-tutorial-gen2
    apdb
 
 .. _lsst.ap.pipe-contributing:

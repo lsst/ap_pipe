@@ -1,15 +1,15 @@
 .. py:currentmodule:: lsst.ap.pipe
 
-.. _pipeline-tutorial:
+.. _pipeline-tutorial-gen2:
 
-#######################
-Running the AP pipeline
-#######################
+###############################
+Running the AP pipeline (Gen 2)
+###############################
 
 Setup
 =====
 
-Pick up where you left off in :doc:`Getting Started <getting-started>`.
+Pick up where you left off in :doc:`Getting Started <getting-started-gen2>`.
 This means you already have a repository of ingested DECam data and have setup
 the LSST Science Pipelines stack as well as ``ap_pipe`` and ``ap_association``.
 
@@ -54,7 +54,7 @@ Your directory structure should look something like
                   psfMatched-0,1.fits
                   ...
 
-.. _section-ap-pipe-command-line:
+.. _section-ap-pipe-command-line-gen2:
 
 AP pipeline on the command line
 ===============================
@@ -73,7 +73,7 @@ In this case, a ``processed`` directory will be created within ``repo/rerun`` an
 See :doc:`apdb` for more information on :command:`make_apdb.py`.
 
 This example command only processes observations that have a
-:ref:`dataId<subsection-ap-pipe-previewing-dataIds>`
+:ref:`dataId<subsection-ap-pipe-previewing-dataIds-gen2>`
 corresponding to visit 123456 and ccdnum 42 in with a filter called g.
 
 :doc:`lsst.ap.pipe <index>` supports ``dataId`` parsing, e.g., ``ccdnum=3^6..12`` will process
@@ -101,7 +101,7 @@ somewhere in ``repo``.
    The location is a path to a new or existing database file to be used for source associations (including associations with previously known objects, if the database already exists).
    In the examples above, it is configured with the ``-c`` option, but a personal config file may be more convenient if you intend to run ``ap_pipe`` many times.
 
-.. _section-ap-pipe-expected-outputs:
+.. _section-ap-pipe-expected-outputs-gen2:
 
 Expected outputs
 ================
@@ -139,7 +139,7 @@ For example, in python
    diaSourceTable = butler.get('deepDiff_diaSrc', dataId=dataId)
 
 
-.. _section-ap-pipe-calexp-templates:
+.. _section-ap-pipe-calexp-templates-gen2:
 
 Calexp template mode
 ====================
@@ -166,12 +166,12 @@ A full command looks like
    ap_pipe.py repo --calib repo/calibs --rerun processed -C $AP_PIPE_DIR/config/calexpTemplates.py -c diaPipe.apdb.isolation_level=READ_UNCOMMITTED -c diaPipe.apdb.db_url="sqlite:///apdb/association.db" --id visit=123456 ccdnum=42 filter=g --template /path/to/calexp/templates --templateId visit=234567
 
 
-.. _section-ap-pipe-supplemental-info:
+.. _section-ap-pipe-supplemental-info-gen2:
 
 Supplemental information
 ========================
 
-.. _subsection-ap-pipe-previewing-dataIds:
+.. _subsection-ap-pipe-previewing-dataIds-gen2:
 
 Previewing dataIds
 ------------------
@@ -193,9 +193,9 @@ Running on other cameras
 ------------------------
 
 Running ap_pipe on cameras other than DECam works much the same way: you need to provide a raw repo and either a rerun or an output repo, and you may need to provide calib or template repos.
-The :ref:`calexp configuration file <section-ap-pipe-calexp-templates>` will work with any camera.
+The :ref:`calexp configuration file <section-ap-pipe-calexp-templates-gen2>` will work with any camera.
 
-You will need to use a dataId formatted appropriately for the camera; check the camera's obs package documentation or consult the :ref:`--show data<subsection-ap-pipe-previewing-dataIds>` flag.
+You will need to use a dataId formatted appropriately for the camera; check the camera's obs package documentation or consult the :ref:`--show data<subsection-ap-pipe-previewing-dataIds-gen2>` flag.
 
 Common errors
 -------------
@@ -206,7 +206,7 @@ Common errors
   cannot be accessed.
 
 
-.. _section-ap-pipe-interpreting-results:
+.. _section-ap-pipe-interpreting-results-gen2:
 
 Interpreting the results
 ========================

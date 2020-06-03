@@ -1,13 +1,13 @@
 .. py:currentmodule:: lsst.ap.pipe
 
-.. _ap-pipe-getting-started:
+.. _ap-pipe-getting-started-gen2:
 
-####################################
-Getting started with the AP pipeline
-####################################
+############################################
+Getting started with the AP pipeline (Gen 2)
+############################################
 
 
-.. _section-ap-pipe-installation:
+.. _section-ap-pipe-installation-gen2:
 
 Installation
 ============
@@ -16,7 +16,7 @@ Installation
 It is installed as part of the ``lsst_apps`` and ``lsst_distrib`` metapackages.
 
 
-.. _section-ap-pipe-ingesting-data-files:
+.. _section-ap-pipe-ingesting-data-files-gen2:
 
 Ingesting data files
 ====================
@@ -53,7 +53,7 @@ A standard ingestion workflow for DECam looks something like
    may change when `DM-5467 <https://jira.lsstcorp.org/browse/DM-5467>`_ is completed.
 
 
-.. _section-ap-pipe-required-data-products:
+.. _section-ap-pipe-required-data-products-gen2:
 
 Required data products
 ======================
@@ -88,8 +88,8 @@ For the AP Pipeline to successfully process data, the following is required:
 A sample dataset from the `DECam HiTS survey <http://iopscience.iop.org/article/10.3847/0004-637X/832/2/155/meta>`_ 
 that works with ``ap_pipe`` in the :doc:`/modules/lsst.ap.verify/datasets` format
 is available as `ap_verify_hits2015`_. However, this dataset must be
-ingested as described in :ref:`section-ap-pipe-ingesting-data-files`, and the reference
+ingested as described in :ref:`section-ap-pipe-ingesting-data-files-gen2`, and the reference
 catalog and defect files must be decompressed and extracted.
 
-Please continue to :doc:`Pipeline Tutorial <pipeline-tutorial>` for more
+Please continue to :doc:`Pipeline Tutorial <pipeline-tutorial-gen2>` for more
 details about running the AP Pipeline and interpreting the results.

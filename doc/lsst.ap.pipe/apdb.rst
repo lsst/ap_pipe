@@ -58,4 +58,4 @@ Databases can also be set up using config files:
 Further reading
 ===============
 
-- :doc:`pipeline-tutorial`
+- :doc:`pipeline-tutorial-gen2`
