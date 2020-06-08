@@ -19,16 +19,30 @@ Overview
 
    pipeline-overview
 
-.. .. _lsst.ap.pipe-using:
+.. _lsst.ap.pipe-using-gen2:
 
-Using lsst.ap.pipe
-==================
+Using lsst.ap.pipe in Gen 2
+===========================
 
 .. toctree::
    :maxdepth: 1
 
    getting-started-gen2
    pipeline-tutorial-gen2
+   apdb
+
+.. _lsst.ap.pipe-using:
+
+.. _lsst.ap.pipe-using-gen3:
+
+Using lsst.ap.pipe in Gen 3
+===========================
+
+.. toctree::
+   :maxdepth: 1
+
+   getting-started
+   pipeline-tutorial
    apdb
 
 .. _lsst.ap.pipe-contributing:
