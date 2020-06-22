@@ -34,23 +34,16 @@ is available in :ref:`ap_verify <ap-verify-run-ingest>`. However, this works
 only on datasets which adhere to the :doc:`ap_verify dataset </modules/lsst.ap.verify/datasets>` format.
 Alternately, you may use a pre-
 ingested dataset or manually ingest files yourself following the directions
-for a given ``obs_`` package, e.g.,
-step 4 of `the obs_decam README <https://github.com/lsst/obs_decam/blob/master/README.md>`_.
+for a given ``obs_`` package.
 
 A standard ingestion workflow for DECam looks something like
 
 .. prompt:: bash
 
-   ingestImagesDecam.py input_loc --filetype raw path/to/raw/files
-   ingestCalibs.py input_loc --calib calib_loc path/to/flats/and/biases --validity 999
-   ingestCalibs.py input_loc --calib calib_loc --calibType defect --mode=skip path/to/defects --validity 0
-
-.. note::
-
-   Defect ingestion is a step unique to DECam. It presently requires
-   ``--mode=skip``, this mode interprets paths as relative to ``calib_loc``,
-   and the validity value is not used (but must be included). This interface
-   may change when `DM-5467 <https://jira.lsstcorp.org/browse/DM-5467>`_ is completed.
+   ingestImagesDecam.py input_loc --filetype raw path/to/raw/files --mode=link
+   ingestCuratedCalibs.py input_loc --calib calib_loc $OBS_DECAM_DATA_DIR/decam/defects
+   ingestCuratedCalibs.py input_loc --calib calib_loc $OBS_DECAM_DATA_DIR/decam/crosstalk
+   ingestCalibs.py input_loc --calib calib_loc /path/to/biases/and/flats --mode=link --validity 999
 
 
 .. _section-ap-pipe-required-data-products-gen2:
@@ -69,13 +62,13 @@ For the AP Pipeline to successfully process data, the following is required:
     We recommend using Pan-STARRS for photometry and Gaia for astrometry.
     An example :ref:`config file <command-line-task-config-howto-configfile>` for using these two catalogs can be found in the `ap_verify_hits2015`_ repository.
 
-- **Calibration products** (biases, flats, and defects, if applicable)
-  ingested into a Butler repository you must specify with the ``--calib`` flag on
+- **Calibration products** (biases, flats, and possibly others)
+  ingested into a Butler repository that you must specify with the ``--calib`` flag on
   the command line at runtime
 
   - To check if this requirement has been satisfied, you can inspect the
     :file:`calibRegistry.sqlite3` created in this repository and ensure the information
-    in the flat, bias, and defect tables is accurate
+    in the tables is accurate
 
 - **Template images** (of type ``deepCoadd`` by default) for difference imaging
   must be either in the main Butler repository or in another location you may
@@ -89,7 +82,7 @@ A sample dataset from the `DECam HiTS survey <http://iopscience.iop.org/article/
 that works with ``ap_pipe`` in the :doc:`/modules/lsst.ap.verify/datasets` format
 is available as `ap_verify_hits2015`_. However, this dataset must be
 ingested as described in :ref:`section-ap-pipe-ingesting-data-files-gen2`, and the reference
-catalog and defect files must be decompressed and extracted.
+catalog files must be decompressed and extracted.
 
 Please continue to :doc:`Pipeline Tutorial <pipeline-tutorial-gen2>` for more
 details about running the AP Pipeline and interpreting the results.
