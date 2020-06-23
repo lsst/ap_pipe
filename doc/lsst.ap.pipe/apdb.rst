@@ -42,7 +42,7 @@ Note that ``apdb.db_url`` has no default; a value *must* be provided by the user
 Examples
 ========
 
-Databases can be configured using direct config overrides (see :ref:`pipeline-tutorial-gen2` for an explanation of the |ap_pipe| command line):
+Databases can be configured using direct config overrides (see :ref:`ap-pipe-pipeline-tutorial-gen2` for an explanation of the |ap_pipe| command line):
 
 .. prompt:: bash
 

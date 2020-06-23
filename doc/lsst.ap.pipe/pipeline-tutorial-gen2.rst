@@ -1,6 +1,6 @@
 .. py:currentmodule:: lsst.ap.pipe
 
-.. _pipeline-tutorial-gen2:
+.. _ap-pipe-pipeline-tutorial-gen2:
 
 ###############################
 Running the AP pipeline (Gen 2)
