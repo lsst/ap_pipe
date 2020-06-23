@@ -8,8 +8,17 @@ lsst.ap.pipe
 
 .. Paragraph that describes what this Python module does and links to related modules and frameworks.
 
-The ``lsst.ap.pipe`` module links together a set of common image processing tasks so that a user may run one Command-Line Task on a dataset of raw, ingested images rather than several.
-The Alert Production (AP) pipeline includes three key data processing Tasks for LSST Prompt Data Products: `~lsst.pipe.tasks.ProcessCcdTask` (which includes `~lsst.ip.isr.IsrTask`),  `~lsst.ip.diffim.ImageDifferenceTask`, and `~lsst.ap.associate.AssociationTask`.
+The ``lsst.ap.pipe`` module links together a set of common image processing tasks so that a user may run one command on a dataset of raw, ingested images rather than several.
+The Alert Production (AP) pipeline includes the following key data processing Tasks for LSST Prompt Data Products: `~lsst.ip.isr.IsrTask`, `~lsst.pipe.tasks.characterizeImage.CharacterizeImageTask`, `~lsst.pipe.tasks.calibrate.CalibrateTask`, `~lsst.pipe.tasks.imageDifference.ImageDifferenceTask`, and `~lsst.ap.association.DiaPipelineTask`.
+
+At present, the alert production pipeline is implemented using two separate frameworks that store and retrieve data from "Butler" repositories in incompatible ways:
+
+- `ApPipeTask` is an `lsst.pipe.base.CmdLineTask` that reads and writes data using the :ref:`lsst.daf.persistence` package.
+  This is the established "Gen 2" framework.
+- ``ApPipe`` is an `lsst.pipe.base.Pipeline` that reads and writes data using the :ref:`lsst.daf.butler` package.
+  This "Gen 3" framework is expected to be the only implementation in the future.
+
+.. TODO: add links to Gen 3 docs as they become available
 
 Overview
 ========
@@ -19,10 +28,24 @@ Overview
 
    pipeline-overview
 
-.. .. _lsst.ap.pipe-using:
+.. _lsst.ap.pipe-using-gen2:
 
-Using lsst.ap.pipe
-==================
+Using lsst.ap.pipe in Gen 2
+===========================
+
+.. toctree::
+   :maxdepth: 1
+
+   getting-started-gen2
+   pipeline-tutorial-gen2
+   apdb
+
+.. _lsst.ap.pipe-using:
+
+.. _lsst.ap.pipe-using-gen3:
+
+Using lsst.ap.pipe in Gen 3
+===========================
 
 .. toctree::
    :maxdepth: 1

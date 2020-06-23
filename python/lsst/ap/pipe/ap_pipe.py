@@ -67,6 +67,8 @@ class ApPipeConfig(pexConfig.Config):
 
     def validate(self):
         pexConfig.Config.validate(self)
+        if not self.ccdProcessor.calibrate.doWrite or not self.ccdProcessor.calibrate.doWriteExposure:
+            raise ValueError("Differencing needs calexps [ccdProcessor.calibrate.doWrite, doWriteExposure]")
         if not self.differencer.doMeasurement:
             raise ValueError("Source association needs diaSource fluxes [differencer.doMeasurement].")
         if not self.differencer.doWriteSources:
@@ -104,7 +106,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
 
         self.makeSubtask("ccdProcessor", butler=butler)
         self.makeSubtask("differencer", butler=butler)
-        self.makeSubtask("diaPipe", initInputs={"diaSourceSchema": self.differencer.schema})
+        self.makeSubtask("diaPipe", initInputs={"diaSourceSchema": self.differencer.outputSchema})
 
     @pipeBase.timeMethod
     def runDataRef(self, rawRef, templateIds=None, reuse=None):
@@ -268,7 +270,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
 
         # apdb_marker triggers metrics processing; let them try to read
         # something even if association failed
-        sensorRef.put(results.apdb_marker, "apdb_marker")
+        sensorRef.put(results.apdbMarker, "apdb_marker")
 
         return pipeBase.Struct(
             l1Database=self.diaPipe.apdb,
