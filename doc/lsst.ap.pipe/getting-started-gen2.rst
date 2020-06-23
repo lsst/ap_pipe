@@ -7,6 +7,12 @@ Getting started with the AP pipeline (Gen 2)
 ############################################
 
 
+This page explains how to set up a Gen 2 data repository that can then be processed with the AP Pipeline (see :doc:`pipeline-tutorial-gen2`).
+This is the established Science Pipelines workflow, and is compatible with a variety of existing pipelines and tools.
+However, it is expected to be phased out in the future in favor of the Gen 3 framework.
+
+If you already have a Gen 3 data repository or want to learn the new framework, see :doc:`getting-started`.
+
 .. _section-ap-pipe-installation-gen2:
 
 Installation

@@ -8,6 +8,11 @@
 Getting started with the AP pipeline (Gen 3)
 ############################################
 
+This page explains how to set up a Gen 3 data repository that can then be processed with the AP Pipeline (see :doc:`pipeline-tutorial`).
+This is appropriate if you are trying to learn the new workflow, and compatibility or integration with other tools is not a problem.
+The Gen 3 processing is still being finalized, and all details in these tutorials are subject to change.
+
+If you already have a Gen 2 data repository or need compatibility with existing code, see :doc:`getting-started-gen2`.
 
 .. _section-ap-pipe-installation:
 
