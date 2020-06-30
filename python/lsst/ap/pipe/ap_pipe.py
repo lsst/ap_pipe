@@ -65,6 +65,9 @@ class ApPipeConfig(pexConfig.Config):
         # Don't have source catalogs for templates
         self.differencer.doSelectSources = False
 
+        # Write the WarpedExposure to disk for use in Alert Packet creation.
+        self.differencer.doWriteWarpedExp = True
+
     def validate(self):
         pexConfig.Config.validate(self)
         if not self.ccdProcessor.calibrate.doWrite or not self.ccdProcessor.calibrate.doWriteExposure:
@@ -266,6 +269,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
             diaSourceCat=sensorRef.get(diffType + "Diff_diaSrc"),
             diffIm=sensorRef.get(diffType + "Diff_differenceExp"),
             exposure=sensorRef.get("calexp"),
+            template=sensorRef.get(diffType + "Diff_warpedExp"),
             ccdExposureIdBits=sensorRef.get("ccdExposureId_bits"))
 
         # apdb_marker triggers metrics processing; let them try to read
