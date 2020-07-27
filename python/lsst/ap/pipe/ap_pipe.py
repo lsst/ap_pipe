@@ -269,7 +269,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
             diaSourceCat=sensorRef.get(diffType + "Diff_diaSrc"),
             diffIm=sensorRef.get(diffType + "Diff_differenceExp"),
             exposure=sensorRef.get("calexp"),
-            template=sensorRef.get(diffType + "Diff_warpedExp"),
+            warpedExposure=sensorRef.get(diffType + "Diff_warpedExp"),
             ccdExposureIdBits=sensorRef.get("ccdExposureId_bits"))
 
         # apdb_marker triggers metrics processing; let them try to read
