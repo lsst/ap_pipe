@@ -4,7 +4,7 @@ description: End to end AP pipeline
 inherits:
   - location: $PIPE_TASKS_DIR/pipelines/ProcessCcd.yaml
 tasks:
-    differencer:
+    imageDifference:
         class: lsst.pipe.tasks.imageDifference.ImageDifferenceTask
         config:
             # Always prefer decorrelation; may eventually become ImageDifferenceTask default
@@ -16,9 +16,9 @@ tasks:
         class: lsst.ap.association.DiaPipelineTask
 contracts:
     # DiaPipelineTask needs diaSource fluxes, catalogs, and difference exposures
-    - differencer.doMeasurement is True
-    - differencer.doWriteSources is True
-    - differencer.doWriteSubtractedExp is True
+    - imageDifference.doMeasurement is True
+    - imageDifference.doWriteSources is True
+    - imageDifference.doWriteSubtractedExp is True
     # Inputs and outputs must match
-    - differencer.connections.coaddName == diaPipe.connections.coaddName
-    - differencer.connections.fakesType == diaPipe.connections.fakesType
+    - imageDifference.connections.coaddName == diaPipe.connections.coaddName
+    - imageDifference.connections.fakesType == diaPipe.connections.fakesType
