@@ -43,33 +43,57 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
 
         self.simpleMap = skyMap.DiscreteSkyMap(simpleMapConfig)
         self.tractId = 0
-        self.objsPerSqDeg = 10
-        self.nSources = 5
-
-    def tearDown(self):
-        """
-        """
-        pass
+        bCircle = self.simpleMap.generateTract(self.tractId).getInnerSkyPolygon().getBoundingCircle()
+        self.nSources = 10
+        self.sourceDensity = (self.nSources
+                              / (bCircle.getArea() * (180 / np.pi) ** 2))
+        self.fraction = 0.5
+        self.nInVisit = (int(self.nSources * self.fraction)
+                         + int((1 - self.fraction) / 2 * self.nSources))
+        self.nInTemplate = (self.nSources - self.nInVisit
+                            + int(self.nSources * self.fraction))
 
     def testRun(self):
         """Test the run method.
         """
-        fakesTask = CreateRandomApFakesTask()
-        parqTable = fakesTask.run(self.tractId, self.simpleMap)
+        fakesConfig = CreateRandomApFakesConfig()
+        fakesConfig.fraction = 0.5
+        fakesConfig.fakeDensity = self.sourceDensity
+        fakesTask = CreateRandomApFakesTask(config=fakesConfig)
+        bCircle = self.simpleMap.generateTract(self.tractId).getInnerSkyPolygon().getBoundingCircle()
+        result = fakesTask.run(self.tractId, self.simpleMap)
+        fakeCat = result.fakeCat.toDataFrame()
+        self.assertEqual(len(fakeCat), self.nSources)
+        for idx, row in fakeCat.iterrows():
+            self.assertTrue(
+                bCircle.contains(
+                    geom.SpherePoint(row[fakesTask.config.raColName],
+                                     row[fakesTask.config.decColName],
+                                     geom.radians).getVector()))
+        self.assertEqual(fakeCat[fakesConfig.visitSourceFlagCol].sum(),
+                         self.nInVisit)
+        self.assertEqual(fakeCat[fakesConfig.templateSourceFlagCol].sum(),
+                         self.nInTemplate)
+        for f in fakesConfig.filterSet:
+            filterMags = fakeCat[fakesConfig.magVar % f]
+            self.assertEqual(self.nSources, len(filterMags))
+            self.assertTrue(
+                np.all(fakesConfig.magMin <= filterMags))
+            self.assertTrue(
+                np.all(fakesConfig.magMax > filterMags))
 
     def testCreateRandomPositions(self):
         """Test that the correct number of sources are produced and are
         contained in the cap bound.
         """
-        nSources = 5
         fakesTask = CreateRandomApFakesTask()
         bCircle = self.simpleMap.generateTract(self.tractId).getInnerSkyPolygon().getBoundingCircle()
 
         randData = fakesTask.createRandomPositions(
-            nFakes=nSources,
+            nFakes=self.nSources,
             boundingCircle=bCircle)
-        self.assertEqual(nSources, len(randData[fakesTask.config.raColName]))
-        self.assertEqual(nSources, len(randData[fakesTask.config.decColName]))
+        self.assertEqual(self.nSources, len(randData[fakesTask.config.raColName]))
+        self.assertEqual(self.nSources, len(randData[fakesTask.config.decColName]))
         for idx in range(self.nSources):
             self.assertTrue(
                 bCircle.contains(
@@ -91,7 +115,8 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
         self.assertAlmostEqual(expectedVect.z(), rotatedVector[2])
 
     def testVisitCoaddSubdivision(self):
-        """
+        """Test that the number of assigned visit to template objects is
+        correct.
         """
         fakesConfig = CreateRandomApFakesConfig()
         fakesConfig.fraction = 0.5
@@ -99,10 +124,10 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
         subdivision = fakesTask.createVisitCoaddSubdivision(self.nSources)
         self.assertEqual(
             subdivision[fakesConfig.visitSourceFlagCol].sum(),
-            3)
+            self.nInVisit)
         self.assertEqual(
-            subdivision[fakesConfig.visitSourceFlagCol].sum(),
-            3)
+            subdivision[fakesConfig.templateSourceFlagCol].sum(),
+            self.nInTemplate)
 
     def testRandomMagnitudes(self):
         """Test that the correct number of filters and magnitudes have been
@@ -136,4 +161,3 @@ def setup_module(module):
 if __name__ == "__main__":
     lsst.utils.tests.init()
     unittest.main()
-

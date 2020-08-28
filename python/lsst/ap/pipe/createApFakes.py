@@ -156,6 +156,8 @@ class CreateRandomApFakesTask(PipelineTask):
             f"Creating {nFakes} over tractId={tractId} with BBox area: "
             "{tractArea} deg^2")
 
+        # Concatenate the data and add dummy values for the unused variables.
+        # Set all data to PSF like objects.
         randData = {
             **self.createRandomPositions(nFakes, tractBoundingCircle),
             **self.createVisitCoaddSubdivision(nFakes),
@@ -169,7 +171,8 @@ class CreateRandomApFakesTask(PipelineTask):
             self.config.bDisk: np.ones(nFakes, dtype="float"),
             self.config.bBulge: np.ones(nFakes, dtype="float"),
             self.config.paDisk: np.ones(nFakes, dtype="float"),
-            self.config.paBulge: np.ones(nFakes, dtype="float")}
+            self.config.paBulge: np.ones(nFakes, dtype="float"),
+            self.config.sourceType: nFakes * ["star"]}
 
         return Struct(
             fakeCat=ParquetTable(dataFrame=pd.DataFrame(data=randData)))
@@ -187,8 +190,8 @@ class CreateRandomApFakesTask(PipelineTask):
 
         Returns
         -------
-        data : `dict`
-            Data dict containing:
+        data : `dict`[`str`, `numpy.ndarray`]
+            Dictionary of RA and Dec locations over the tract.
         """
         # Create uniform random vectors on the sky around the north pole.
         randVect = np.empty((nFakes, 3))
@@ -199,7 +202,7 @@ class CreateRandomApFakesTask(PipelineTask):
         sinRawTheta = np.sin(np.arccos(randVect[:, 2]))
         rawPhi = np.random.uniform(0, 2 * np.pi, nFakes)
         randVect[:, 0] = sinRawTheta * np.cos(rawPhi)
-        randVect[:, 1] = sinRawTheta * np.sign(rawPhi)
+        randVect[:, 1] = sinRawTheta * np.sin(rawPhi)
 
         # Compute the rotation matrix to move our random points to the
         # correct location.
@@ -226,14 +229,24 @@ class CreateRandomApFakesTask(PipelineTask):
             3x3 rotation matrix to rotate the dec=90 pole to the location of
             the circle bound.
         """
+        # Get the center point of our tract
         center = boundingCircle.getCenter()
+
+        # Compute the axis to rotate around. This is done by taking the cross
+        # product of dec=90 pole into the tract center.
         cross = np.array([-center.y(),
                           center.x(),
                           0])
         cross /= np.sqrt(cross[0] ** 2 + cross[1] ** 2 + cross[2] ** 2)
+
+        # Get the cosine and sine of the dec angle of the tract center. This
+        # is the amount of rotation needed to move the points we created from
+        # around the pole to the tract location.
         cosTheta = center.z()
         sinTheta = np.sin(np.arccos(center.z()))
 
+        # Compose the rotation matrix for rotation around the axis created from
+        # the cross product.
         rotMatrix = cosTheta * np.array([[1, 0, 0],
                                          [0, 1, 0],
                                          [0, 0, 1]])
@@ -250,8 +263,8 @@ class CreateRandomApFakesTask(PipelineTask):
         return rotMatrix
 
     def createVisitCoaddSubdivision(self, nFakes):
-        """Assign a given fake either a visit image or coadd based on the
-        ``faction`` config value.
+        """Assign a given fake either a visit image or coadd or both based on
+        the ``faction`` config value.
 
         Parameters
         ----------
@@ -260,7 +273,9 @@ class CreateRandomApFakesTask(PipelineTask):
 
         Returns
         -------
-        output : `dict`
+        output : `dict`[`str`, `numpy.ndarray`]
+            Dictionary of boolean arrays specifying which image to put a
+            given fake into.
         """
         nBoth = int(self.config.fraction * nFakes)
         nOnly = int((1 - self.config.fraction) / 2 * nFakes)
@@ -286,7 +301,7 @@ class CreateRandomApFakesTask(PipelineTask):
 
         Returns
         -------
-        randMags : `dict`
+        randMags : `dict`[`str`, `numpy.ndarray`]
             Dictionary of magnitudes in the bands set by the ``filterSet``
             config option.
         """
