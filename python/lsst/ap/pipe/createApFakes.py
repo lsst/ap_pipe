@@ -116,8 +116,10 @@ class CreateRandomApFakesConfig(
 
 
 class CreateRandomApFakesTask(PipelineTask):
-    """Create and store a set of spatially uniform fakes for use in AP
-    processing.
+    """Create and store a set of spatially uniform star fakes over the sphere
+    for use in AP processing. Additionally assign random magnitudes to said
+    fakes and assign them to be inserted into either a visit exposure or
+    template exposure.
     """
 
     _DefaultName = "createApFakes"
@@ -142,26 +144,26 @@ class CreateRandomApFakesTask(PipelineTask):
 
         Returns
         -------
-        randoms : `lsst.pipe.tasks.PaquertTable`
+        randoms : `pandas.DataFrame`
             Catalog of random points covering the given tract. Follows the
-            format expected in `lsst.pipe.tasks.InsertFakes`.
+            columns and format expected in `lsst.pipe.tasks.InsertFakes`.
         """
-        np.random.seed(self.config.randomSeed)
+        rng = np.random.default_rng(self.config.randomSeed)
         tractBoundingCircle = \
             skyMap.generateTract(tractId).getInnerSkyPolygon().getBoundingCircle()
         tractArea = tractBoundingCircle.getArea() * (180 / np.pi) ** 2
         nFakes = int(self.config.fakeDensity * tractArea)
 
         self.log.info(
-            f"Creating {nFakes} over tractId={tractId} with BBox area: "
-            "{tractArea} deg^2")
+            f"Creating {nFakes} star fakes over tractId={tractId} with "
+            f"bounding circle area: {tractArea} deg^2")
 
         # Concatenate the data and add dummy values for the unused variables.
         # Set all data to PSF like objects.
         randData = {
-            **self.createRandomPositions(nFakes, tractBoundingCircle),
+            **self.createRandomPositions(nFakes, tractBoundingCircle, rng),
             **self.createVisitCoaddSubdivision(nFakes),
-            **self.createRandomMagnitudes(nFakes),
+            **self.createRandomMagnitudes(nFakes, rng),
             self.config.diskHLR: np.ones(nFakes, dtype="float"),
             self.config.bulgeHLR: np.ones(nFakes, dtype="float"),
             self.config.nDisk: np.ones(nFakes, dtype="float"),
@@ -177,9 +179,9 @@ class CreateRandomApFakesTask(PipelineTask):
         return Struct(
             fakeCat=ParquetTable(dataFrame=pd.DataFrame(data=randData)))
 
-    def createRandomPositions(self, nFakes, boundingCircle):
+    def createRandomPositions(self, nFakes, boundingCircle, rng):
         """Create a set of spatially uniform randoms over the tract bounding
-        circle.
+        circle on the sphere.
 
         Parameters
         ----------
@@ -187,6 +189,8 @@ class CreateRandomApFakesTask(PipelineTask):
             Number of fakes to create.
         boundingCicle : `lsst.sphgeom.BoundingCircle`
             Circle bound covering the tract.
+        rng : `numpy.random.Generator`
+            Initialized random number generator.
 
         Returns
         -------
@@ -195,12 +199,12 @@ class CreateRandomApFakesTask(PipelineTask):
         """
         # Create uniform random vectors on the sky around the north pole.
         randVect = np.empty((nFakes, 3))
-        randVect[:, 2] = np.random.uniform(
+        randVect[:, 2] = rng.uniform(
             np.cos(boundingCircle.getOpeningAngle().asRadians()),
             1,
             nFakes)
         sinRawTheta = np.sin(np.arccos(randVect[:, 2]))
-        rawPhi = np.random.uniform(0, 2 * np.pi, nFakes)
+        rawPhi = rng.uniform(0, 2 * np.pi, nFakes)
         randVect[:, 0] = sinRawTheta * np.cos(rawPhi)
         randVect[:, 1] = sinRawTheta * np.sin(rawPhi)
 
@@ -228,6 +232,11 @@ class CreateRandomApFakesTask(PipelineTask):
         rotMatrix : `numpy.ndarray`, (3, 3)
             3x3 rotation matrix to rotate the dec=90 pole to the location of
             the circle bound.
+
+        Notes
+        -----
+        Rotation matrix follows
+        https://mathworld.wolfram.com/RodriguesRotationFormula.html
         """
         # Get the center point of our tract
         center = boundingCircle.getCenter()
@@ -291,13 +300,15 @@ class CreateRandomApFakesTask(PipelineTask):
         return {self.config.visitSourceFlagCol: isVisitSource,
                 self.config.templateSourceFlagCol: isTemplateSource}
 
-    def createRandomMagnitudes(self, nFakes):
+    def createRandomMagnitudes(self, nFakes, rng):
         """Create a random distribution of magnitudes for out fakes.
 
         Parameters
         ----------
         nFakes : `int`
             Number of fakes to create.
+        rng : `numpy.random.Generator`
+            Initialized random number generator.
 
         Returns
         -------
@@ -305,9 +316,9 @@ class CreateRandomApFakesTask(PipelineTask):
             Dictionary of magnitudes in the bands set by the ``filterSet``
             config option.
         """
-        mags = np.random.uniform(self.config.magMin,
-                                 self.config.magMax,
-                                 size=nFakes)
+        mags = rng.uniform(self.config.magMin,
+                           self.config.magMax,
+                           size=nFakes)
         randMags = {}
         for fil in self.config.filterSet:
             randMags[self.config.magVar % fil] = mags

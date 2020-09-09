@@ -52,6 +52,7 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
                          + int((1 - self.fraction) / 2 * self.nSources))
         self.nInTemplate = (self.nSources - self.nInVisit
                             + int(self.nSources * self.fraction))
+        self.rng = np.random.default_rng(1234)
 
     def testRun(self):
         """Test the run method.
@@ -91,7 +92,8 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
 
         randData = fakesTask.createRandomPositions(
             nFakes=self.nSources,
-            boundingCircle=bCircle)
+            boundingCircle=bCircle,
+            rng=self.rng)
         self.assertEqual(self.nSources, len(randData[fakesTask.config.raColName]))
         self.assertEqual(self.nSources, len(randData[fakesTask.config.decColName]))
         for idx in range(self.nSources):
@@ -139,7 +141,7 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
         fakesConfig.magMin = 20
         fakesConfig.magMax = 21
         fakesTask = CreateRandomApFakesTask(config=fakesConfig)
-        mags = fakesTask.createRandomMagnitudes(self.nSources)
+        mags = fakesTask.createRandomMagnitudes(self.nSources, self.rng)
         self.assertEqual(len(fakesConfig.filterSet), len(mags))
         for f in fakesConfig.filterSet:
             filterMags = mags[fakesConfig.magVar % f]
