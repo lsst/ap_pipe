@@ -98,7 +98,7 @@ class CreateRandomApFakesConfig(
     randomSeed = pexConfig.Field(
         doc="Random seed to set for reproducible datasets",
         dtype=int,
-        default=None,
+        default=1234,
     )
     visitSourceFlagCol = pexConfig.Field(
         doc="Name of the column flagging objects for insertion into the visit "
