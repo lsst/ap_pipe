@@ -90,9 +90,7 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
             {key: dataId for key in {"skyMap", "fakeCat"}})
         run = testUtils.runTestQuantum(fakesTask, butler, quantum, True)
         # Actual input dataset omitted for simplicity
-        run.assert_called_once()
-        # Smoke test that the full pipeline task actualy runs.
-        testUtils.runTestQuantum(fakesTask, butler, quantum, False)
+        run.assert_called_once_with(tractId=dataId["tract"], skyMap=self.simpleMap)
         shutil.rmtree(root, ignore_errors=True)
 
     def testRun(self):
