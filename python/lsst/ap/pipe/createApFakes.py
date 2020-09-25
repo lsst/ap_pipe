@@ -21,6 +21,7 @@
 
 import numpy as np
 import pandas as pd
+import uuid
 
 import lsst.pex.config as pexConfig
 from lsst.pipe.base import PipelineTask, PipelineTaskConnections, Struct
@@ -160,6 +161,7 @@ class CreateRandomApFakesTask(PipelineTask):
         # Concatenate the data and add dummy values for the unused variables.
         # Set all data to PSF like objects.
         randData = {
+            "fakeId": [uuid.uuid4().int for n in range(nFakes)],
             **self.createRandomPositions(nFakes, tractBoundingCircle, rng),
             **self.createVisitCoaddSubdivision(nFakes),
             **self.createRandomMagnitudes(nFakes, rng),
