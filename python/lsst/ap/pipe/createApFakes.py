@@ -26,7 +26,6 @@ import lsst.pex.config as pexConfig
 from lsst.pipe.base import PipelineTask, PipelineTaskConnections, Struct
 import lsst.pipe.base.connectionTypes as connTypes
 from lsst.pipe.tasks.insertFakes import InsertFakesConfig
-from lsst.pipe.tasks.parquetTable import ParquetTable
 
 __all__ = ["CreateRandomApFakesTask",
            "CreateRandomApFakesConfig",
@@ -46,7 +45,7 @@ class CreateRandomApFakesConnections(PipelineTaskConnections,
     fakeCat = connTypes.Output(
         doc="Catalog of fake sources to draw inputs from.",
         name="{CoaddName}Coadd_fakeSourceCat",
-        storageClass="Parquet",
+        storageClass="DataFrame",
         dimensions=("tract", "skymap")
     )
 
@@ -99,7 +98,7 @@ class CreateRandomApFakesConfig(
     randomSeed = pexConfig.Field(
         doc="Random seed to set for reproducible datasets",
         dtype=int,
-        default=None,
+        default=1234,
     )
     visitSourceFlagCol = pexConfig.Field(
         doc="Name of the column flagging objects for insertion into the visit "
@@ -176,8 +175,7 @@ class CreateRandomApFakesTask(PipelineTask):
             self.config.paBulge: np.ones(nFakes, dtype="float"),
             self.config.sourceType: nFakes * ["star"]}
 
-        return Struct(
-            fakeCat=ParquetTable(dataFrame=pd.DataFrame(data=randData)))
+        return Struct(fakeCat=pd.DataFrame(data=randData))
 
     def createRandomPositions(self, nFakes, boundingCircle, rng):
         """Create a set of spatially uniform randoms over the tract bounding

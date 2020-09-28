@@ -22,9 +22,13 @@
 #
 
 import numpy as np
+import shutil
+import tempfile
 import unittest
 
+import lsst.daf.butler.tests as butlerTests
 import lsst.geom as geom
+from lsst.pipe.base import testUtils
 import lsst.skymap as skyMap
 import lsst.utils.tests
 
@@ -54,6 +58,41 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
                             + int(self.nSources * self.fraction))
         self.rng = np.random.default_rng(1234)
 
+    def testRunQuantum(self):
+        """Test the run quantum method with a gen3 butler.
+        """
+        root = tempfile.mkdtemp()
+        dimensions = {"instrument": ["notACam"],
+                      "skymap": ["deepCoadd_skyMap"],
+                      "tract": [0, 42],
+                      }
+        testRepo = butlerTests.makeTestRepo(root, dimensions)
+        fakesTask = CreateRandomApFakesTask()
+        connections = fakesTask.config.ConnectionsClass(
+            config=fakesTask.config)
+        butlerTests.addDatasetType(
+            testRepo,
+            connections.skyMap.name,
+            connections.skyMap.dimensions,
+            connections.skyMap.storageClass)
+        butlerTests.addDatasetType(
+            testRepo,
+            connections.fakeCat.name,
+            connections.fakeCat.dimensions,
+            connections.fakeCat.storageClass)
+
+        dataId = {"skymap": "deepCoadd_skyMap", "tract": 0}
+        butler = butlerTests.makeTestCollection(testRepo)
+        butler.put(self.simpleMap, "deepCoadd_skyMap", {"skymap": "deepCoadd_skyMap"})
+
+        quantum = testUtils.makeQuantum(
+            fakesTask, butler, dataId,
+            {key: dataId for key in {"skyMap", "fakeCat"}})
+        run = testUtils.runTestQuantum(fakesTask, butler, quantum, True)
+        # Actual input dataset omitted for simplicity
+        run.assert_called_once_with(tractId=dataId["tract"], skyMap=self.simpleMap)
+        shutil.rmtree(root, ignore_errors=True)
+
     def testRun(self):
         """Test the run method.
         """
@@ -63,7 +102,7 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
         fakesTask = CreateRandomApFakesTask(config=fakesConfig)
         bCircle = self.simpleMap.generateTract(self.tractId).getInnerSkyPolygon().getBoundingCircle()
         result = fakesTask.run(self.tractId, self.simpleMap)
-        fakeCat = result.fakeCat.toDataFrame()
+        fakeCat = result.fakeCat
         self.assertEqual(len(fakeCat), self.nSources)
         for idx, row in fakeCat.iterrows():
             self.assertTrue(
