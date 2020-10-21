@@ -2,7 +2,9 @@
 
 description: End to end AP pipeline
 inherits:
-  - location: $PIPE_TASKS_DIR/pipelines/ProcessCcd.yaml
+  - location: $PIPE_TASKS_DIR/pipelines/DRP.yaml
+    include:
+      - processCcd
 tasks:
     imageDifference:
         class: lsst.pipe.tasks.imageDifference.ImageDifferenceTask
