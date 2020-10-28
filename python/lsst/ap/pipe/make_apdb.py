@@ -23,10 +23,9 @@ __all__ = ["makeApdb"]
 
 import argparse
 
+from lsst.dax.apdb import ApdbConfig, Apdb
 from lsst.pipe.base.configOverrides import ConfigOverrides
 from lsst.ap.association import make_dia_object_schema, make_dia_source_schema
-
-from .ap_pipe import ApPipeConfig
 
 
 class ConfigOnlyParser(argparse.ArgumentParser):
@@ -38,26 +37,25 @@ class ConfigOnlyParser(argparse.ArgumentParser):
             # Description must be readable in both Sphinx and make_apdb.py -h
             description = """\
 Create a Alert Production Database using config overrides for
-`lsst.ap.pipe.ApPipeConfig`.
+`lsst.dax.apdb.ApdbConfig`.
 
-This script takes the same ``--config`` and ``--configfile`` arguments as
-command-line tasks. Calling ``ap_pipe.py`` with the same arguments uses the
-newly created database.
+This script takes the same ``--config`` and ``--config-file`` arguments as
+pipeline runs. However, the configs are at a lower level than the AP pipeline.
 
-The config overrides must define ``apdb.db_url`` to create a valid config.
+The config overrides must define ``db_url`` to create a valid config.
 """
 
         super().__init__(description=description, **kwargs)
 
         self.add_argument("-c", "--config", nargs="*", action=ConfigValueAction,
                           help="config override(s), e.g. "
-                               "``-c apdb.prefix=fancy diaPipe.apdb.db_url=\"sqlite://\"``",
+                               "``-c prefix=fancy db_url=\"sqlite://\"``",
                           metavar="NAME=VALUE")
-        self.add_argument("-C", "--configfile", dest="configfile", nargs="*", action=ConfigFileAction,
-                          help="config override file(s) for ApPipeConfig")
+        self.add_argument("-C", "--config-file", dest="configfile", nargs="*", action=ConfigFileAction,
+                          help="config override file(s) for ApdbConfig")
 
     def parse_args(self, args=None, namespace=None):
-        """Parse arguments for an `ApPipeConfig`.
+        """Parse arguments for an `ApdbConfig`.
 
         Parameters
         ----------
@@ -81,7 +79,7 @@ The config overrides must define ``apdb.db_url`` to create a valid config.
         # ConfigFileAction and ConfigValueAction require namespace.overrides to exist
         namespace = super().parse_args(args, namespace)
         del namespace.configfile
-        namespace.config = ApPipeConfig()
+        namespace.config = ApdbConfig()
         namespace.overrides.applyTo(namespace.config)
 
         namespace.config.validate()
@@ -94,7 +92,7 @@ def makeApdb(args=None):
     """Create an APDB according to a config.
 
     The command-line arguments should provide config values or a config file
-    for `ApPipeConfig`.
+    for `ApdbConfig`.
 
     Parameters
     ----------
@@ -110,9 +108,9 @@ def makeApdb(args=None):
     parser = ConfigOnlyParser()
     parsedCmd = parser.parse_args(args=args)
 
-    apdb = parsedCmd.config.diaPipe.apdb.apply(
-        afw_schemas=dict(DiaObject=make_dia_object_schema(),
-                         DiaSource=make_dia_source_schema()))
+    apdb = Apdb(config=parsedCmd.config,
+                afw_schemas=dict(DiaObject=make_dia_object_schema(),
+                                 DiaSource=make_dia_source_schema()))
     apdb.makeSchema()
     return apdb
 

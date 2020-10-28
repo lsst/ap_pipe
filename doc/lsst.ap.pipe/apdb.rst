@@ -28,14 +28,13 @@ Configuring the database
 ========================
 
 The database is configured using `~lsst.dax.apdb.ApdbConfig`.
-|ap_pipe| command line users can pass configuration information to the script through the :option:`--config <ap_pipe.py --config>` and :option:`--configfile <ap_pipe.py --configfile>` command-line options.
-|make_apdb| also uses `ApPipeConfig` and the :option:`--config` and :option:`--configfile` options, so users can pass exactly the same arguments to |make_apdb| and |ap_pipe|.
-Supporting identical command line arguments for both scripts makes it easy to keep the database settings in sync.
+|ap_pipe| command line users can pass configuration information to the script through the :option:`--config <ap_pipe.py --config>` and :option:`--configfile <ap_pipe.py --configfile>` command-line options, using the prefix ``diaPipe.apdb.`` to distinguish APDB information from other pipeline configuration.
+|make_apdb| configures the database directly through :option:`--config` and :option:`--config-file` (different spelling, for consistency with |pipetask|), with no prefix.
 
-For |pipetask| users the process is almost the same, except that |pipetask|'s config syntax is not exactly the same.
-The :option:`--config <pipetask --config>` and :option:`--configfile <pipetask --configfile>` options for |pipetask| use colons as separators between each task and its config; replace these with periods for |make_apdb|.
+For |pipetask| users, the APDB is configured with the :option:`--config <pipetask run --config>` and :option:`--config-file <pipetask run --config-file>` options.
+APDB configuration info uses the prefix ``diaPipe:apdb.``, with a colon, but is otherwise the same.
 
-Note that ``apdb.db_url`` has no default; a value *must* be provided by the user.
+Note that the `~lsst.dax.apdb.ApdbConfig.db_url` field has no default; a value *must* be provided by the user.
 
 .. _section-ap-pipe-apdb-examples:
 
@@ -46,23 +45,35 @@ Databases can be configured using direct config overrides (see :ref:`ap-pipe-pip
 
 .. prompt:: bash
 
-   make_apdb.py -c diaPipe.apdb.isolation_level=READ_UNCOMMITTED diaPipe.apdb.db_url="sqlite:///databases/apdb.db" differencer.coaddName=dcr
+   make_apdb.py -c isolation_level=READ_UNCOMMITTED db_url="sqlite:///databases/apdb.db"
    ap_pipe.py -c diaPipe.apdb.isolation_level=READ_UNCOMMITTED diaPipe.apdb.db_url="sqlite:///databases/apdb.db" differencer.coaddName=dcr repo --calib repo/calibs --rerun myrun --id [optional IDs to process]
 
-|make_apdb| ignores any `ApPipeConfig` fields not related to the APDB (in the example, ``differencer.coaddName``), so there is no need to filter them out.
+The user is responsible for making sure the two APDB configurations are consistent.
 
 In Gen 3, this becomes (see :ref:`ap-pipe-pipeline-tutorial` for an explanation of |pipetask|):
 
 .. prompt:: bash
 
-   make_apdb.py -c diaPipe.apdb.isolation_level=READ_UNCOMMITTED diaPipe.apdb.db_url="sqlite:///databases/apdb.db" differencer.coaddName=dcr
+   make_apdb.py -c isolation_level=READ_UNCOMMITTED db_url="sqlite:///databases/apdb.db"
    pipetask run -p ApPipe.yaml -c diaPipe:apdb.isolation_level=READ_UNCOMMITTED diaPipe:apdb.db_url="sqlite:///databases/apdb.db" differencer:coaddName=dcr -b repo -o myrun
 
-Databases can also be set up using config files:
+.. warning::
+
+   As in Gen 2, make sure the APDB is created with a configuration consistent with the one used by the pipeline.
+   Note that the pipeline file given by ``-p`` may include APDB config overrides of its own.
+   You can double-check what configuration is being run by calling :command:`pipetask run` with the ``--show config="apdb*"`` argument, though this lists *all* configuration options, including those left at their defaults.
+
+Databases can also be set up using :ref:`config files <command-line-task-config-howto-configfile>`:
+
+.. code-block:: py
+   :caption: myApdbConfig.py
+
+   config.db_url = "sqlite:///databases/apdb.db"
+   config.isolation_level = "READ_UNCOMMITTED"
 
 .. prompt:: bash
 
-   make_apdb.py -C myApPipeConfig.py
+   make_apdb.py -C myApdbConfig.py
    ap_pipe.py repo --calib repo/calibs --rerun myrun -C myApPipeConfig.py --id [optional ID to process]
 
 .. _section-ap-pipe-apdb-seealso:

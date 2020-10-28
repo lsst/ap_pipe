@@ -67,7 +67,7 @@ To process your ingested data, run
 .. prompt:: bash
 
    mkdir apdb/
-   make_apdb.py -c diaPipe.apdb.isolation_level=READ_UNCOMMITTED -c diaPipe.apdb.db_url="sqlite:///apdb/association.db"
+   make_apdb.py -c isolation_level=READ_UNCOMMITTED -c db_url="sqlite:///apdb/association.db"
    ap_pipe.py repo --calib repo/calibs --rerun processed -c diaPipe.apdb.isolation_level=READ_UNCOMMITTED -c diaPipe.apdb.db_url="sqlite:///apdb/association.db" --id visit=123456^123457 ccdnum=42 filter=g --template templates
 
 In this case, a ``processed`` directory will be created within ``repo/rerun`` and the results will be written there.
