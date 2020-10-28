@@ -62,6 +62,20 @@ class MakeApdbParserTestSuite(lsst.utils.tests.TestCase):
         self.assertEqual(parsed.config.diaPipe.apdb.db_url, 'dummy')
         self.assertEqual(parsed.config.diaPipe.apdb.dia_object_index, 'pix_id_iov')
 
+    def testSetValueFile(self):
+        """Verify that config files are handled correctly.
+        """
+        with lsst.utils.tests.getTempFilePath(ext=".py") as configFile:
+            with open(configFile, mode='wt') as config:
+                config.write('config.diaPipe.apdb.db_url = "dummy"\n')
+                config.write('config.diaPipe.apdb.dia_object_index = "pix_id_iov"\n')
+
+            args = f"-C {configFile}"
+            parsed = self._parseString(args)
+
+        self.assertEqual(parsed.config.diaPipe.apdb.db_url, 'dummy')
+        self.assertEqual(parsed.config.diaPipe.apdb.dia_object_index, 'pix_id_iov')
+
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
     pass

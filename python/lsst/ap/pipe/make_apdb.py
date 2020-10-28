@@ -23,7 +23,7 @@ __all__ = ["makeApdb"]
 
 import argparse
 
-from lsst.pipe.base import ConfigFileAction, ConfigValueAction
+from lsst.pipe.base.configOverrides import ConfigOverrides
 from lsst.ap.association import make_dia_object_schema, make_dia_source_schema
 
 from .ap_pipe import ApPipeConfig
@@ -76,11 +76,13 @@ The config overrides must define ``apdb.db_url`` to create a valid config.
         """
         if not namespace:
             namespace = argparse.Namespace()
-        namespace.config = ApPipeConfig()
+        namespace.overrides = ConfigOverrides()
 
-        # ConfigFileAction and ConfigValueAction require namespace.config to exist
+        # ConfigFileAction and ConfigValueAction require namespace.overrides to exist
         namespace = super().parse_args(args, namespace)
         del namespace.configfile
+        namespace.config = ApPipeConfig()
+        namespace.overrides.applyTo(namespace.config)
 
         namespace.config.validate()
         namespace.config.freeze()
@@ -113,3 +115,36 @@ def makeApdb(args=None):
                          DiaSource=make_dia_source_schema()))
     apdb.makeSchema()
     return apdb
+
+
+# --------------------------------------------------------------------
+# argparse.Actions for use with ConfigOverrides
+# ConfigOverrides is normally used with Click; there is no built-in
+# argparse support.
+
+
+class ConfigValueAction(argparse.Action):
+    """argparse action to override config parameters using
+    name=value pairs from the command-line.
+    """
+
+    def __call__(self, parser, namespace, values, option_string):
+        if namespace.overrides is None:
+            return
+        for nameValue in values:
+            name, sep, valueStr = nameValue.partition("=")
+            if not valueStr:
+                parser.error(f"{option_string} value {nameValue} must be in form name=value")
+
+            namespace.overrides.addValueOverride(name, valueStr)
+
+
+class ConfigFileAction(argparse.Action):
+    """argparse action to load config overrides from one or more files.
+    """
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        if namespace.overrides is None:
+            return
+        for configfile in values:
+            namespace.overrides.addFileOverride(configfile)
