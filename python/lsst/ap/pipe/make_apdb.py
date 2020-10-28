@@ -83,7 +83,7 @@ The config overrides must define ``apdb.db_url`` to create a valid config.
         del namespace.configfile
 
         namespace.config.validate()
-        # Do not freeze the config, as a workaround for DM-24435.
+        namespace.config.freeze()
 
         return namespace
 
