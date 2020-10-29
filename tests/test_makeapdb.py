@@ -19,7 +19,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import contextlib
+import io
 import shlex
+import sys
 import unittest
 
 import lsst.utils.tests
@@ -75,6 +78,42 @@ class MakeApdbParserTestSuite(lsst.utils.tests.TestCase):
 
         self.assertEqual(parsed.config.db_url, 'dummy')
         self.assertEqual(parsed.config.dia_object_index, 'pix_id_iov')
+
+    @contextlib.contextmanager
+    def _temporaryBuffer(self):
+        tempStdErr = io.StringIO()
+        savedStdErr = sys.stderr
+        sys.stderr = tempStdErr
+        try:
+            yield tempStdErr
+        finally:
+            sys.stderr = savedStdErr
+
+    def testOldConfig(self):
+        """Verify that old-style config options are caught.
+        """
+        args = '-c diaPipe.apdb.db_url="dummy"'
+        with self._temporaryBuffer() as buffer:
+            with self.assertRaises(SystemExit):
+                self._parseString(args)
+
+        output = buffer.getvalue()
+        self.assertIn("try dropping 'diaPipe.apdb'", output)
+
+    def testOldConfigFile(self):
+        """Verify that old-style config file entries are caught.
+        """
+        with lsst.utils.tests.getTempFilePath(ext=".py") as configFile:
+            with open(configFile, mode='wt') as config:
+                config.write('config.diaPipe.apdb.db_url = "dummy"\n')
+
+            args = f"-C {configFile}"
+            with self._temporaryBuffer() as buffer:
+                with self.assertRaises(SystemExit):
+                    self._parseString(args)
+
+                output = buffer.getvalue()
+                self.assertIn("try dropping 'diaPipe.apdb'", output)
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):

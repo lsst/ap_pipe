@@ -80,7 +80,14 @@ The config overrides must define ``db_url`` to create a valid config.
         namespace = super().parse_args(args, namespace)
         del namespace.configfile
         namespace.config = ApdbConfig()
-        namespace.overrides.applyTo(namespace.config)
+        try:
+            namespace.overrides.applyTo(namespace.config)
+        except Exception as e:  # yes, configs really can raise anything
+            message = str(e)
+            if "diaPipe" in message:
+                message = "it looks like one of the config files uses ApPipeConfig; " \
+                    "try dropping 'diaPipe.apdb'\n" + message
+            self.error(f"cannot apply config: {message}")
 
         namespace.config.validate()
         namespace.config.freeze()
@@ -133,6 +140,8 @@ class ConfigValueAction(argparse.Action):
             name, sep, valueStr = nameValue.partition("=")
             if not valueStr:
                 parser.error(f"{option_string} value {nameValue} must be in form name=value")
+            if "diaPipe.apdb" in name:
+                parser.error(f"{nameValue} looks like it uses ApPipeConfig; try dropping 'diaPipe.apdb'")
 
             namespace.overrides.addValueOverride(name, valueStr)
 
