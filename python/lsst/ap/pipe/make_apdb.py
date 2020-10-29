@@ -23,9 +23,9 @@ __all__ = ["makeApdb"]
 
 import argparse
 
-from lsst.dax.apdb import ApdbConfig, Apdb
+from lsst.dax.apdb import Apdb
 from lsst.pipe.base.configOverrides import ConfigOverrides
-from lsst.ap.association import make_dia_object_schema, make_dia_source_schema
+from lsst.ap.association import DiaPipelineConfig, make_dia_object_schema, make_dia_source_schema
 
 
 class ConfigOnlyParser(argparse.ArgumentParser):
@@ -79,7 +79,8 @@ The config overrides must define ``db_url`` to create a valid config.
         # ConfigFileAction and ConfigValueAction require namespace.overrides to exist
         namespace = super().parse_args(args, namespace)
         del namespace.configfile
-        namespace.config = ApdbConfig()
+        # Make ApdbConfig as a subconfig of DiaPipelineConfig to ensure correct defaults get set
+        namespace.config = DiaPipelineConfig().apdb.value
         try:
             namespace.overrides.applyTo(namespace.config)
         except Exception as e:  # yes, configs really can raise anything

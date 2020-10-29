@@ -79,6 +79,13 @@ class MakeApdbParserTestSuite(lsst.utils.tests.TestCase):
         self.assertEqual(parsed.config.db_url, 'dummy')
         self.assertEqual(parsed.config.dia_object_index, 'pix_id_iov')
 
+    def testDiaPipeDefaults(self):
+        """Verify that DiaPipelineTask's custom APDB settings are included.
+        """
+        args = '-c db_url="dummy"'
+        parsed = self._parseString(args)
+        self.assertIn("ap_association", parsed.config.extra_schema_file)
+
     @contextlib.contextmanager
     def _temporaryBuffer(self):
         tempStdErr = io.StringIO()
