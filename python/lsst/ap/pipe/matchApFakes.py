@@ -19,19 +19,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import numpy as np
 from scipy.spatial import cKDTree
 
-import lsst.pipe.base as pipeBase
+from lsst.geom import Box2D, radians, SpherePoint
+import lsst.pex.config as pexConfig
+from lsst.pipe.base import PipelineTask, PipelineTaskConnections, Struct
 import lsst.pipe.base.connectionTypes as connTypes
 from lsst.pipe.tasks.insertFakes import InsertFakesConfig
+from lsst.sphgeom import ConvexPolygon
 
 __all__ = ["MatchApFakesTask",
            "MatchApFakesConfig",
            "MatchApFakesConnections"]
 
 
-class MatchApFakesConnections(pipeBase.PipelineTaskConnections,
-                              defaultTemplates={"CoaddName": "deep".
+class MatchApFakesConnections(PipelineTaskConnections,
+                              defaultTemplates={"CoaddName": "deep",
                                                 "fakesType": ""},
                               dimensions=("tract",
                                           "skymap",
@@ -46,27 +50,27 @@ class MatchApFakesConnections(pipeBase.PipelineTaskConnections,
     )
     diffIm = connTypes.Input(
         doc="Difference image on which the DiaSources were detected.",
-        name="{fakesType}{coaddName}Diff_differenceExp",
+        name="{fakesType}{CoaddName}Diff_differenceExp",
         storageClass="ExposureF",
         dimensions=("instrument", "visit", "detector"),
     )
     associatedDiaSources = connTypes.Input(
         doc="Optional output storing the DiaSource catalog after matching and "
             "SDMification.",
-        name="associatedDiaSources",
+        name="{fakesType}{CoaddName}Diff_assocDiaSrc",
         storageClass="DataFrame",
         dimensions=("instrument", "visit", "detector"),
     )
     matchedDiaSources = connTypes.Output(
         doc="",
-        name="matchedDiaSources",
+        name="{fakesType}{CoaddName}Diff_matchDiaSrc",
         storageClass="DataFrame",
         dimensions=("instrument", "visit", "detector"),
     )
 
 
 class MatchApFakesConfig(
-        InsertFakesConfig,,
+        InsertFakesConfig,
         pipelineConnections=MatchApFakesConnections):
     """Config for MatchApFakesTask.
     """
@@ -99,26 +103,28 @@ class MatchApFakesTask(PipelineTask):
         """
         """
         trimmedFakes = self.trimFakeCat(fakeCat, diffIm)
+        nPossibleFakes = len(trimmedFakes)
+
         fakeVects = self.getVectors(trimmedFakes[self.config.raColName],
                                     trimmedFakes[self.config.decColName])
         diaSrcVects = self.getVectors(
-            associatedDiaSources["ra"],
-            associatedDiaSources["decl"])
+            np.radians(associatedDiaSources.loc[:, "ra"]),
+            np.radians(associatedDiaSources.loc[:, "decl"]))
 
         diaSrcTree = cKDTree(diaSrcVects)
         dist, idxs = diaSrcTree.query(
             fakeVects,
             distance_upper_bound=np.radians(self.config.matchDistanceArcseconds / 3600))
-        trimmedFakes["diaSourceId"] = np.where(
-            np.isfinite(dist),
-            associatedDiaSources.iloc[np.where(np.isfinite(dist), idxs, 0)]["diaSourceId"],
-            0)
+        nFakesFound = np.isfinite(dist).sum()
 
-        return pipeeBase.Struct(
-            matchedDiaSources=trimmedFakes.merge(
-                associatedDiaSources, how="left")
+        self.log.info(f"Found {nFakesFound} out of {nPossibleFakes} possible.")
+        diaSrcIds = associatedDiaSources.iloc[np.where(np.isfinite(dist), idxs, 0)]["diaSourceId"].to_numpy()
+        matchedFakes = trimmedFakes.assign(diaSourceId=np.where(np.isfinite(dist), diaSrcIds, 0))
+
+        return Struct(
+            matchedDiaSources=matchedFakes.merge(
+                associatedDiaSources.reset_index(drop=True), on="diaSourceId", how="left")
         )
-
 
     def trimFakeCat(self, fakeCat, image):
         """Trim the fake cat to about the size of the input image.
@@ -152,7 +158,7 @@ class MatchApFakesTask(PipelineTask):
     def getVectors(self, ras, decs):
         """
         """
-        vectors = np.empty(len(ras), 3)
+        vectors = np.empty((len(ras), 3))
 
         vectors[:, 2] = np.sin(decs)
         vectors[:, 0] = np.cos(decs) * np.cos(ras)
