@@ -38,7 +38,7 @@ To process your ingested data, run
 .. prompt:: bash
 
    mkdir apdb/
-   make_apdb.py -c diaPipe.apdb.isolation_level=READ_UNCOMMITTED -c diaPipe.apdb.db_url="sqlite:///apdb/association.db"
+   make_apdb.py -c isolation_level=READ_UNCOMMITTED -c db_url="sqlite:///apdb/association.db"
    pipetask run -p ${AP_PIPE_DIR}/pipelines/ApPipe.yaml --instrument lsst.obs.decam.DarkEnergyCamera --register-dataset-types -c diaPipe:apdb.isolation_level=READ_UNCOMMITTED -c diaPipe:apdb.db_url="sqlite:///apdb.db" -b repo/ -i "templates/deep,skymaps,DECam/raw/all,DECam/calib,refcats" -o processed -d "visit in (123456, 123457) and detector=42"
 
 In this case, a ``processed/<timestamp>`` collection will be created within ``repo`` and the results will be written there.

@@ -19,7 +19,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import contextlib
+import io
 import shlex
+import sys
 import unittest
 
 import lsst.utils.tests
@@ -50,17 +53,74 @@ class MakeApdbParserTestSuite(lsst.utils.tests.TestCase):
     def testExtras(self):
         """Verify that a command line containing extra arguments is rejected.
         """
-        args = '-c diaPipe.apdb.db_url="dummy" --id visit=42'
+        args = '-c db_url="dummy" --id visit=42'
         with self.assertRaises(SystemExit):
             self._parseString(args)
 
     def testSetValue(self):
         """Verify that command-line arguments get propagated.
         """
-        args = '-c diaPipe.apdb.db_url="dummy" -c diaPipe.apdb.dia_object_index=pix_id_iov'
+        args = '-c db_url="dummy" -c dia_object_index=pix_id_iov'
         parsed = self._parseString(args)
-        self.assertEqual(parsed.config.diaPipe.apdb.db_url, 'dummy')
-        self.assertEqual(parsed.config.diaPipe.apdb.dia_object_index, 'pix_id_iov')
+        self.assertEqual(parsed.config.db_url, 'dummy')
+        self.assertEqual(parsed.config.dia_object_index, 'pix_id_iov')
+
+    def testSetValueFile(self):
+        """Verify that config files are handled correctly.
+        """
+        with lsst.utils.tests.getTempFilePath(ext=".py") as configFile:
+            with open(configFile, mode='wt') as config:
+                config.write('config.db_url = "dummy"\n')
+                config.write('config.dia_object_index = "pix_id_iov"\n')
+
+            args = f"-C {configFile}"
+            parsed = self._parseString(args)
+
+        self.assertEqual(parsed.config.db_url, 'dummy')
+        self.assertEqual(parsed.config.dia_object_index, 'pix_id_iov')
+
+    def testDiaPipeDefaults(self):
+        """Verify that DiaPipelineTask's custom APDB settings are included.
+        """
+        args = '-c db_url="dummy"'
+        parsed = self._parseString(args)
+        self.assertIn("ap_association", parsed.config.extra_schema_file)
+
+    @contextlib.contextmanager
+    def _temporaryBuffer(self):
+        tempStdErr = io.StringIO()
+        savedStdErr = sys.stderr
+        sys.stderr = tempStdErr
+        try:
+            yield tempStdErr
+        finally:
+            sys.stderr = savedStdErr
+
+    def testOldConfig(self):
+        """Verify that old-style config options are caught.
+        """
+        args = '-c diaPipe.apdb.db_url="dummy"'
+        with self._temporaryBuffer() as buffer:
+            with self.assertRaises(SystemExit):
+                self._parseString(args)
+
+        output = buffer.getvalue()
+        self.assertIn("try dropping 'diaPipe.apdb'", output)
+
+    def testOldConfigFile(self):
+        """Verify that old-style config file entries are caught.
+        """
+        with lsst.utils.tests.getTempFilePath(ext=".py") as configFile:
+            with open(configFile, mode='wt') as config:
+                config.write('config.diaPipe.apdb.db_url = "dummy"\n')
+
+            args = f"-C {configFile}"
+            with self._temporaryBuffer() as buffer:
+                with self.assertRaises(SystemExit):
+                    self._parseString(args)
+
+                output = buffer.getvalue()
+                self.assertIn("try dropping 'diaPipe.apdb'", output)
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
