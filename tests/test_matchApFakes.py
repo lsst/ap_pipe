@@ -56,8 +56,8 @@ class TestMatchApFakes(lsst.utils.tests.TestCase):
         self.simpleMap = skyMap.DiscreteSkyMap(simpleMapConfig)
         self.tractId = 0
         bCircle = self.simpleMap.generateTract(self.tractId).getInnerSkyPolygon().getBoundingCircle()
-        self.nSources = 1000
-        self.sourceDensity = (self.nSources
+        targetSources = 1000
+        self.sourceDensity = (targetSources
                               / (bCircle.getArea() * (180 / np.pi) ** 2))
         self.rng = np.random.default_rng(1234)
 
@@ -67,7 +67,7 @@ class TestMatchApFakes(lsst.utils.tests.TestCase):
         fakesTask = CreateRandomApFakesTask(config=fakesConfig)
         self.fakeCat = fakesTask.run(self.tractId, self.simpleMap).fakeCat
 
-        self.inExp = np.zeros(self.nSources, dtype=bool)
+        self.inExp = np.zeros(len(self.fakeCat), dtype=bool)
         for idx, row in self.fakeCat.iterrows():
             self.inExp[idx] = geom.Box2D(self.bbox).contains(
                 self.exposure.getWcs().skyToPixel(
