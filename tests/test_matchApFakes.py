@@ -34,14 +34,14 @@ from lsst.pipe.base import testUtils
 import lsst.skymap as skyMap
 import lsst.utils.tests
 
-from lsst.ap.pipe.matchApFakes import MatchApFakesTask, MatchApFakesConfig
+from lsst.ap.pipe.matchApFakes import MatchApFakesTask
 from lsst.ap.pipe.createApFakes import CreateRandomApFakesTask, CreateRandomApFakesConfig
 
 
 class TestMatchApFakes(lsst.utils.tests.TestCase):
 
     def setUp(self):
-        """
+        """Create fake data to use in the tests.
         """
         self.bbox = geom.Box2I(geom.Point2I(0, 0),
                                geom.Extent2I(1024, 1153))
@@ -94,7 +94,7 @@ class TestMatchApFakes(lsst.utils.tests.TestCase):
         root = tempfile.mkdtemp()
         dimensions = {"instrument": ["notACam"],
                       "skymap": ["deepCoadd_skyMap"],
-                      "tract": [0,],
+                      "tract": [0, 42],
                       "visit": [1234, 4321],
                       "detector": [25, 26]}
         testRepo = butlerTests.makeTestRepo(root, dimensions)

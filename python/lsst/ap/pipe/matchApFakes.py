@@ -19,6 +19,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+"""Methods to match an input catalog to a set of fakes in AP.
+"""
+
 import numpy as np
 from scipy.spatial import cKDTree
 
@@ -100,7 +103,24 @@ class MatchApFakesTask(PipelineTask):
         butlerQC.put(outputs, outputRefs)
 
     def run(self, fakeCat, diffIm, associatedDiaSources):
-        """
+        """Match fakes to detected diaSources within a difference image bound.
+
+        Parameters
+        ----------
+        fakeCat : `pandas.DataFrame`
+            Catalog of fakes to match to detected diaSources.
+        diffIm : `lsst.afw.image.Exposure`
+            Difference image where ``associatedDiaSources`` were detected in.
+        associatedDiaSources : `pandas.DataFrame`
+            Catalog of difference image sources detected in ``diffIm``.
+
+        Returns
+        -------
+        result : `lsst.pipe.base.Struct`
+            Results struct with components.
+
+            - ``matchedDiaSources`` : Fakes matched to input diaSources. Has
+              length of ``fakeCat``. (`pandas.DataFrame`)
         """
         trimmedFakes = self.trimFakeCat(fakeCat, diffIm)
         nPossibleFakes = len(trimmedFakes)
@@ -156,7 +176,19 @@ class MatchApFakesTask(PipelineTask):
         return fakeCat[fakeCat.apply(trim, axis=1)]
 
     def getVectors(self, ras, decs):
-        """
+        """Convert ra dec to unit vectors on the sphere.
+
+        Parameters
+        ----------
+        ras : `numpy.ndarray`, (N,)
+            RA coordinates in radians.
+        decs : `numpy.ndarray`, (N,)
+            Dec coordinates in radians.
+
+        Returns
+        -------
+        vectors : `numpy.ndarray`, (N, 3)
+            Vectors on the unit sphere for the given RA/DEC values.
         """
         vectors = np.empty((len(ras), 3))
 
