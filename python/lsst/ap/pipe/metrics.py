@@ -25,9 +25,15 @@ __all__ = [
 ]
 
 
+import astropy.units as u
+import numpy as np
+
+import lsst.pex.config as pexConfig
+from lsst.pipe.base import Struct
+import lsst.pipe.base.connectionTypes as connTypes
 from lsst.pipe.tasks.insertFakes import InsertFakesConfig
-from lsst.verify.tasks import MetricTask, MetricConfig, MetricConnections, \
-    MetricComputationError
+from lsst.verify import Measurement, Name
+from lsst.verify.tasks import MetricTask, MetricComputationError
 
 
 class ApFakesCompletenessMetricConnections(
@@ -39,9 +45,9 @@ class ApFakesCompletenessMetricConnections(
                           "metric": "apFakesCompleteness"}):
     """
     """
-    matchedFakes = connectionTypes.Input(
+    matchedFakes = connTypes.Input(
         doc="Fakes matched to their detections in the difference image.",
-        name="{fakesType}{CoaddName}Diff_matchDiaSrc",
+        name="{fakesType}{coaddName}Diff_matchDiaSrc",
         storageClass="DataFrame",
         dimensions=("instrument", "visit", "detector"),
     )
@@ -70,6 +76,14 @@ class ApFakesCompletenessMetricConfig(
         max=40,
     )
 
+    @property
+    def metricName(self):
+        """The metric calculated by a `MetricTask` with this config
+        (`lsst.verify.Name`, read-only).
+        """
+        return Name(package=self.connections.package,
+                    metric=f"{self.connections.metric}Mag{self.magMin:.0f}t{self.magMax:.0f}")
+
 
 class ApFakesCompletenessMetricTask(MetricTask):
     """
@@ -77,9 +91,16 @@ class ApFakesCompletenessMetricTask(MetricTask):
     _DefaultName = "apFakesCompleteness"
     ConfigClass = ApFakesCompletenessMetricConfig
 
-    def run(self, matchedFakes):
+    def runQuantum(self, butlerQC, inputRefs, outputRefs):
+        inputs = butlerQC.get(inputRefs)
+        inputs["band"] = butlerQC.quantum.dataId["band"]
+
+        outputs = self.run(**inputs)
+        butlerQC.put(outputs, outputRefs)
+
+    def run(self, matchedFakes, band):
         """Compute the completeness of recovered fakes within a magnitude
-        range..
+        range.
 
         Parameters
         ----------
@@ -95,10 +116,9 @@ class ApFakesCompletenessMetricTask(MetricTask):
                 the ratio (`lsst.verify.Measurement` or `None`)
         """
         if matchedFakes is not None:
-            filterName = matchedFakes["filterName"][matchedFakes["diaSourceId"] > 0].unique()[0]
             metricName = \
-                f"{self.config.metricName}{filterName}{self.config.magMin:.1f}t{self.config.magMin:.1f}"
-            magnitudes = mmatchedFakes[f"{filterName}{self.config.magVar}"]
+                f"{self.config.metricName}"
+            magnitudes = matchedFakes[f"{self.config.magVar}" % band]
             magCutFakes = matchedFakes[np.logical_and(magnitudes > self.config.magMin,
                                                       magnitudes < self.config.magMax)]
             if len(magCutFakes) <= 0.0:
