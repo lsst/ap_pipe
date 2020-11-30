@@ -161,7 +161,7 @@ class CreateRandomApFakesTask(PipelineTask):
         # Concatenate the data and add dummy values for the unused variables.
         # Set all data to PSF like objects.
         randData = {
-            "fakeId": [uuid.uuid4().int for n in range(nFakes)],
+            "fakeId": [uuid.uuid4().int & (1 << 64) - 1 for n in range(nFakes)],
             **self.createRandomPositions(nFakes, tractBoundingCircle, rng),
             **self.createVisitCoaddSubdivision(nFakes),
             **self.createRandomMagnitudes(nFakes, rng),
