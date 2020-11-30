@@ -122,12 +122,12 @@ class MatchApFakesTask(PipelineTask):
             - ``matchedDiaSources`` : Fakes matched to input diaSources. Has
               length of ``fakeCat``. (`pandas.DataFrame`)
         """
-        trimmedFakes = self.trimFakeCat(fakeCat, diffIm)
+        trimmedFakes = self._trimFakeCat(fakeCat, diffIm)
         nPossibleFakes = len(trimmedFakes)
 
-        fakeVects = self.getVectors(trimmedFakes[self.config.raColName],
-                                    trimmedFakes[self.config.decColName])
-        diaSrcVects = self.getVectors(
+        fakeVects = self._getVectors(trimmedFakes[self.config.raColName],
+                                     trimmedFakes[self.config.decColName])
+        diaSrcVects = self._getVectors(
             np.radians(associatedDiaSources.loc[:, "ra"]),
             np.radians(associatedDiaSources.loc[:, "decl"]))
 
@@ -146,7 +146,7 @@ class MatchApFakesTask(PipelineTask):
                 associatedDiaSources.reset_index(drop=True), on="diaSourceId", how="left")
         )
 
-    def trimFakeCat(self, fakeCat, image):
+    def _trimFakeCat(self, fakeCat, image):
         """Trim the fake cat to about the size of the input image.
 
         Parameters
@@ -175,7 +175,7 @@ class MatchApFakesTask(PipelineTask):
 
         return fakeCat[fakeCat.apply(trim, axis=1)]
 
-    def getVectors(self, ras, decs):
+    def _getVectors(self, ras, decs):
         """Convert ra dec to unit vectors on the sphere.
 
         Parameters
