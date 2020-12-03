@@ -53,6 +53,10 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
             cls.datadir = lsst.utils.getPackageDir("ap_pipe_testdata")
         except pexExcept.NotFoundError:
             raise unittest.SkipTest("ap_pipe_testdata not set up")
+        try:
+            lsst.utils.getPackageDir("obs_decam")
+        except LookupError:
+            raise unittest.SkipTest("obs_decam not set up; needed for ap_pipe_testdata")
 
     def _setupObjPatch(self, *args, **kwargs):
         """Create a patch in setUp that will be reverted once the test ends.
