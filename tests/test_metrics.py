@@ -37,6 +37,15 @@ class TestApCompletenessTask(MetricTaskTestCase):
 
     @classmethod
     def makeTask(cls, magMin=20, magMax=30):
+        """Make the task and allow for modification of the config min and max.
+
+        Parameters
+        ----------
+        magMin : min magnitude, `float`
+            Minimum magnitude
+        magMax : min magnitude, `float`
+            Maximum magnitude
+        """
         config = ApFakesCompletenessMetricConfig()
         config.magMin = magMin
         config.magMax = magMax
@@ -87,7 +96,7 @@ class TestApCompletenessTask(MetricTaskTestCase):
             self.expectedAllMatched / self.targetSources * u.dimensionless_unscaled)
 
     def testMissingData(self):
-        """
+        """Test the run method with no data.
         """
         result = self.task.run(None, None)
         lsst.pipe.base.testUtils.assertValidOutput(self.task, result)
@@ -95,7 +104,7 @@ class TestApCompletenessTask(MetricTaskTestCase):
         self.assertIsNone(meas)
 
     def testValidEmpty(self):
-        """Test the run method.
+        """Test the run method with a valid but zero result.
         """
         metricComplete = self.makeTask(25, 30)
         result = metricComplete.run(self.fakeCat, self.band)

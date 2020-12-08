@@ -20,10 +20,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+"""Metrics for ap_pipe tasks.
+"""
+
 __all__ = [
     "ApFakesCompletenessMetricTask", "ApFakesCompletenessMetricConfig",
 ]
-
 
 import astropy.units as u
 import numpy as np
@@ -43,7 +45,7 @@ class ApFakesCompletenessMetricConnections(
                           "fakesType": "",
                           "package": "ap_pipe",
                           "metric": "apFakesCompleteness"}):
-    """
+    """ApFakesCompleteness connections.
     """
     matchedFakes = connTypes.Input(
         doc="Fakes matched to their detections in the difference image.",
@@ -57,12 +59,12 @@ class ApFakesCompletenessMetricConfig(
         MetricTask.ConfigClass,
         InsertFakesConfig,
         pipelineConnections=ApFakesCompletenessMetricConnections):
-    """
+    """ApFakesCompleteness config.
     """
     magMin = pexConfig.RangeField(
         doc="Minimum magnitude the mag distribution. All magnitudes requested "
             "are set to the same value.",
-        dtype=float,
+        dtype=int,
         default=20,
         min=1,
         max=40,
@@ -70,7 +72,7 @@ class ApFakesCompletenessMetricConfig(
     magMax = pexConfig.RangeField(
         doc="Maximum magnitude the mag distribution. All magnitudes requested "
             "are set to the same value.",
-        dtype=float,
+        dtype=int,
         default=30,
         min=1,
         max=40,
@@ -82,11 +84,12 @@ class ApFakesCompletenessMetricConfig(
         (`lsst.verify.Name`, read-only).
         """
         return Name(package=self.connections.package,
-                    metric=f"{self.connections.metric}Mag{self.magMin:.0f}t{self.magMax:.0f}")
+                    metric=f"{self.connections.metric}Mag{self.magMin}t{self.magMax}")
 
 
 class ApFakesCompletenessMetricTask(MetricTask):
-    """
+    """Metric task for summarizing the completeness of fakes inserted into the
+    AP pipeline.
     """
     _DefaultName = "apFakesCompleteness"
     ConfigClass = ApFakesCompletenessMetricConfig
