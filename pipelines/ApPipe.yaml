@@ -1,7 +1,7 @@
 # Gen 3 pipeline for Alert Production
 
 description: End to end AP pipeline
-inherits:
+imports:
   - location: $PIPE_TASKS_DIR/pipelines/DRP.yaml
     include:
       - processCcd
