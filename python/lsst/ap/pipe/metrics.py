@@ -29,12 +29,13 @@ __all__ = [
 
 import astropy.units as u
 import numpy as np
+import traceback
 
 import lsst.pex.config as pexConfig
 from lsst.pipe.base import Struct
 import lsst.pipe.base.connectionTypes as connTypes
 from lsst.pipe.tasks.insertFakes import InsertFakesConfig
-from lsst.verify import Measurement, Name
+from lsst.verify import Measurement
 from lsst.verify.tasks import MetricTask, MetricComputationError
 
 
@@ -55,6 +56,8 @@ class ApFakesCompletenessMetricConnections(
     )
 
 
+# Inherits from InsertFakesConfig to preserve column names in the fakes
+# catalog.
 class ApFakesCompletenessMetricConfig(
         MetricTask.ConfigClass,
         InsertFakesConfig,
@@ -62,29 +65,21 @@ class ApFakesCompletenessMetricConfig(
     """ApFakesCompleteness config.
     """
     magMin = pexConfig.RangeField(
-        doc="Minimum magnitude the mag distribution. All magnitudes requested "
-            "are set to the same value.",
-        dtype=int,
+        doc="Minimum of cut on magnitude range used to compute completeness "
+            "in.",
+        dtype=float,
         default=20,
         min=1,
         max=40,
     )
     magMax = pexConfig.RangeField(
-        doc="Maximum magnitude the mag distribution. All magnitudes requested "
-            "are set to the same value.",
+        doc="Maximum of cut on magnitude range used to compute completeness "
+            "in.",
         dtype=int,
         default=30,
         min=1,
         max=40,
     )
-
-    @property
-    def metricName(self):
-        """The metric calculated by a `MetricTask` with this config
-        (`lsst.verify.Name`, read-only).
-        """
-        return Name(package=self.connections.package,
-                    metric=f"{self.connections.metric}Mag{self.magMin}t{self.magMax}")
 
 
 class ApFakesCompletenessMetricTask(MetricTask):
@@ -95,11 +90,20 @@ class ApFakesCompletenessMetricTask(MetricTask):
     ConfigClass = ApFakesCompletenessMetricConfig
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
-        inputs = butlerQC.get(inputRefs)
-        inputs["band"] = butlerQC.quantum.dataId["band"]
-
-        outputs = self.run(**inputs)
-        butlerQC.put(outputs, outputRefs)
+        try:
+            inputs = butlerQC.get(inputRefs)
+            inputs["band"] = butlerQC.quantum.dataId["band"]
+            outputs = self.run(**inputs)
+            if outputs.measurement is not None:
+                butlerQC.put(outputs, outputRefs)
+            else:
+                self.log.debugf("Skipping measurement of {!r} on {} "
+                                "as not applicable.", self, inputRefs)
+        except MetricComputationError:
+            # Apparently lsst.log doesn't have built-in exception support?
+            self.log.errorf(
+                "Measurement of {!r} failed on {}->{}\n{}",
+                self, inputRefs, outputRefs, traceback.format_exc())
 
     def run(self, matchedFakes, band):
         """Compute the completeness of recovered fakes within a magnitude
@@ -119,8 +123,6 @@ class ApFakesCompletenessMetricTask(MetricTask):
                 the ratio (`lsst.verify.Measurement` or `None`)
         """
         if matchedFakes is not None:
-            metricName = \
-                f"{self.config.metricName}"
             magnitudes = matchedFakes[f"{self.config.magVar}" % band]
             magCutFakes = matchedFakes[np.logical_and(magnitudes > self.config.magMin,
                                                       magnitudes < self.config.magMax)]
@@ -130,7 +132,7 @@ class ApFakesCompletenessMetricTask(MetricTask):
                     "ill defined.")
             else:
                 meas = Measurement(
-                    metricName,
+                    self.config.metricName,
                     (magCutFakes["diaSourceId"] > 0).sum() / len(magCutFakes) * u.dimensionless_unscaled)
         else:
             self.log.info("Nothing to do: no matched catalog found.")

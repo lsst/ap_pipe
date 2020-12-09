@@ -24,6 +24,7 @@ import astropy.units as u
 import numpy as np
 import unittest
 
+from lsst.pipe.base import testUtils
 import lsst.skymap as skyMap
 import lsst.utils.tests
 from lsst.verify import Name
@@ -74,10 +75,12 @@ class TestApCompletenessTask(MetricTaskTestCase):
         fakeCat = fakesTask.run(self.tractId, self.simpleMap).fakeCat
 
         self.band = 'g'
-        magCut = 25
-        magMask = (fakeCat[f"{fakesConfig.magVar}" % self.band] < magCut)
+        self.magCut = 25
+        magMask = (fakeCat[fakesConfig.magVar % self.band] < self.magCut)
         self.expectedAllMatched = magMask.sum()
         ids = np.where(magMask, np.arange(1, len(fakeCat) + 1, dtype=int), 0)
+        # Add columns to mimic the matched fakes result without running the
+        # full pipeline.
         self.fakeCat = fakeCat.assign(diaObjectId=ids,
                                       filterName=["g"] * len(fakeCat),
                                       diaSourceId=ids)
@@ -85,12 +88,11 @@ class TestApCompletenessTask(MetricTaskTestCase):
     def testValid(self):
         """Test the run method.
         """
-        metricComplete = self.makeTask(20, 30)
-        result = metricComplete.run(self.fakeCat, self.band)
-        lsst.pipe.base.testUtils.assertValidOutput(metricComplete, result)
+        result = self.task.run(self.fakeCat, self.band)
+        testUtils.assertValidOutput(self.task, result)
 
         meas = result.measurement
-        self.assertEqual(meas.metric_name, Name(metric="ap_pipe.apFakesCompletenessMag20t30"))
+        self.assertEqual(meas.metric_name, Name(metric="ap_pipe.apFakesCompleteness"))
         self.assertEqual(
             meas.quantity,
             self.expectedAllMatched / self.targetSources * u.dimensionless_unscaled)
@@ -99,19 +101,19 @@ class TestApCompletenessTask(MetricTaskTestCase):
         """Test the run method with no data.
         """
         result = self.task.run(None, None)
-        lsst.pipe.base.testUtils.assertValidOutput(self.task, result)
+        testUtils.assertValidOutput(self.task, result)
         meas = result.measurement
         self.assertIsNone(meas)
 
     def testValidEmpty(self):
         """Test the run method with a valid but zero result.
         """
-        metricComplete = self.makeTask(25, 30)
+        metricComplete = self.makeTask(self.magCut, self.magCut + 5)
         result = metricComplete.run(self.fakeCat, self.band)
-        lsst.pipe.base.testUtils.assertValidOutput(metricComplete, result)
+        testUtils.assertValidOutput(metricComplete, result)
 
         meas = result.measurement
-        self.assertEqual(meas.metric_name, Name(metric="ap_pipe.apFakesCompletenessMag25t30"))
+        self.assertEqual(meas.metric_name, Name(metric="ap_pipe.apFakesCompleteness"))
         self.assertEqual(meas.quantity, 0 * u.dimensionless_unscaled)
 
 
