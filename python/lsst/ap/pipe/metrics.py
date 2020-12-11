@@ -133,7 +133,8 @@ class ApFakesCompletenessMetricTask(MetricTask):
             else:
                 meas = Measurement(
                     self.config.metricName,
-                    (magCutFakes["diaSourceId"] > 0).sum() / len(magCutFakes) * u.dimensionless_unscaled)
+                    ((magCutFakes["diaSourceId"] > 0).sum() / len(magCutFakes))
+                    * u.dimensionless_unscaled)
         else:
             self.log.info("Nothing to do: no matched catalog found.")
             meas = None
