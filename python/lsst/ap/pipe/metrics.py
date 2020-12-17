@@ -43,7 +43,7 @@ class ApFakesCompletenessMetricConnections(
         MetricTask.ConfigClass.ConnectionsClass,
         dimensions={"instrument", "visit", "detector", "band"},
         defaultTemplates={"coaddName": "deep",
-                          "fakesType": "",
+                          "fakesType": "fakes_",
                           "package": "ap_pipe",
                           "metric": "apFakesCompleteness"}):
     """ApFakesCompleteness connections.

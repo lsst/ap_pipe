@@ -39,7 +39,7 @@ __all__ = ["MatchApFakesTask",
 
 class MatchApFakesConnections(PipelineTaskConnections,
                               defaultTemplates={"CoaddName": "deep",
-                                                "fakesType": ""},
+                                                "fakesType": "fakes_"},
                               dimensions=("tract",
                                           "skymap",
                                           "instrument",
