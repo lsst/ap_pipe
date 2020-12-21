@@ -34,7 +34,7 @@ from lsst.pipe.base import testUtils
 import lsst.skymap as skyMap
 import lsst.utils.tests
 
-from lsst.ap.pipe.matchApFakes import MatchApFakesTask
+from lsst.ap.pipe.matchApFakes import MatchApFakesTask, MatchApFakesConfig
 from lsst.ap.pipe.createApFakes import CreateRandomApFakesTask, CreateRandomApFakesConfig
 
 
@@ -56,7 +56,7 @@ class TestMatchApFakes(lsst.utils.tests.TestCase):
         self.simpleMap = skyMap.DiscreteSkyMap(simpleMapConfig)
         self.tractId = 0
         bCircle = self.simpleMap.generateTract(self.tractId).getInnerSkyPolygon().getBoundingCircle()
-        targetSources = 1000
+        targetSources = 10000
         self.sourceDensity = (targetSources
                               / (bCircle.getArea() * (180 / np.pi) ** 2))
         self.rng = np.random.default_rng(1234)
@@ -68,12 +68,13 @@ class TestMatchApFakes(lsst.utils.tests.TestCase):
         self.fakeCat = fakesTask.run(self.tractId, self.simpleMap).fakeCat
 
         self.inExp = np.zeros(len(self.fakeCat), dtype=bool)
+        bbox = geom.Box2D(self.exposure.getBBox())
         for idx, row in self.fakeCat.iterrows():
-            self.inExp[idx] = geom.Box2D(self.bbox).contains(
-                self.exposure.getWcs().skyToPixel(
-                    geom.SpherePoint(row[fakesConfig.raColName],
+            coord = geom.SpherePoint(row[fakesConfig.raColName],
                                      row[fakesConfig.decColName],
-                                     geom.radians)))
+                                     geom.radians)
+            cent = self.exposure.getWcs().skyToPixel(coord)
+            self.inExp[idx] = bbox.contains(cent)
 
         tmpCat = self.fakeCat[self.inExp].iloc[:int(self.inExp.sum() / 2)]
         extraColumnData = self.rng.integers(0, 100, size=len(tmpCat))
@@ -155,7 +156,9 @@ class TestMatchApFakes(lsst.utils.tests.TestCase):
     def testRun(self):
         """Test the run method.
         """
-        matchFakes = MatchApFakesTask()
+        matchFakesConfig = MatchApFakesConfig()
+        matchFakesConfig.matchDistanceArcseconds = 0.1
+        matchFakes = MatchApFakesTask(config=matchFakesConfig)
         result = matchFakes.run(self.fakeCat,
                                 self.exposure,
                                 self.sourceCat)

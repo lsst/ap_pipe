@@ -79,7 +79,7 @@ class MatchApFakesConfig(
     matchDistanceArcseconds = pexConfig.RangeField(
         doc="Distance in arcseconds to ",
         dtype=float,
-        default=1,
+        default=0.5,
         min=0,
         max=10,
     )
