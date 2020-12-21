@@ -30,7 +30,6 @@ import lsst.pex.config as pexConfig
 from lsst.pipe.base import PipelineTask, PipelineTaskConnections, Struct
 import lsst.pipe.base.connectionTypes as connTypes
 from lsst.pipe.tasks.insertFakes import InsertFakesConfig
-from lsst.sphgeom import ConvexPolygon
 
 __all__ = ["MatchApFakesTask",
            "MatchApFakesConfig",
@@ -164,14 +163,13 @@ class MatchApFakesTask(PipelineTask):
         wcs = image.getWcs()
 
         bbox = Box2D(image.getBBox())
-        corners = bbox.getCorners()
-
-        skyCorners = wcs.pixelToSky(corners)
-        region = ConvexPolygon([s.getVector() for s in skyCorners])
 
         def trim(row):
-            coord = SpherePoint(row[self.config.raColName], row[self.config.decColName], radians)
-            return region.contains(coord.getVector())
+            coord = SpherePoint(row[self.config.raColName],
+                                row[self.config.decColName],
+                                radians)
+            cent = wcs.skyToPixel(coord)
+            return bbox.contains(cent)
 
         return fakeCat[fakeCat.apply(trim, axis=1)]
 
