@@ -35,7 +35,7 @@ __all__ = ["CreateRandomApFakesTask",
 
 
 class CreateRandomApFakesConnections(PipelineTaskConnections,
-                                     defaultTemplates={"CoaddName": "deep"},
+                                     defaultTemplates={"fakesType": "fakes_"},
                                      dimensions=("tract", "skymap")):
     skyMap = connTypes.Input(
         doc="Input definition of geometry/bbox and projection/wcs for "
@@ -46,7 +46,7 @@ class CreateRandomApFakesConnections(PipelineTaskConnections,
     )
     fakeCat = connTypes.Output(
         doc="Catalog of fake sources to draw inputs from.",
-        name="{CoaddName}Coadd_fakeSourceCat",
+        name="{fakesType}fakeSourceCat",
         storageClass="DataFrame",
         dimensions=("tract", "skymap")
     )
