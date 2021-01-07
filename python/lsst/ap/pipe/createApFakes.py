@@ -27,6 +27,7 @@ import lsst.pex.config as pexConfig
 from lsst.pipe.base import PipelineTask, PipelineTaskConnections, Struct
 import lsst.pipe.base.connectionTypes as connTypes
 from lsst.pipe.tasks.insertFakes import InsertFakesConfig
+from lsst.skymap import BaseSkyMap
 
 __all__ = ["CreateRandomApFakesTask",
            "CreateRandomApFakesConfig",
@@ -34,18 +35,18 @@ __all__ = ["CreateRandomApFakesTask",
 
 
 class CreateRandomApFakesConnections(PipelineTaskConnections,
-                                     defaultTemplates={"CoaddName": "deep"},
+                                     defaultTemplates={"fakesType": "fakes_"},
                                      dimensions=("tract", "skymap")):
     skyMap = connTypes.Input(
         doc="Input definition of geometry/bbox and projection/wcs for "
         "template exposures",
-        name="{CoaddName}Coadd_skyMap",
+        name=BaseSkyMap.SKYMAP_DATASET_TYPE_NAME,
         dimensions=("skymap",),
         storageClass="SkyMap",
     )
     fakeCat = connTypes.Output(
         doc="Catalog of fake sources to draw inputs from.",
-        name="{CoaddName}Coadd_fakeSourceCat",
+        name="{fakesType}fakeSourceCat",
         storageClass="DataFrame",
         dimensions=("tract", "skymap")
     )

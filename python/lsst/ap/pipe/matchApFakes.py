@@ -38,8 +38,8 @@ __all__ = ["MatchApFakesTask",
 
 
 class MatchApFakesConnections(PipelineTaskConnections,
-                              defaultTemplates={"CoaddName": "deep",
-                                                "fakesType": ""},
+                              defaultTemplates={"coaddName": "deep",
+                                                "fakesType": "fakes_"},
                               dimensions=("tract",
                                           "skymap",
                                           "instrument",
@@ -47,26 +47,26 @@ class MatchApFakesConnections(PipelineTaskConnections,
                                           "detector")):
     fakeCat = connTypes.Input(
         doc="Catalog of fake sources to draw inputs from.",
-        name="{CoaddName}Coadd_fakeSourceCat",
+        name="{fakesType}fakeSourceCat",
         storageClass="DataFrame",
         dimensions=("tract", "skymap")
     )
     diffIm = connTypes.Input(
         doc="Difference image on which the DiaSources were detected.",
-        name="{fakesType}{CoaddName}Diff_differenceExp",
+        name="{fakesType}{coaddName}Diff_differenceExp",
         storageClass="ExposureF",
         dimensions=("instrument", "visit", "detector"),
     )
     associatedDiaSources = connTypes.Input(
         doc="Optional output storing the DiaSource catalog after matching and "
             "SDMification.",
-        name="{fakesType}{CoaddName}Diff_assocDiaSrc",
+        name="{fakesType}{coaddName}Diff_assocDiaSrc",
         storageClass="DataFrame",
         dimensions=("instrument", "visit", "detector"),
     )
     matchedDiaSources = connTypes.Output(
         doc="",
-        name="{fakesType}{CoaddName}Diff_matchDiaSrc",
+        name="{fakesType}{coaddName}Diff_matchDiaSrc",
         storageClass="DataFrame",
         dimensions=("instrument", "visit", "detector"),
     )

@@ -63,7 +63,7 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
         """
         root = tempfile.mkdtemp()
         dimensions = {"instrument": ["notACam"],
-                      "skymap": ["deepCoadd_skyMap"],
+                      "skymap": ["skyMap"],
                       "tract": [0, 42],
                       }
         testRepo = butlerTests.makeTestRepo(root, dimensions)
@@ -81,9 +81,9 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
             connections.fakeCat.dimensions,
             connections.fakeCat.storageClass)
 
-        dataId = {"skymap": "deepCoadd_skyMap", "tract": 0}
+        dataId = {"skymap": "skyMap", "tract": 0}
         butler = butlerTests.makeTestCollection(testRepo)
-        butler.put(self.simpleMap, "deepCoadd_skyMap", {"skymap": "deepCoadd_skyMap"})
+        butler.put(self.simpleMap, "skyMap", {"skymap": "skyMap"})
 
         quantum = testUtils.makeQuantum(
             fakesTask, butler, dataId,
