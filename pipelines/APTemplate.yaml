@@ -1,0 +1,67 @@
+description: The AP template building pipeline specialized for DECam
+# This pipeline assumes the working repo has raws, calibs, refcats, and a skymap.
+# An example of running it:
+  # pipetask run -j 4
+  #              -b REPO
+  #              -d "exposure IN (289409, 289697, 288935)"
+  #              -i DECam/raw/all,DECam/calib,DECam/calib/DM-26971,refcats/gen2,skymaps
+  #              -o DECam/templates/test1
+  #              -p APTemplate.yaml --register-dataset-types
+instrument: lsst.obs.decam.DarkEnergyCamera
+imports:
+  - $PIPE_TASKS_DIR/pipelines/_SingleFrame.yaml
+  - $PIPE_TASKS_DIR/pipelines/_Coaddition.yaml
+tasks:
+  isr:
+    class: lsst.ip.isr.IsrTask
+    config:
+      connections.ccdExposure: 'raw'
+      connections.bias: 'bias'
+      connections.flat: 'flat'
+      doBias: True
+      doVariance: True
+      doLinearize: False  # eventually want True, not yet implemented in gen3
+      doCrosstalk: False  # eventually want True, not yet implemented in gen3
+      doDefect: True
+      doNanMasking: True
+      doInterpolate: True
+      doDark: False
+      doBrighterFatter: False
+      doFlat: True
+      doFringe: False
+  characterizeImage:
+    class: lsst.pipe.tasks.characterizeImage.CharacterizeImageTask
+    config:
+      refObjLoader.ref_dataset_name: 'panstarrs'
+  calibrate:
+    class: lsst.pipe.tasks.calibrate.CalibrateTask
+    config:
+      photoCal.match.referenceSelection.magLimit.fluxField: 'i_flux'
+      photoCal.match.referenceSelection.magLimit.maximum: 22.0
+      astromRefObjLoader.ref_dataset_name: 'gaia'
+      #astromRefObjLoader.anyFilterMapsToThis: 'phot_g_mean'  # not yet implemented in gen3, DM-27843
+      python: |
+        config.astromRefObjLoader.filterMap = {}
+        config.astromRefObjLoader.filterMap['g'] = 'phot_g_mean'
+        config.astromRefObjLoader.filterMap['r'] = 'phot_g_mean'
+        config.astromRefObjLoader.filterMap['i'] = 'phot_g_mean'
+        config.astromRefObjLoader.filterMap['z'] = 'phot_g_mean'
+        config.astromRefObjLoader.filterMap['y'] = 'phot_g_mean'
+      photoRefObjLoader.ref_dataset_name: 'panstarrs'
+      photoCal.photoCatName: 'panstarrs'
+      connections.astromRefCat: 'gaia'
+      connections.photoRefCat: 'panstarrs'
+  makeWarp:
+    class: lsst.pipe.tasks.makeCoaddTempExp.MakeWarpTask
+    config:
+      doApplySkyCorr: False
+      #doApplyExternalPhotoCalib: False  # want False; not yet implemented in gen3 anyway
+      #doApplyExternalSkyWcs: False  # want False; not yet implemented in gen3 anyway
+      bgSubtracted: True
+      makePsfMatched: True
+      makeDirect: True
+  assembleCoadd:
+    class: lsst.pipe.tasks.assembleCoadd.CompareWarpAssembleCoaddTask
+    config:
+        doInterp: True
+        doNImage: True
