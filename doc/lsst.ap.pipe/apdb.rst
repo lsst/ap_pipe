@@ -36,8 +36,8 @@ APDB configuration info uses the prefix ``diaPipe:apdb.``, with a colon, but is 
 
 Note that the `~lsst.dax.apdb.ApdbConfig.db_url` field has no default; a value *must* be provided by the user.
 
-Additionally, the default set of observed bands allowed to be used in the pipeline are set by the columns available in the Apdb schema specified by `apdb.schema_file` and `apdb.extra_schema_file`. Should the user wish to use the pipeline on data containing bands not in the `ugrizy` system, they must add the appropriate columns to the Apdb schema and add the bands to
-the `validBands` config in `~lsst.ap.association.DiaPipelineConig`.
+Additionally, the default set of observed bands allowed to be used in the pipeline are set by the columns available in the Apdb schema specified by `~lsst.dax.ApdbConfig.schema_file` and `~lsst.dax.ApdbConfig.extra_schema_file`.
+Should the user wish to use the pipeline on data containing bands not in the ``ugrizy`` system, they must add the appropriate columns to the Apdb schema and add the bands to the ``validBands`` config in `~lsst.ap.association.DiaPipelineConig`.
 
 .. _section-ap-pipe-apdb-examples:
 
