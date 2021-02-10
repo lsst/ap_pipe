@@ -36,3 +36,6 @@ to verify the output.
 - `ApPipeConfig`: a config for customizing ``ApPipeTask`` for a particular dataset's needs.
   Supported observatory packages should provide a :ref:`config override file <command-line-task-config-howto-obs>` that does most of the work.
 - :file:`ApPipe.yaml`: a `~lsst.pipe.base.Pipeline` configuration for running the entire AP Pipeline in the newer, "Gen 3" framework
+
+By default the pipeline is limited to running on data taken in filter bands whose names match those used by the Rubin Observatory LSST Camera (that is `ugrizy`).
+In order to run on bands outside of these filters, one must add the associated columns to the `~lsst.dax.apdb.Apdb` schema and add the band names to the config of `~lsst.ap.association.DiaPipelineTask`.
