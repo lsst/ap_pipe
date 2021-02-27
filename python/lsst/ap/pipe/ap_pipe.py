@@ -25,8 +25,6 @@ __all__ = ["ApPipeConfig", "ApPipeTask"]
 
 import warnings
 
-from sqlalchemy.exc import OperationalError, ProgrammingError
-
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 
@@ -169,23 +167,19 @@ class ApPipeTask(pipeBase.CmdLineTask):
         else:
             diffImResults = self.runDiffIm(calexpRef, templateIds)
 
-        try:
-            if "diaPipe" in reuse:
-                warnings.warn(
-                    "Reusing association results for some images while rerunning "
-                    "others may change the associations. If exact reproducibility "
-                    "matters, please clear the association database and run "
-                    "ap_pipe.py with --reuse-output-from=differencer to redo all "
-                    "association results consistently.")
-            if "diaPipe" in reuse and calexpRef.datasetExists("apdb_marker", write=True):
-                message = "DiaPipeline has already been run for {0}, skipping...".format(calexpRef.dataId)
-                self.log.info(message)
-                diaPipeResults = None
-            else:
-                diaPipeResults = self.runAssociation(calexpRef)
-        except (OperationalError, ProgrammingError) as e:
-            # Don't use lsst.pipe.base.TaskError because it mixes poorly with exception chaining
-            raise RuntimeError("Database query failed; did you call make_apdb.py first?") from e
+        if "diaPipe" in reuse:
+            warnings.warn(
+                "Reusing association results for some images while rerunning "
+                "others may change the associations. If exact reproducibility "
+                "matters, please clear the association database and run "
+                "ap_pipe.py with --reuse-output-from=differencer to redo all "
+                "association results consistently.")
+        if "diaPipe" in reuse and calexpRef.datasetExists("apdb_marker", write=True):
+            message = "DiaPipeline has already been run for {0}, skipping...".format(calexpRef.dataId)
+            self.log.info(message)
+            diaPipeResults = None
+        else:
+            diaPipeResults = self.runAssociation(calexpRef)
 
         return pipeBase.Struct(
             l1Database=self.diaPipe.apdb,
