@@ -151,17 +151,17 @@ class ApPipeTask(pipeBase.CmdLineTask):
                 # templateId is typically visit-only; consider only the same raft/CCD/etc. as rawRef
                 rawTemplateRef = _siblingRef(rawRef, "raw", templateId)
                 calexpTemplateRef = _siblingRef(calexpRef, "calexp", templateId)
-                if "ccdProcessor" not in reuse or not calexpTemplateRef.datasetExists("calexp", write=True):
+                if "ccdProcessor" not in reuse or not calexpTemplateRef.datasetExists("calexp"):
                     self.runProcessCcd(rawTemplateRef)
 
-        if "ccdProcessor" in reuse and calexpRef.datasetExists("calexp", write=True):
+        if "ccdProcessor" in reuse and calexpRef.datasetExists("calexp"):
             self.log.info("ProcessCcd has already been run for {0}, skipping...".format(rawRef.dataId))
             processResults = None
         else:
             processResults = self.runProcessCcd(rawRef)
 
         diffType = self.config.differencer.coaddName
-        if "differencer" in reuse and calexpRef.datasetExists(diffType + "Diff_diaSrc", write=True):
+        if "differencer" in reuse and calexpRef.datasetExists(diffType + "Diff_diaSrc"):
             self.log.info("DiffIm has already been run for {0}, skipping...".format(calexpRef.dataId))
             diffImResults = None
         else:
@@ -174,7 +174,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
                 "matters, please clear the association database and run "
                 "ap_pipe.py with --reuse-output-from=differencer to redo all "
                 "association results consistently.")
-        if "diaPipe" in reuse and calexpRef.datasetExists("apdb_marker", write=True):
+        if "diaPipe" in reuse and calexpRef.datasetExists("apdb_marker"):
             message = "DiaPipeline has already been run for {0}, skipping...".format(calexpRef.dataId)
             self.log.info(message)
             diaPipeResults = None
