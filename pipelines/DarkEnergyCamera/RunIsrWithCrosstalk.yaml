@@ -1,0 +1,12 @@
+description: Run ISR using pregenerated crosstalkSources for interchip crosstalk.
+instrument: lsst.obs.decam.DarkEnergyCamera
+tasks:
+  isr:
+    class: lsst.ip.isr.isrTask.IsrTask
+    config:
+      connections.ccdExposure: 'raw'
+      connections.crosstalkSources: 'overscanRaw'
+      connections.bias: 'bias'  # DECam default is still 'cpBias'
+      connections.flat: 'flat'  # DECam default is still 'cpFlat'
+      doOverscan: True
+      doCrosstalk: True
