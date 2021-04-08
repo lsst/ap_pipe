@@ -31,6 +31,7 @@ import lsst.pipe.base as pipeBase
 from lsst.pipe.tasks.processCcd import ProcessCcdTask
 from lsst.pipe.tasks.imageDifference import ImageDifferenceTask
 from lsst.ap.association import DiaPipelineTask
+from lsst.ap.association.transformDiaSourceCatalog import TransformDiaSourceCatalogTask
 from lsst.ap.pipe.apPipeParser import ApPipeParser
 from lsst.ap.pipe.apPipeTaskRunner import ApPipeTaskRunner
 
@@ -46,6 +47,11 @@ class ApPipeConfig(pexConfig.Config):
     differencer = pexConfig.ConfigurableField(
         target=ImageDifferenceTask,
         doc="Task used to do image subtraction and DiaSource detection.",
+    )
+    transformDiaSrcCat = pexConfig.ConfigurableField(
+        target=TransformDiaSourceCatalogTask,
+        doc="Task for converting and calibrating the AfwTable of DiaSources "
+            "to DataFrame for use in Association."
     )
     diaPipe = pexConfig.ConfigurableField(
         target=DiaPipelineTask,
@@ -107,7 +113,8 @@ class ApPipeTask(pipeBase.CmdLineTask):
 
         self.makeSubtask("ccdProcessor", butler=butler)
         self.makeSubtask("differencer", butler=butler)
-        self.makeSubtask("diaPipe", initInputs={"diaSourceSchema": self.differencer.outputSchema})
+        self.makeSubtask("transformDiaSrcCat", initInputs={"diaSourceSchema": self.differencer.outputSchema})
+        self.makeSubtask("diaPipe")
 
     @pipeBase.timeMethod
     def runDataRef(self, rawRef, templateIds=None, reuse=None):
@@ -258,9 +265,16 @@ class ApPipeTask(pipeBase.CmdLineTask):
             - taskResults : output of `config.diaPipe.run` (`lsst.pipe.base.Struct`).
         """
         diffType = self.config.differencer.coaddName
+        diffIm = sensorRef.get(diffType + "Diff_differenceExp")
+
+        transformResult = self.transformDiaSrcCat.run(
+            diaSourceCat=sensorRef.get(diffType + "Diff_diaSrc"),
+            diffIm=diffIm,
+            band=diffIm.getFilterLabel().bandLabel,
+            ccdVisitId=diffIm.getInfo().getVisitInfo().getExposureId())
 
         results = self.diaPipe.run(
-            diaSourceCat=sensorRef.get(diffType + "Diff_diaSrc"),
+            diaSourceTable=transformResult.diaSourceTable,
             diffIm=sensorRef.get(diffType + "Diff_differenceExp"),
             exposure=sensorRef.get("calexp"),
             warpedExposure=sensorRef.get(diffType + "Diff_warpedExp"),
