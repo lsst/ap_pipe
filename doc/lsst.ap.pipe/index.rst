@@ -53,6 +53,7 @@ Using lsst.ap.pipe in Gen 3
    getting-started
    pipeline-tutorial
    apdb
+   pipeline-bps
 
 .. _lsst.ap.pipe-contributing:
 
