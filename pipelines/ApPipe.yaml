@@ -1,10 +1,18 @@
-# Gen 3 pipeline for Alert Production
+description: End to end Alert Production pipeline
+# Look in subdirectories of $AP_PIPE_DIR/pipelines to find customized pipelines
+# for each camera. Those pipelines import this general AP pipeline.
+#
+# NOTES
+# Remember to run make_apdb.py and use the same configs for diaPipe
+# READ_UNCOMMITTED is required for sqlite APDBs, i.e.,
+# -c diaPipe:apdb.isolation_level: 'READ_UNCOMMITTED'
+# A db_url is always required, e.g.,
+# -c diaPipe:apdb.db_url: 'sqlite:////project/user/association.db'
+# Option to specify connection_timeout for sqlite APDBs encountering lock errors, i.e.,
+# -c diaPipe:apdb.connection_timeout: 240
 
-description: End to end AP pipeline
 imports:
-  - location: $PIPE_TASKS_DIR/pipelines/DRP.yaml
-    include:
-      - processCcd
+  - location: $AP_PIPE_DIR/pipelines/ProcessCcd.yaml
 tasks:
     imageDifference:
         class: lsst.pipe.tasks.imageDifference.ImageDifferenceTask
@@ -14,6 +22,8 @@ tasks:
             detection.thresholdValue: 5.0  # needed with doDecorrelation
             # Don't have source catalogs for templates
             doSelectSources: False
+            # Scale diffim variance instead of template variance
+            doScaleDiffimVariance: True
     diaPipe:
         class: lsst.ap.association.DiaPipelineTask
 contracts:
