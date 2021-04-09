@@ -1,0 +1,10 @@
+description: End to end AP pipeline specialized for HSC
+# (1) Execute `make_apdb.py`, e.g.,
+#     make_apdb.py -c isolation_level=READ_UNCOMMITTED
+#                  -c db_url="sqlite:////project/user/association.db"
+# (2) Run this pipeline, setting appropriate diaPipe configs
+#     (diaPipe configs should match the make_apdb.py configs)
+
+instrument: lsst.obs.subaru.HyperSuprimeCam
+imports:
+  - location: $AP_PIPE_DIR/pipelines/ApPipe.yaml
