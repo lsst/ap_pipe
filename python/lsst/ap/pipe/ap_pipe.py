@@ -50,8 +50,8 @@ class ApPipeConfig(pexConfig.Config):
     )
     transformDiaSrcCat = pexConfig.ConfigurableField(
         target=TransformDiaSourceCatalogTask,
-        doc="Task for converting and calibrating the AfwTable of DiaSources "
-            "to DataFrame for use in Association."
+        doc="Task for converting and calibrating the afw SourceCatalog of "
+            "DiaSources to Pandas DataFrame for use in Association."
     )
     diaPipe = pexConfig.ConfigurableField(
         target=DiaPipelineTask,

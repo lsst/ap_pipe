@@ -111,9 +111,11 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
         """
         with patch.object(task, "ccdProcessor") as mockCcdProcessor, \
                 patch.object(task, "differencer") as mockDifferencer, \
+                patch.object(task, "transformDiaSrcCat") as mockTransform, \
                 patch.object(task, "diaPipe") as mockDiaPipe:
             yield pipeBase.Struct(ccdProcessor=mockCcdProcessor,
                                   differencer=mockDifferencer,
+                                  transformDiaSrcCat=mockTransform,
                                   diaPipe=mockDiaPipe)
 
     def testGenericRun(self):
