@@ -1,0 +1,20 @@
+description: End to end AP pipeline specialized for DECam
+# (1) Run $AP_PIPE_DIR/pipelines/DarkEnergyCamera/RunIsrForCrosstalkSources.yaml
+# (2) Execute `make_apdb.py`, e.g.,
+#     make_apdb.py -c isolation_level=READ_UNCOMMITTED
+#                  -c db_url="sqlite:////project/user/association.db"
+# (3) Run this pipeline, setting appropriate diaPipe configs
+#     (diaPipe configs should match the make_apdb.py configs)
+
+instrument: lsst.obs.decam.DarkEnergyCamera
+imports:
+  - location: $AP_PIPE_DIR/pipelines/ApPipe.yaml
+    exclude:
+      - isr
+  - location: $AP_PIPE_DIR/pipelines/DarkEnergyCamera/RunIsrWithCrosstalk.yaml
+tasks:
+    calibrate:
+        class: lsst.pipe.tasks.calibrate.CalibrateTask
+        config:
+          photoCal.match.referenceSelection.magLimit.fluxField: 'i_flux'
+          photoCal.match.referenceSelection.magLimit.maximum: 22.0

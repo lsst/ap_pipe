@@ -1,0 +1,50 @@
+# UPDATE THIS to the path to the pipeline to run
+pipelineYaml: '${AP_PIPE_DIR}/pipelines/ApPipe.yaml'
+
+# Format for job names and job output filenames
+templateDataId: '{tract}_{patch}_{band}_{visit}_{exposure}_{detector}'
+
+# Just names, but UPDATE THIS AND KEEP THEM SHORT
+project: ApPipe
+campaign: smallrun_example
+
+submitPath: ${PWD}/bps/{outCollection}
+computeSite: ncsapool
+# Memory allocated for each quantum, in MBs
+requestMemory: 2048
+# CPUs to use per quantum
+requestCpus: 1
+
+# Example arguments, like the ones you would send to pipetask run from the command line
+payload:
+  runInit: true
+  # UPDATE THIS to also set the output collection name
+  payloadName: DM-XXXXX_ApPipe_example
+  # UPDATE THIS to point to the correct repository
+  butlerConfig: /repo/main/butler.yaml
+  # UPDATE THIS and be sure it includes collections with raws, calibs, refcats, skymaps, and templates
+  inCollection: HSC/defaults,'u/${USER}/templates'
+  # Note: keep timestamp in outCollection so you don't get a zillion sub-runs
+  output : 'u/${USER}/{payloadName}'
+  outCollection: '{output}/{timestamp}'
+  # UPDATE THIS to specify what data to process
+  dataQuery: 'exposure IN (11690, 11692) AND detector in (49, 50)'
+
+# Various things for bps to customize about each pipeline task
+pipetask:
+  # Initialization (optional, but a good idea; treated like its own pipeline task)
+  pipetaskInit:
+    runQuantumCommand: '${CTRL_MPEXEC_DIR}/bin/pipetask --long-log run -b {butlerConfig} -i {inCollection} --output {output} --output-run {outCollection} --init-only --skip-existing --register-dataset-types --qgraph {qgraphFile} --clobber-partial-outputs --no-versions'
+  # Option to list other pipeline tasks being run here with default overrides
+  imageDifference:
+    requestMemory: 4096
+
+# Condor backend stuff
+wmsServiceClass: lsst.ctrl.bps.wms.htcondor.htcondor_service.HTCondorService
+clusterAlgorithm: lsst.ctrl.bps.quantum_clustering_funcs.single_quantum_clustering
+
+# Create quantum graph for use by all tasks
+createQuantumGraph: '${CTRL_MPEXEC_DIR}/bin/pipetask qgraph -d "{dataQuery}" -b {butlerConfig} -i {inCollection} -p {pipelineYaml} -q {qgraphFile} --qgraph-dot {qgraphFile}.dot'
+
+# Main pipetask run call
+runQuantumCommand: '${CTRL_MPEXEC_DIR}/bin/pipetask --long-log run -b {butlerConfig} -i {inCollection} --output {output} --output-run {outCollection} --extend-run --skip-init-writes --qgraph {qgraphFile} --clobber-partial-outputs --no-versions'

@@ -1,0 +1,22 @@
+description: Prepare crosstalkSources for ISR/interchip crosstalk by running overscan correction on raw frames.
+instrument: lsst.obs.decam.DarkEnergyCamera
+tasks:
+  overscan:
+    class: lsst.ip.isr.isrTask.IsrTask
+    config:
+      connections.ccdExposure: 'raw'
+      connections.outputExposure: 'overscanRaw'
+      doBias: False
+      doOverscan: True
+      doAssembleCcd: False
+      doVariance: False
+      doLinearize: False
+      doCrosstalk: False
+      doDefect: False
+      doNanMasking: False
+      doInterpolate: False
+      doBrighterFatter: False
+      doDark: False
+      doFlat: False
+      doApplyGains: False
+      doFringe: False
