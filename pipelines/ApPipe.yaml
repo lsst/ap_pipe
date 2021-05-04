@@ -22,8 +22,6 @@ tasks:
             detection.thresholdValue: 5.0  # needed with doDecorrelation
             # Don't have source catalogs for templates
             doSelectSources: False
-            # Scale diffim variance instead of template variance
-            doScaleDiffimVariance: True
     transformDiaSrcCat:
         class: lsst.ap.association.TransformDiaSourceCatalogTask
     diaPipe:
