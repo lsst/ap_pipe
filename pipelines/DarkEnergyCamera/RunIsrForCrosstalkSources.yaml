@@ -2,7 +2,7 @@ description: Prepare crosstalkSources for ISR/interchip crosstalk by running ove
 instrument: lsst.obs.decam.DarkEnergyCamera
 tasks:
   overscan:
-    class: lsst.ip.isr.isrTask.IsrTask
+    class: lsst.ip.isr.IsrTask
     config:
       connections.ccdExposure: 'raw'
       connections.outputExposure: 'overscanRaw'
