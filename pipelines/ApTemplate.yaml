@@ -1,0 +1,52 @@
+description: The AP template building pipeline
+# Look in subdirectories of $AP_PIPE_DIR/pipelines to find customized pipelines
+# for each camera. Those pipelines import this general template-building pipeline.
+
+imports:
+  - location: $AP_PIPE_DIR/pipelines/ProcessCcd.yaml
+tasks:
+  consolidateVisitSummary: lsst.pipe.tasks.postprocess.ConsolidateVisitSummaryTask
+  selectGoodSeeingVisits:
+    class: lsst.pipe.tasks.selectImages.BestSeeingQuantileSelectVisitsTask
+    config:
+      connections.goodVisits: goodSeeingVisits
+  makeWarp:
+    class: lsst.pipe.tasks.makeCoaddTempExp.MakeWarpTask
+    config:
+      doWriteEmptyWarps: True
+      doApplyExternalPhotoCalib: False
+      doApplyExternalSkyWcs: False
+      makePsfMatched: True
+  assembleCoadd:
+    class: lsst.pipe.tasks.assembleCoadd.CompareWarpAssembleCoaddTask
+    config:
+      doSelectVisits: True
+      doNImage: True
+      assembleStaticSkyModel.doSelectVisits: True
+      connections.selectedVisits: goodSeeingVisits
+      connections.outputCoaddName: goodSeeing
+      connections.coaddExposure: goodSeeingCoadd
+
+subsets:
+  singleFrameAp:
+    subset:
+      - isr
+      - characterizeImage
+      - calibrate
+      - consolidateVisitSummary
+    description: >
+      Tasks to run for single frame processing that are necessary to use the good
+      seeing selector to build coadds for use as difference imaging templates.
+  makeTemplate:
+    subset:
+      - selectGoodSeeingVisits
+      - makeWarp
+      - assembleCoadd
+    description: >
+      Tasks to run once calexps and visit summaries exist to build good seeing
+      coadds for use as templates.
+
+contracts:
+  - makeWarp.makeDirect is True
+  - makeWarp.makePsfMatched is True
+  - selectGoodSeeingVisits.connections.goodVisits == assembleCoadd.connections.selectedVisits
