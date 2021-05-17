@@ -1,0 +1,15 @@
+description: A set of tasks to run when processing raw images, specialized for DECam
+# You must run $AP_PIPE_DIR/pipelines/DarkEnergyCamera/RunIsrForCrosstalkSources.yaml first!
+
+instrument: lsst.obs.decam.DarkEnergyCamera
+imports:
+  - location: $AP_PIPE_DIR/pipelines/DarkEnergyCamera/RunIsrWithCrosstalk.yaml
+  - location: $AP_PIPE_DIR/pipelines/ProcessCcd.yaml
+    exclude:
+      - isr
+tasks:
+  calibrate:
+    class: lsst.pipe.tasks.calibrate.CalibrateTask
+    config:
+      photoCal.match.referenceSelection.magLimit.fluxField: 'i_flux'
+      photoCal.match.referenceSelection.magLimit.maximum: 22.0
