@@ -103,11 +103,11 @@ class TestMatchApFakes(lsst.utils.tests.TestCase):
         connections = matchTask.config.ConnectionsClass(
             config=matchTask.config)
 
-        dataId = {"instrument": "notACam",
-                  "skymap": "deepCoadd_skyMap",
-                  "tract": 0,
-                  "visit": 1234,
-                  "detector": 25}
+        fakesDataId = {"skymap": "deepCoadd_skyMap",
+                       "tract": 0}
+        imgDataId = {"instrument": "notACam",
+                     "visit": 1234,
+                     "detector": 25}
         butlerTests.addDatasetType(
             testRepo,
             connections.fakeCat.name,
@@ -132,22 +132,27 @@ class TestMatchApFakes(lsst.utils.tests.TestCase):
 
         butler.put(self.fakeCat,
                    connections.fakeCat.name,
-                   {"tract": dataId["tract"],
-                    "skymap": dataId["skymap"]})
+                   {"tract": fakesDataId["tract"],
+                    "skymap": fakesDataId["skymap"]})
         butler.put(self.exposure,
                    connections.diffIm.name,
-                   {"instrument": dataId["instrument"],
-                    "visit": dataId["visit"],
-                    "detector": dataId["detector"]})
+                   {"instrument": imgDataId["instrument"],
+                    "visit": imgDataId["visit"],
+                    "detector": imgDataId["detector"]})
         butler.put(self.sourceCat,
                    connections.associatedDiaSources.name,
-                   {"instrument": dataId["instrument"],
-                    "visit": dataId["visit"],
-                    "detector": dataId["detector"]})
+                   {"instrument": imgDataId["instrument"],
+                    "visit": imgDataId["visit"],
+                    "detector": imgDataId["detector"]})
 
+        quantumDataId = imgDataId.copy()
+        quantumDataId.update(fakesDataId)
         quantum = testUtils.makeQuantum(
-            matchTask, butler, dataId,
-            {key: dataId for key in {"fakeCat", "diffIm", "associatedDiaSources", "matchedDiaSources"}})
+            matchTask, butler, quantumDataId,
+            {"fakeCat": fakesDataId,
+             "diffIm": imgDataId,
+             "associatedDiaSources": imgDataId,
+             "matchedDiaSources": imgDataId})
         run = testUtils.runTestQuantum(matchTask, butler, quantum)
         # Actual input dataset omitted for simplicity
         run.assert_called_once()

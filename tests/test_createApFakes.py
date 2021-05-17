@@ -87,7 +87,7 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
 
         quantum = testUtils.makeQuantum(
             fakesTask, butler, dataId,
-            {key: dataId for key in {"skyMap", "fakeCat"}})
+            {"skyMap": {"skymap": dataId["skymap"]}, "fakeCat": dataId})
         run = testUtils.runTestQuantum(fakesTask, butler, quantum, True)
         # Actual input dataset omitted for simplicity
         run.assert_called_once_with(tractId=dataId["tract"], skyMap=self.simpleMap)
