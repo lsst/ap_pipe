@@ -62,12 +62,6 @@ class ApPipeConfig(pexConfig.Config):
     def setDefaults(self):
         """Settings appropriate for most or all ap_pipe runs.
         """
-        # Always prefer decorrelation; may eventually become ImageDifferenceTask default
-        self.differencer.doDecorrelation = True
-        self.differencer.detection.thresholdValue = 5.0  # needed with doDecorrelation
-
-        # Don't have source catalogs for templates
-        self.differencer.doSelectSources = False
 
         # Write the WarpedExposure to disk for use in Alert Packet creation.
         self.differencer.doWriteWarpedExp = True
