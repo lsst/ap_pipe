@@ -14,19 +14,38 @@ description: End to end Alert Production pipeline
 imports:
   - location: $AP_PIPE_DIR/pipelines/ProcessCcd.yaml
 tasks:
-    imageDifference:
-        class: lsst.pipe.tasks.imageDifference.ImageDifferenceTask
-    transformDiaSrcCat:
-        class: lsst.ap.association.TransformDiaSourceCatalogTask
-    diaPipe:
-        class: lsst.ap.association.DiaPipelineTask
+  imageDifference:
+    class: lsst.pipe.tasks.imageDifference.ImageDifferenceTask
+    config:
+      doWriteWarpedExp: True
+      coaddName: goodSeeing
+      getTemplate.coaddName: goodSeeing
+      connections.coaddName: goodSeeing
+      connections.coaddExposures: goodSeeingCoadd
+      connections.subtractedExposure: goodSeeingDiff_differenceExp
+      connections.warpedExposure: goodSeeingDiff_warpedExp
+  transformDiaSrcCat:
+    class: lsst.ap.association.TransformDiaSourceCatalogTask
+    config:
+      connections.coaddName: goodSeeing
+      connections.diaSourceSchema: goodSeeingDiff_diaSrc_schema
+      connections.diaSourceCat: goodSeeingDiff_diaSrc
+      connections.diffIm: goodSeeingDiff_differenceExp
+      connections.diaSourceTable: goodSeeingDiff_diaSrcTable
+  diaPipe:
+    class: lsst.ap.association.DiaPipelineTask
+    config:
+      connections.coaddName: goodSeeing
+      connections.diaSourceTable: goodSeeingDiff_diaSrcTable
+      connections.associatedDiaSources: goodSeeingDiff_assocDiaSrcTable
 contracts:
-    # DiaPipelineTask needs diaSource fluxes, catalogs, and difference exposures
-    - imageDifference.doMeasurement is True
-    - imageDifference.doWriteSources is True
-    - imageDifference.doWriteSubtractedExp is True
-    # Inputs and outputs must match
-    - imageDifference.connections.coaddName == transformDiaSrcCat.connections.coaddName
-    - imageDifference.connections.fakesType == transformDiaSrcCat.connections.fakesType
-    - imageDifference.connections.coaddName == diaPipe.connections.coaddName
-    - imageDifference.connections.fakesType == diaPipe.connections.fakesType
+  # DiaPipelineTask needs diaSource fluxes, catalogs, and difference exposures
+  - imageDifference.doMeasurement is True
+  - imageDifference.doWriteSources is True
+  - imageDifference.doWriteSubtractedExp is True
+  # Inputs and outputs must match
+  - imageDifference.connections.coaddName == transformDiaSrcCat.connections.coaddName
+  - imageDifference.connections.fakesType == transformDiaSrcCat.connections.fakesType
+  - imageDifference.connections.coaddName == diaPipe.connections.coaddName
+  - imageDifference.connections.fakesType == diaPipe.connections.fakesType
+  - transformDiaSrcCat.connections.diaSourceTable == diaPipe.connections.diaSourceTable
