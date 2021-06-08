@@ -17,31 +17,39 @@ tasks:
   imageDifference:
     class: lsst.pipe.tasks.imageDifference.ImageDifferenceTask
     config:
-      doWriteWarpedExp: True
-      coaddName: goodSeeing
-      getTemplate.coaddName: goodSeeing
+      doWriteWarpedExp: True             # Required for diaPipe
+      # 'goodSeeing' expected type for LSST processing; task default 'deep' for Gen 2 pipelines
+      coaddName: goodSeeing              # Can be removed once ImageDifference no longer supports Gen 2
+      getTemplate.coaddName: goodSeeing  # Can be removed once ImageDifference no longer supports Gen 2
       connections.coaddName: goodSeeing
+      # TODO: redundant connection definitions workaround for DM-30210
       connections.coaddExposures: goodSeeingCoadd
       connections.subtractedExposure: goodSeeingDiff_differenceExp
       connections.warpedExposure: goodSeeingDiff_warpedExp
+      # TODO: end DM-30210 workaround
   transformDiaSrcCat:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
     config:
       connections.coaddName: goodSeeing
+      # TODO: redundant connection definitions workaround for DM-30210
       connections.diaSourceSchema: goodSeeingDiff_diaSrc_schema
       connections.diaSourceCat: goodSeeingDiff_diaSrc
       connections.diffIm: goodSeeingDiff_differenceExp
       connections.diaSourceTable: goodSeeingDiff_diaSrcTable
+      # TODO: end DM-30210 workaround
   diaPipe:
     class: lsst.ap.association.DiaPipelineTask
     config:
       connections.coaddName: goodSeeing
+      # TODO: redundant connection definitions workaround for DM-30210
       connections.diaSourceTable: goodSeeingDiff_diaSrcTable
       connections.associatedDiaSources: goodSeeingDiff_assocDiaSrcTable
+      # TODO: end DM-30210 workaround
 contracts:
-  # DiaPipelineTask needs diaSource fluxes, catalogs, and difference exposures
+  # DiaPipelineTask needs diaSource fluxes, catalogs, warped exposures, and difference exposures
   - imageDifference.doMeasurement is True
   - imageDifference.doWriteSources is True
+  - imageDifference.doWriteWarpedExp is True
   - imageDifference.doWriteSubtractedExp is True
   # Inputs and outputs must match
   - imageDifference.connections.coaddName == transformDiaSrcCat.connections.coaddName
