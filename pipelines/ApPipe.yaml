@@ -23,9 +23,15 @@ tasks:
       getTemplate.coaddName: goodSeeing  # Can be removed once ImageDifference no longer supports Gen 2
       connections.coaddName: goodSeeing
       # TODO: redundant connection definitions workaround for DM-30210
+      connections.exposure: calexp
       connections.coaddExposures: goodSeeingCoadd
+      connections.dcrCoadds: dcrCoadd
+      connections.outputSchema: goodSeeingDiff_diaSrc_schema
       connections.subtractedExposure: goodSeeingDiff_differenceExp
+      connections.scoreExposure: goodSeeingDiff_scoreExp
       connections.warpedExposure: goodSeeingDiff_warpedExp
+      connections.matchedExposure: goodSeeingDiff_matchedExp
+      connections.diaSources: goodSeeingDiff_diaSrc
       # TODO: end DM-30210 workaround
   transformDiaSrcCat:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
@@ -43,6 +49,8 @@ tasks:
       connections.coaddName: goodSeeing
       # TODO: redundant connection definitions workaround for DM-30210
       connections.diaSourceTable: goodSeeingDiff_diaSrcTable
+      connections.diffIm: goodSeeingDiff_differenceExp
+      connections.warpedExposure: goodSeeingDiff_warpedExp
       connections.associatedDiaSources: goodSeeingDiff_assocDiaSrcTable
       # TODO: end DM-30210 workaround
 contracts:
