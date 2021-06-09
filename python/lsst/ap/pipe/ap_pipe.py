@@ -72,6 +72,8 @@ class ApPipeConfig(pexConfig.Config):
             raise ValueError("Differencing needs calexps [ccdProcessor.calibrate.doWrite, doWriteExposure]")
         if not self.differencer.doMeasurement:
             raise ValueError("Source association needs diaSource fluxes [differencer.doMeasurement].")
+        if not self.differencer.doWriteWarpedExp:
+            raise ValueError("Alert generation needs warped exposures [differencer.doWriteWarpedExp].")
         if not self.differencer.doWriteSources:
             raise ValueError("Source association needs diaSource catalogs [differencer.doWriteSources].")
         if not self.differencer.doWriteSubtractedExp:
