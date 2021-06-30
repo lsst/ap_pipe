@@ -17,7 +17,8 @@ tasks:
   imageDifference:
     class: lsst.pipe.tasks.imageDifference.ImageDifferenceTask
     config:
-      doWriteWarpedExp: True             # Required for diaPipe
+      doWriteWarpedExp: True             # Required for packaging alerts in diaPipe
+      doSkySources: True
       # 'goodSeeing' expected type for LSST processing; task default 'deep' for Gen 2 pipelines
       coaddName: goodSeeing              # Can be removed once ImageDifference no longer supports Gen 2
       getTemplate.coaddName: goodSeeing  # Can be removed once ImageDifference no longer supports Gen 2
@@ -36,6 +37,7 @@ tasks:
   transformDiaSrcCat:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
     config:
+      doRemoveSkySources: True
       connections.coaddName: goodSeeing
       # TODO: redundant connection definitions workaround for DM-30210
       connections.diaSourceSchema: goodSeeingDiff_diaSrc_schema
@@ -59,6 +61,7 @@ contracts:
   - imageDifference.doWriteSources is True
   - imageDifference.doWriteWarpedExp is True
   - imageDifference.doWriteSubtractedExp is True
+  - imageDifference.doSkySources == transformDiaSrcCat.doRemoveSkySources
   # Inputs and outputs must match
   - imageDifference.connections.coaddName == transformDiaSrcCat.connections.coaddName
   - imageDifference.connections.fakesType == transformDiaSrcCat.connections.fakesType
