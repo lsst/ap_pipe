@@ -84,7 +84,8 @@ class MakeApdbParserTestSuite(lsst.utils.tests.TestCase):
         """
         args = '-c db_url="dummy"'
         parsed = self._parseString(args)
-        self.assertIn("ap_association", parsed.config.extra_schema_file)
+        # Allow ap_association or AP_ASSOCIATION.
+        self.assertRegex(parsed.config.extra_schema_file, "(?i)ap_association")
 
     @contextlib.contextmanager
     def _temporaryBuffer(self):
