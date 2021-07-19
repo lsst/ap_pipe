@@ -25,6 +25,7 @@
 
 __all__ = [
     "ApFakesCompletenessMetricTask", "ApFakesCompletenessMetricConfig",
+    "ApFakesCountMetricTask", "ApFakesCountMetricConfig"
 ]
 
 import astropy.units as u
@@ -151,7 +152,7 @@ class ApFakesCountMetricConnections(
     pass
 
 
-class ApFakesCountMetricMetricConfig(
+class ApFakesCountMetricConfig(
         ApFakesCompletenessMetricConfig,
         pipelineConnections=ApFakesCountMetricConnections):
     """ApFakesCompleteness config.
@@ -164,7 +165,7 @@ class ApFakesCountMetricTask(ApFakesCompletenessMetricTask):
     AP pipeline.
     """
     _DefaultName = "apFakesCount"
-    ConfigClass = ApFakesCountMetricMetricConfig
+    ConfigClass = ApFakesCountMetricConfig
 
     def run(self, matchedFakes, band):
         """Compute the completeness of recovered fakes within a magnitude
