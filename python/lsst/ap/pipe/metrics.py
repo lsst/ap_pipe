@@ -115,6 +115,8 @@ class ApFakesCompletenessMetricTask(MetricTask):
         matchedFakes : `lsst.afw.table.SourceCatalog` or `None`
             Catalog of fakes that were inserted into the ccdExposure matched
             to their detected counterparts.
+        band : `str`
+            Single character name of the observed band for this quanta.
 
         Returns
         -------
@@ -168,7 +170,7 @@ class ApFakesCountMetricTask(ApFakesCompletenessMetricTask):
     ConfigClass = ApFakesCountMetricConfig
 
     def run(self, matchedFakes, band):
-        """Compute the completeness of recovered fakes within a magnitude
+        """Compute the number of fakes inserted within a magnitude
         range.
 
         Parameters
@@ -176,6 +178,8 @@ class ApFakesCountMetricTask(ApFakesCompletenessMetricTask):
         matchedFakes : `lsst.afw.table.SourceCatalog` or `None`
             Catalog of fakes that were inserted into the ccdExposure matched
             to their detected counterparts.
+        band : `str`
+            Single character name of the observed band for this quanta.
 
         Returns
         -------
@@ -191,6 +195,6 @@ class ApFakesCountMetricTask(ApFakesCompletenessMetricTask):
             meas = Measurement(self.config.metricName,
                                len(magCutFakes) * u.count)
         else:
-            self.log.info("Nothing to do: no matched catalog found.")
+            self.log.info("Nothing to do: no matched catalog supplied.")
             meas = None
         return Struct(measurement=meas)
