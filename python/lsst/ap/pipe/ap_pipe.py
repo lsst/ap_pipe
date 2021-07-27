@@ -274,7 +274,9 @@ class ApPipeTask(pipeBase.CmdLineTask):
             diffIm=sensorRef.get(diffType + "Diff_differenceExp"),
             exposure=sensorRef.get("calexp"),
             warpedExposure=sensorRef.get(diffType + "Diff_warpedExp"),
-            ccdExposureIdBits=sensorRef.get("ccdExposureId_bits"))
+            ccdExposureIdBits=sensorRef.get("ccdExposureId_bits"),
+            band=diffIm.getFilterLabel().bandLabel,
+        )
 
         # apdb_marker triggers metrics processing; let them try to read
         # something even if association failed
