@@ -126,7 +126,7 @@ class ApFakesCompletenessMetricTask(MetricTask):
                 the ratio (`lsst.verify.Measurement` or `None`)
         """
         if matchedFakes is not None:
-            magnitudes = matchedFakes[f"{self.config.magVar}" % band]
+            magnitudes = np.fabs(matchedFakes[f"{self.config.mag_col}" % band])
             magCutFakes = matchedFakes[np.logical_and(magnitudes > self.config.magMin,
                                                       magnitudes < self.config.magMax)]
             if len(magCutFakes) <= 0.0:
@@ -189,7 +189,7 @@ class ApFakesCountMetricTask(ApFakesCompletenessMetricTask):
                 the ratio (`lsst.verify.Measurement` or `None`)
         """
         if matchedFakes is not None:
-            magnitudes = matchedFakes[f"{self.config.magVar}" % band]
+            magnitudes = np.fabs(matchedFakes[f"{self.config.mag_col}" % band])
             magCutFakes = matchedFakes[np.logical_and(magnitudes > self.config.magMin,
                                                       magnitudes < self.config.magMax)]
             meas = Measurement(self.config.metricName,
