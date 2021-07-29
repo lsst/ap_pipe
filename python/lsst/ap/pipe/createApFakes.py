@@ -322,6 +322,6 @@ class CreateRandomApFakesTask(PipelineTask):
                            size=nFakes)
         randMags = {}
         for fil in self.config.filterSet:
-            randMags[self.config.magVar % fil] = mags
+            randMags[self.config.mag_col % fil] = mags
 
         return randMags
