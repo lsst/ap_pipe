@@ -115,7 +115,7 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
         self.assertEqual(fakeCat[fakesConfig.templateSourceFlagCol].sum(),
                          self.nInTemplate)
         for f in fakesConfig.filterSet:
-            filterMags = fakeCat[fakesConfig.magVar % f]
+            filterMags = fakeCat[fakesConfig.mag_col % f]
             self.assertEqual(self.nSources, len(filterMags))
             self.assertTrue(
                 np.all(fakesConfig.magMin <= filterMags))
@@ -176,14 +176,14 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
         """
         fakesConfig = CreateRandomApFakesConfig()
         fakesConfig.filterSet = ["u", "g"]
-        fakesConfig.magVar = "%smag"
+        fakesConfig.mag_col = "%s_mag"
         fakesConfig.magMin = 20
         fakesConfig.magMax = 21
         fakesTask = CreateRandomApFakesTask(config=fakesConfig)
         mags = fakesTask.createRandomMagnitudes(self.nSources, self.rng)
         self.assertEqual(len(fakesConfig.filterSet), len(mags))
         for f in fakesConfig.filterSet:
-            filterMags = mags[fakesConfig.magVar % f]
+            filterMags = mags[fakesConfig.mag_col % f]
             self.assertEqual(self.nSources, len(filterMags))
             self.assertTrue(
                 np.all(fakesConfig.magMin <= filterMags))

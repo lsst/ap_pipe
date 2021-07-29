@@ -77,7 +77,7 @@ class TestApCompletenessTask(MetricTaskTestCase):
 
         self.band = 'g'
         self.magCut = 25
-        magMask = (fakeCat[fakesConfig.magVar % self.band] < self.magCut)
+        magMask = (fakeCat[fakesConfig.mag_col % self.band] < self.magCut)
         self.expectedAllMatched = magMask.sum()
         ids = np.where(magMask, np.arange(1, len(fakeCat) + 1, dtype=int), 0)
         # Add columns to mimic the matched fakes result without running the
@@ -162,7 +162,7 @@ class TestApCountTask(MetricTaskTestCase):
 
         self.band = 'g'
         self.magCut = 25
-        magMask = (fakeCat[fakesConfig.magVar % self.band] < self.magCut)
+        magMask = (fakeCat[fakesConfig.mag_col % self.band] < self.magCut)
         self.expectedAllMatched = magMask.sum()
         ids = np.where(magMask, np.arange(1, len(fakeCat) + 1, dtype=int), 0)
         # Add columns to mimic the matched fakes result without running the
