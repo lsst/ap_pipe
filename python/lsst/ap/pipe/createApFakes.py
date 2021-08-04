@@ -97,11 +97,6 @@ class CreateRandomApFakesConfig(
         min=1,
         max=40,
     )
-    randomSeed = pexConfig.Field(
-        doc="Random seed to set for reproducible datasets",
-        dtype=int,
-        default=1234,
-    )
     visitSourceFlagCol = pexConfig.Field(
         doc="Name of the column flagging objects for insertion into the visit "
             "image.",
@@ -149,7 +144,8 @@ class CreateRandomApFakesTask(PipelineTask):
             Catalog of random points covering the given tract. Follows the
             columns and format expected in `lsst.pipe.tasks.InsertFakes`.
         """
-        rng = np.random.default_rng(self.config.randomSeed)
+        # Use the tractId as the ranomd seed.
+        rng = np.random.default_rng(tractId)
         tractBoundingCircle = \
             skyMap.generateTract(tractId).getInnerSkyPolygon().getBoundingCircle()
         tractArea = tractBoundingCircle.getArea() * (180 / np.pi) ** 2
@@ -322,6 +318,6 @@ class CreateRandomApFakesTask(PipelineTask):
                            size=nFakes)
         randMags = {}
         for fil in self.config.filterSet:
-            randMags[self.config.magVar % fil] = mags
+            randMags[self.config.mag_col % fil] = mags
 
         return randMags
