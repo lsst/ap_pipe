@@ -30,7 +30,6 @@ __all__ = [
 
 import astropy.units as u
 import numpy as np
-import traceback
 
 import lsst.pex.config as pexConfig
 from lsst.pipe.base import Struct
@@ -98,13 +97,13 @@ class ApFakesCompletenessMetricTask(MetricTask):
             if outputs.measurement is not None:
                 butlerQC.put(outputs, outputRefs)
             else:
-                self.log.debugf("Skipping measurement of {!r} on {} "
-                                "as not applicable.", self, inputRefs)
+                self.log.debug("Skipping measurement of %r on %s "
+                               "as not applicable.", self, inputRefs)
         except MetricComputationError:
             # Apparently lsst.log doesn't have built-in exception support?
-            self.log.errorf(
-                "Measurement of {!r} failed on {}->{}\n{}",
-                self, inputRefs, outputRefs, traceback.format_exc())
+            self.log.error(
+                "Measurement of %r failed on %s->%s",
+                self, inputRefs, outputRefs, exc_info=True)
 
     def run(self, matchedFakes, band):
         """Compute the completeness of recovered fakes within a magnitude
