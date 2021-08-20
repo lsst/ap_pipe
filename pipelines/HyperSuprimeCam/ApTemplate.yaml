@@ -1,0 +1,26 @@
+description: The AP template building pipeline specialized for HSC
+# This pipeline assumes the working repo has raws, calibs, refcats, and a skymap.
+
+instrument: lsst.obs.subaru.HyperSuprimeCam
+imports:
+  - location: $AP_PIPE_DIR/pipelines/HyperSuprimeCam/ProcessCcd.yaml
+  - location: $AP_PIPE_DIR/pipelines/ApTemplate.yaml
+    exclude:  # These tasks come from HyperSuprimeCam/ProcessCcd.yaml instead
+      - isr
+      - characterizeImage
+      - calibrate
+
+subsets:
+# The singleFrameAp subset is identical to the one in
+# $AP_PIPE_DIR/pipelines/ApTemplate.yaml, but needs to be defined here because
+# isr, characterizeImage, and calibrate are coming from the DECam-specific
+# ProcessCcd pipeline.
+  singleFrameAp:
+    subset:
+      - isr
+      - characterizeImage
+      - calibrate
+      - consolidateVisitSummary
+    description: >
+      Tasks to run for single frame processing that are necessary to use the good
+      seeing selector to build coadds for use as difference imaging templates.

@@ -6,4 +6,9 @@ description: End to end AP pipeline specialized for HSC
 
 instrument: lsst.obs.subaru.HyperSuprimeCam
 imports:
+  - location: $AP_PIPE_DIR/pipelines/HyperSuprimeCam/ProcessCcd.yaml
   - location: $AP_PIPE_DIR/pipelines/ApPipe.yaml
+    exclude:  # These tasks come from HyperSuprimeCam/ProcessCcd.yaml instead
+      - isr
+      - characterizeImage
+      - calibrate
