@@ -6,9 +6,7 @@ imports:
   - location: $AP_PIPE_DIR/pipelines/LsstCamImSim/ProcessCcd.yaml
   - location: $AP_PIPE_DIR/pipelines/ApTemplate.yaml
     exclude:  # These tasks come from LsstCamImSim/ProcessCcd.yaml instead
-      - isr
-      - characterizeImage
-      - calibrate
+      - processCcd
 
 subsets:
 # The singleFrameAp subset is identical to the one in

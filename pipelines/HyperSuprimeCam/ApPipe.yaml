@@ -9,6 +9,17 @@ imports:
   - location: $AP_PIPE_DIR/pipelines/HyperSuprimeCam/ProcessCcd.yaml
   - location: $AP_PIPE_DIR/pipelines/ApPipe.yaml
     exclude:  # These tasks come from HyperSuprimeCam/ProcessCcd.yaml instead
+      - processCcd
+subsets:
+# apPipe must be redefined from $AP_PIPE_DIR/pipelines/ApPipe.yaml because
+# its processCcd was excluded.
+  apPipe:
+    subset:
       - isr
       - characterizeImage
       - calibrate
+      - imageDifference
+      - transformDiaSrcCat
+      - diaPipe
+    description: >
+      An alias of ApPipe to use in higher-level pipelines.

@@ -53,6 +53,17 @@ tasks:
       connections.warpedExposure: goodSeeingDiff_warpedExp
       connections.associatedDiaSources: goodSeeingDiff_assocDiaSrcTable
       # TODO: end DM-30210 workaround
+subsets:
+  apPipe:
+    subset:
+      - isr
+      - characterizeImage
+      - calibrate
+      - imageDifference
+      - transformDiaSrcCat
+      - diaPipe
+    description: >
+      An alias of ApPipe to use in higher-level pipelines.
 contracts:
   # DiaPipelineTask needs diaSource fluxes, catalogs, warped exposures, and difference exposures
   - imageDifference.doMeasurement is True
