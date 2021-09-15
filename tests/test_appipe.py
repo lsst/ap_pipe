@@ -27,7 +27,6 @@ import unittest
 from unittest.mock import patch, Mock, ANY
 
 import lsst.utils.tests
-import lsst.pex.exceptions as pexExcept
 import lsst.daf.persistence as dafPersist
 import lsst.pipe.base as pipeBase
 
@@ -51,7 +50,7 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
     def setUpClass(cls):
         try:
             cls.datadir = lsst.utils.getPackageDir("ap_pipe_testdata")
-        except pexExcept.NotFoundError:
+        except LookupError:
             raise unittest.SkipTest("ap_pipe_testdata not set up")
         try:
             lsst.utils.getPackageDir("obs_decam")
