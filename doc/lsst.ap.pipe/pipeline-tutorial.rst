@@ -38,8 +38,8 @@ To process your ingested data, run
 .. prompt:: bash
 
    mkdir apdb/
-   make_apdb.py -c isolation_level=READ_UNCOMMITTED -c db_url="sqlite:///apdb/association.db"
-   pipetask run -p ${AP_PIPE_DIR}/pipelines/ApPipe.yaml --instrument lsst.obs.decam.DarkEnergyCamera --register-dataset-types -c diaPipe:apdb.isolation_level=READ_UNCOMMITTED -c diaPipe:apdb.db_url="sqlite:///apdb.db" -b repo/ -i "templates/deep,skymaps,DECam/raw/all,DECam/calib,refcats" -o processed -d "visit in (123456, 123457) and detector=42"
+   make_apdb.py -c db_url="sqlite:///apdb/association.db"
+   pipetask run -p ${AP_PIPE_DIR}/pipelines/ApPipe.yaml --instrument lsst.obs.decam.DarkEnergyCamera --register-dataset-types -c diaPipe:apdb.db_url="sqlite:///apdb.db" -b repo/ -i "templates/deep,skymaps,DECam/raw/all,DECam/calib,refcats" -o processed -d "visit in (123456, 123457) and detector=42"
 
 In this case, a ``processed/<timestamp>`` collection will be created within ``repo`` and the results will be written there.
 See :doc:`apdb` for more information on :command:`make_apdb.py`.
@@ -51,7 +51,7 @@ If you prefer to have a standalone output collection, you may instead run
 
 .. prompt:: bash
 
-   pipetask run -p ${AP_PIPE_DIR}/pipelines/ApPipe.yaml --instrument lsst.obs.decam.DarkEnergyCamera --register-dataset-types -c diaPipe:apdb.isolation_level=READ_UNCOMMITTED -c diaPipe:apdb.db_url="sqlite:///apdb.db" -b repo/ -i "templates/deep,skymaps,DECam/raw/all,DECam/calib,refcats" --output-run processed -d "visit in (123456, 123457) and detector=42"
+   pipetask run -p ${AP_PIPE_DIR}/pipelines/ApPipe.yaml --instrument lsst.obs.decam.DarkEnergyCamera --register-dataset-types -c diaPipe:apdb.db_url="sqlite:///apdb.db" -b repo/ -i "templates/deep,skymaps,DECam/raw/all,DECam/calib,refcats" --output-run processed -d "visit in (123456, 123457) and detector=42"
 
 .. note::
 

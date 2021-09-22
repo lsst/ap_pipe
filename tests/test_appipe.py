@@ -43,7 +43,6 @@ class PipelineTestSuite(lsst.utils.tests.TestCase):
         config = ApPipeTask.ConfigClass()
         config.load(os.path.join(cls.datadir, "config", "apPipe.py"))
         config.diaPipe.apdb.db_url = "sqlite://"
-        config.diaPipe.apdb.isolation_level = "READ_UNCOMMITTED"
         return config
 
     @classmethod

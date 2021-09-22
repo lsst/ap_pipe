@@ -4,8 +4,6 @@ description: End to end Alert Production pipeline
 #
 # NOTES
 # Remember to run make_apdb.py and use the same configs for diaPipe
-# READ_UNCOMMITTED is required for sqlite APDBs, i.e.,
-# -c diaPipe:apdb.isolation_level: 'READ_UNCOMMITTED'
 # A db_url is always required, e.g.,
 # -c diaPipe:apdb.db_url: 'sqlite:////project/user/association.db'
 # Option to specify connection_timeout for sqlite APDBs encountering lock errors, i.e.,
