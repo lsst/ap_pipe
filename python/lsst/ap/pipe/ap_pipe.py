@@ -271,6 +271,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
 
         results = self.diaPipe.run(
             diaSourceTable=transformResult.diaSourceTable,
+            solarSystemObjectTable=None,
             diffIm=sensorRef.get(diffType + "Diff_differenceExp"),
             exposure=sensorRef.get("calexp"),
             warpedExposure=sensorRef.get(diffType + "Diff_warpedExp"),
