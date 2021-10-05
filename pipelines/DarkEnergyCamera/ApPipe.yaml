@@ -14,13 +14,13 @@ imports:
 subsets:
 # apPipe must be redefined from $AP_PIPE_DIR/pipelines/ApPipe.yaml because
 # its processCcd was excluded.
-    apPipe:
-        subset:
-            - isr
-            - characterizeImage
-            - calibrate
-            - imageDifference
-            - transformDiaSrcCat
-            - diaPipe
-        description: >
-            An alias of ApPipe to use in higher-level pipelines.
+  apPipe:
+    subset:
+      - isr
+      - characterizeImage
+      - calibrate
+      - imageDifference
+      - transformDiaSrcCat
+      - diaPipe
+    description: >
+      An alias of ApPipe to use in higher-level pipelines.
