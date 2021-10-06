@@ -23,9 +23,9 @@ __all__ = ["makeApdb"]
 
 import argparse
 
-from lsst.dax.apdb import Apdb
+import lsst.dax.apdb as daxApdb
 from lsst.pipe.base.configOverrides import ConfigOverrides
-from lsst.ap.association import DiaPipelineConfig, make_dia_object_schema, make_dia_source_schema
+from lsst.ap.association import DiaPipelineConfig
 
 
 class ConfigOnlyParser(argparse.ArgumentParser):
@@ -116,9 +116,7 @@ def makeApdb(args=None):
     parser = ConfigOnlyParser()
     parsedCmd = parser.parse_args(args=args)
 
-    apdb = Apdb(config=parsedCmd.config,
-                afw_schemas=dict(DiaObject=make_dia_object_schema(),
-                                 DiaSource=make_dia_source_schema()))
+    apdb = daxApdb.make_apdb(config=parsedCmd.config)
     apdb.makeSchema()
     return apdb
 

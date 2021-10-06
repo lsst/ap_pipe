@@ -48,8 +48,8 @@ Databases can be configured using direct config overrides (see :ref:`ap-pipe-pip
 
 .. prompt:: bash
 
-   make_apdb.py -c isolation_level=READ_UNCOMMITTED db_url="sqlite:///databases/apdb.db"
-   ap_pipe.py -c diaPipe.apdb.isolation_level=READ_UNCOMMITTED diaPipe.apdb.db_url="sqlite:///databases/apdb.db" differencer.coaddName=dcr repo --calib repo/calibs --rerun myrun --id [optional IDs to process]
+   make_apdb.py -c db_url="sqlite:///databases/apdb.db"
+   ap_pipe.py -c diaPipe.apdb.db_url="sqlite:///databases/apdb.db" differencer.coaddName=dcr repo --calib repo/calibs --rerun myrun --id [optional IDs to process]
 
 The user is responsible for making sure the two APDB configurations are consistent.
 
@@ -57,8 +57,8 @@ In Gen 3, this becomes (see :ref:`ap-pipe-pipeline-tutorial` for an explanation 
 
 .. prompt:: bash
 
-   make_apdb.py -c isolation_level=READ_UNCOMMITTED db_url="sqlite:///databases/apdb.db"
-   pipetask run -p ApPipe.yaml -c diaPipe:apdb.isolation_level=READ_UNCOMMITTED diaPipe:apdb.db_url="sqlite:///databases/apdb.db" differencer:coaddName=dcr -b repo -o myrun
+   make_apdb.py -c db_url="sqlite:///databases/apdb.db"
+   pipetask run -p ApPipe.yaml -c diaPipe:apdb.db_url="sqlite:///databases/apdb.db" differencer:coaddName=dcr -b repo -o myrun
 
 .. warning::
 
@@ -72,7 +72,6 @@ Databases can also be set up using :ref:`config files <command-line-task-config-
    :caption: myApdbConfig.py
 
    config.db_url = "sqlite:///databases/apdb.db"
-   config.isolation_level = "READ_UNCOMMITTED"
 
 .. prompt:: bash
 
