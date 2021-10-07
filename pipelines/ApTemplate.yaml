@@ -4,12 +4,21 @@ description: The AP template building pipeline
 
 imports:
   - location: $AP_PIPE_DIR/pipelines/ProcessCcd.yaml
+parameters:
+  coaddName: goodSeeing
+  # TODO: redundant connection definitions workaround for DM-30210
+  selectedVisits: goodSeeingVisits
+  template: goodSeeingCoadd
+  # TODO: end DM-30210 workaround
 tasks:
   consolidateVisitSummary: lsst.pipe.tasks.postprocess.ConsolidateVisitSummaryTask
   selectGoodSeeingVisits:
     class: lsst.pipe.tasks.selectImages.BestSeeingQuantileSelectVisitsTask
     config:
-      connections.goodVisits: goodSeeingVisits
+      connections.coaddName: parameters.coaddName
+      # TODO: redundant connection definitions workaround for DM-30210
+      connections.goodVisits: parameters.selectedVisits
+      # TODO: end DM-30210 workaround
   makeWarp:
     class: lsst.pipe.tasks.makeCoaddTempExp.MakeWarpTask
     config:
@@ -23,9 +32,11 @@ tasks:
       doSelectVisits: True
       doNImage: True
       assembleStaticSkyModel.doSelectVisits: True
-      connections.selectedVisits: goodSeeingVisits
-      connections.outputCoaddName: goodSeeing
-      connections.coaddExposure: goodSeeingCoadd
+      connections.outputCoaddName: parameters.coaddName
+      # TODO: redundant connection definitions workaround for DM-30210
+      connections.selectedVisits: parameters.selectedVisits
+      connections.coaddExposure: parameters.template
+      # TODO: end DM-30210 workaround
 
 subsets:
   singleFrameAp:
