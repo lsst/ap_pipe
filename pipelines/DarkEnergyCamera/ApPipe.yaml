@@ -7,13 +7,20 @@ description: End to end AP pipeline specialized for DECam
 
 instrument: lsst.obs.decam.DarkEnergyCamera
 imports:
+  - location: $AP_PIPE_DIR/pipelines/DarkEnergyCamera/ProcessCcd.yaml
   - location: $AP_PIPE_DIR/pipelines/ApPipe.yaml
-    exclude:
+    exclude:  # These tasks come from DarkEnergyCamera/ProcessCcd.yaml instead
+      - processCcd
+subsets:
+# apPipe must be redefined from $AP_PIPE_DIR/pipelines/ApPipe.yaml because
+# its processCcd was excluded.
+  apPipe:
+    subset:
       - isr
-  - location: $AP_PIPE_DIR/pipelines/DarkEnergyCamera/RunIsrWithCrosstalk.yaml
-tasks:
-    calibrate:
-        class: lsst.pipe.tasks.calibrate.CalibrateTask
-        config:
-          photoCal.match.referenceSelection.magLimit.fluxField: 'i_flux'
-          photoCal.match.referenceSelection.magLimit.maximum: 22.0
+      - characterizeImage
+      - calibrate
+      - imageDifference
+      - transformDiaSrcCat
+      - diaPipe
+    description: >
+      An alias of ApPipe to use in higher-level pipelines.

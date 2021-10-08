@@ -11,48 +11,71 @@ description: End to end Alert Production pipeline
 
 imports:
   - location: $AP_PIPE_DIR/pipelines/ProcessCcd.yaml
+parameters:
+  # Pipeline configurable to run on both goodSeeing and deep templates, depending on dataset.
+  coaddName: goodSeeing
+  # TODO: redundant connection definitions workaround for DM-30210
+  template: goodSeeingCoadd
+  diaSrcCat: goodSeeingDiff_diaSrc
+  diaSrcSchema: goodSeeingDiff_diaSrc_schema
+  diaSrcParquet: goodSeeingDiff_diaSrcTable
+  diff: goodSeeingDiff_differenceExp
+  diffScore: goodSeeingDiff_scoreExp
+  diffWarp: goodSeeingDiff_warpedExp
+  diffMatch: goodSeeingDiff_matchedExp
+  assocSrc: goodSeeingDiff_assocDiaSrc
+  # TODO: end DM-30210 workaround
 tasks:
   imageDifference:
     class: lsst.pipe.tasks.imageDifference.ImageDifferenceTask
     config:
       doWriteWarpedExp: True             # Required for packaging alerts in diaPipe
       doSkySources: True
-      # 'goodSeeing' expected type for LSST processing; task default 'deep' for Gen 2 pipelines
-      coaddName: goodSeeing              # Can be removed once ImageDifference no longer supports Gen 2
-      getTemplate.coaddName: goodSeeing  # Can be removed once ImageDifference no longer supports Gen 2
-      connections.coaddName: goodSeeing
+      coaddName: parameters.coaddName              # Can be removed once ImageDifference no longer supports Gen 2
+      getTemplate.coaddName: parameters.coaddName  # Can be removed once ImageDifference no longer supports Gen 2
+      connections.coaddName: parameters.coaddName
       # TODO: redundant connection definitions workaround for DM-30210
-      connections.exposure: calexp
-      connections.coaddExposures: goodSeeingCoadd
+      connections.coaddExposures: parameters.template
       connections.dcrCoadds: dcrCoadd
-      connections.outputSchema: goodSeeingDiff_diaSrc_schema
-      connections.subtractedExposure: goodSeeingDiff_differenceExp
-      connections.scoreExposure: goodSeeingDiff_scoreExp
-      connections.warpedExposure: goodSeeingDiff_warpedExp
-      connections.matchedExposure: goodSeeingDiff_matchedExp
-      connections.diaSources: goodSeeingDiff_diaSrc
+      connections.outputSchema: parameters.diaSrcSchema
+      connections.subtractedExposure: parameters.diff
+      connections.scoreExposure: parameters.diffScore
+      connections.warpedExposure: parameters.diffWarp
+      connections.matchedExposure: parameters.diffMatch
+      connections.diaSources: parameters.diaSrcCat
       # TODO: end DM-30210 workaround
   transformDiaSrcCat:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
     config:
       doRemoveSkySources: True
-      connections.coaddName: goodSeeing
+      connections.coaddName: parameters.coaddName
       # TODO: redundant connection definitions workaround for DM-30210
-      connections.diaSourceSchema: goodSeeingDiff_diaSrc_schema
-      connections.diaSourceCat: goodSeeingDiff_diaSrc
-      connections.diffIm: goodSeeingDiff_differenceExp
-      connections.diaSourceTable: goodSeeingDiff_diaSrcTable
+      connections.diaSourceSchema: parameters.diaSrcSchema
+      connections.diaSourceCat: parameters.diaSrcCat
+      connections.diffIm: parameters.diff
+      connections.diaSourceTable: parameters.diaSrcParquet
       # TODO: end DM-30210 workaround
   diaPipe:
     class: lsst.ap.association.DiaPipelineTask
     config:
-      connections.coaddName: goodSeeing
+      connections.coaddName: parameters.coaddName
       # TODO: redundant connection definitions workaround for DM-30210
-      connections.diaSourceTable: goodSeeingDiff_diaSrcTable
-      connections.diffIm: goodSeeingDiff_differenceExp
-      connections.warpedExposure: goodSeeingDiff_warpedExp
-      connections.associatedDiaSources: goodSeeingDiff_assocDiaSrcTable
+      connections.diaSourceTable: parameters.diaSrcParquet
+      connections.diffIm: parameters.diff
+      connections.warpedExposure: parameters.diffWarp
+      connections.associatedDiaSources: parameters.assocSrc
       # TODO: end DM-30210 workaround
+subsets:
+  apPipe:
+    subset:
+      - isr
+      - characterizeImage
+      - calibrate
+      - imageDifference
+      - transformDiaSrcCat
+      - diaPipe
+    description: >
+      An alias of ApPipe to use in higher-level pipelines.
 contracts:
   # DiaPipelineTask needs diaSource fluxes, catalogs, warped exposures, and difference exposures
   - imageDifference.doMeasurement is True

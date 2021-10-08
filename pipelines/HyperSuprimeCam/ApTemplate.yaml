@@ -1,12 +1,11 @@
-description: The AP template building pipeline specialized for DECam
-# This pipeline assumes the working repo has raws, calibs, refcats, and a skymap,
-# and that you have already run the RunIsrForCrosstalkSources.yaml pipeline.
+description: The AP template building pipeline specialized for HSC
+# This pipeline assumes the working repo has raws, calibs, refcats, and a skymap.
 
-instrument: lsst.obs.decam.DarkEnergyCamera
+instrument: lsst.obs.subaru.HyperSuprimeCam
 imports:
-  - location: $AP_PIPE_DIR/pipelines/DarkEnergyCamera/ProcessCcd.yaml
+  - location: $AP_PIPE_DIR/pipelines/HyperSuprimeCam/ProcessCcd.yaml
   - location: $AP_PIPE_DIR/pipelines/ApTemplate.yaml
-    exclude:  # These tasks come from DarkEnergyCamera/ProcessCcd.yaml instead
+    exclude:  # These tasks come from HyperSuprimeCam/ProcessCcd.yaml instead
       - processCcd
 
 subsets:

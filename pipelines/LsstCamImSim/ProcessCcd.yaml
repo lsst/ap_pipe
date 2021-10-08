@@ -1,0 +1,4 @@
+description: Raw image pipeline specialized for ImSim
+instrument: lsst.obs.lsst.LsstCamImSim
+imports:
+  - location: $AP_PIPE_DIR/pipelines/ProcessCcd.yaml

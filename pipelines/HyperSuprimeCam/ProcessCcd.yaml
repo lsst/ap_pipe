@@ -1,0 +1,5 @@
+description: A set of tasks to run when processing raw images, specialized for HSC
+
+instrument: lsst.obs.subaru.HyperSuprimeCam
+imports:
+  - location: $AP_PIPE_DIR/pipelines/ProcessCcd.yaml

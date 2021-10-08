@@ -3,3 +3,11 @@ tasks:
   isr: lsst.ip.isr.IsrTask
   characterizeImage: lsst.pipe.tasks.characterizeImage.CharacterizeImageTask
   calibrate: lsst.pipe.tasks.calibrate.CalibrateTask
+subsets:
+  processCcd:
+    subset:
+      - isr
+      - characterizeImage
+      - calibrate
+    description: >
+      An alias of ProcessCcd to use in higher-level pipelines.

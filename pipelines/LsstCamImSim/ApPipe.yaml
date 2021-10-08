@@ -1,14 +1,15 @@
-description: End to end AP pipeline specialized for HSC
+description: End to end AP pipeline specialized for ImSim
 # (1) Execute `make_apdb.py`, e.g.,
-#     make_apdb.py -c db_url="sqlite:////project/user/association.db"
+#     make_apdb.py -c isolation_level=READ_UNCOMMITTED
+#                  -c db_url="sqlite:////project/user/association.db"
 # (2) Run this pipeline, setting appropriate diaPipe configs
 #     (diaPipe configs should match the make_apdb.py configs)
 
-instrument: lsst.obs.subaru.HyperSuprimeCam
+instrument: lsst.obs.lsst.LsstCamImSim
 imports:
-  - location: $AP_PIPE_DIR/pipelines/HyperSuprimeCam/ProcessCcd.yaml
+  - location: $AP_PIPE_DIR/pipelines/LsstCamImSim/ProcessCcd.yaml
   - location: $AP_PIPE_DIR/pipelines/ApPipe.yaml
-    exclude:  # These tasks come from HyperSuprimeCam/ProcessCcd.yaml instead
+    exclude:  # These tasks come from LsstCamImSim/ProcessCcd.yaml instead
       - processCcd
 subsets:
 # apPipe must be redefined from $AP_PIPE_DIR/pipelines/ApPipe.yaml because
