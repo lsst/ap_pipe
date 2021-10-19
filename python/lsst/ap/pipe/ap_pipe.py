@@ -34,6 +34,7 @@ from lsst.ap.association import DiaPipelineTask
 from lsst.ap.association.transformDiaSourceCatalog import TransformDiaSourceCatalogTask
 from lsst.ap.pipe.apPipeParser import ApPipeParser
 from lsst.ap.pipe.apPipeTaskRunner import ApPipeTaskRunner
+from lsst.utils.timer import timeMethod
 
 
 class ApPipeConfig(pexConfig.Config):
@@ -112,7 +113,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
         self.makeSubtask("transformDiaSrcCat", initInputs={"diaSourceSchema": self.differencer.outputSchema})
         self.makeSubtask("diaPipe")
 
-    @pipeBase.timeMethod
+    @timeMethod
     def runDataRef(self, rawRef, templateIds=None, reuse=None):
         """Execute the ap_pipe pipeline on a single image.
 
@@ -191,7 +192,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
             diaPipe=diaPipeResults.taskResults if diaPipeResults else None
         )
 
-    @pipeBase.timeMethod
+    @timeMethod
     def runProcessCcd(self, sensorRef):
         """Perform ISR with ingested images and calibrations via processCcd.
 
@@ -215,7 +216,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
         self.log.info("Running ProcessCcd...")
         return self.ccdProcessor.runDataRef(sensorRef)
 
-    @pipeBase.timeMethod
+    @timeMethod
     def runDiffIm(self, sensorRef, templateIds=None):
         """Do difference imaging with a template and a science image
 
@@ -239,7 +240,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
         self.log.info("Running ImageDifference...")
         return self.differencer.runDataRef(sensorRef, templateIdList=templateIds)
 
-    @pipeBase.timeMethod
+    @timeMethod
     def runAssociation(self, sensorRef):
         """Do source association.
 
