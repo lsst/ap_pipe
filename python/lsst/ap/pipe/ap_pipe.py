@@ -268,7 +268,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
             diaSourceCat=sensorRef.get(diffType + "Diff_diaSrc"),
             diffIm=diffIm,
             band=diffIm.getFilterLabel().bandLabel,
-            ccdVisitId=diffIm.getInfo().getVisitInfo().getExposureId())
+            ccdVisitId=diffIm.info.id)
 
         results = self.diaPipe.run(
             diaSourceTable=transformResult.diaSourceTable,
