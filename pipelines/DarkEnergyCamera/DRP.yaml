@@ -1,0 +1,174 @@
+description: The DRP pipeline specialized for the DECam instrument
+instrument: lsst.obs.decam.DarkEnergyCamera
+imports:
+  - location: $AP_PIPE_DIR/pipelines/DarkEnergyCamera/RunIsrForCrosstalkSources.yaml
+  - location: $AP_PIPE_DIR/pipelines/DarkEnergyCamera/ProcessCcd.yaml
+tasks:
+  writeSourceTable:
+    class: lsst.pipe.tasks.postprocess.WriteSourceTableTask
+  transformSourceTable:
+    class: lsst.pipe.tasks.postprocess.TransformSourceTableTask
+  consolidateSourceTable:
+    class: lsst.pipe.tasks.postprocess.ConsolidateSourceTableTask
+  consolidateVisitSummary:
+    class: lsst.pipe.tasks.postprocess.ConsolidateVisitSummaryTask
+  selectGoodSeeingVisits:
+    class: lsst.pipe.tasks.selectImages.BestSeeingQuantileSelectVisitsTask
+    config:
+    - connections.goodVisits: goodSeeingVisits
+  templateGen:
+    class: lsst.pipe.tasks.assembleCoadd.CompareWarpAssembleCoaddTask
+    config:
+    - doSelectVisits: true
+      assembleStaticSkyModel.doSelectVisits: true
+      connections.selectedVisits: goodSeeingVisits
+      connections.outputCoaddName: goodSeeing
+      connections.coaddExposure: goodSeeingCoadd
+  makeWarp:
+    class: lsst.pipe.tasks.makeCoaddTempExp.MakeWarpTask
+    config:
+    - doWriteEmptyWarps: true
+      doApplyExternalPhotoCalib: false
+      doApplyExternalSkyWcs: false
+      makePsfMatched: true
+    - python: |
+        from lsst.pipe.tasks.selectImages import PsfWcsSelectImagesTask; 
+        config.select.retarget(PsfWcsSelectImagesTask)
+  assembleCoadd:
+    class: lsst.pipe.tasks.assembleCoadd.CompareWarpAssembleCoaddTask
+    config:
+    - doSelectVisits: true
+      doNImage: true
+      assembleStaticSkyModel.doSelectVisits: true
+  detection:
+    class: lsst.pipe.tasks.multiBand.DetectCoaddSourcesTask
+  mergeDetections:
+    class: lsst.pipe.tasks.mergeDetections.MergeDetectionsTask
+  deblend:
+    class: lsst.pipe.tasks.deblendCoaddSourcesPipeline.DeblendCoaddSourcesMultiTask
+  measure:
+    class: lsst.pipe.tasks.multiBand.MeasureMergedCoaddSourcesTask
+  mergeMeasurements:
+    class: lsst.pipe.tasks.mergeMeasurements.MergeMeasurementsTask
+  forcedPhotCoadd:
+    class: lsst.meas.base.forcedPhotCoadd.ForcedPhotCoaddTask
+  writeObjectTable:
+    class: lsst.pipe.tasks.postprocess.WriteObjectTableTask
+  transformObjectTable:
+    class: lsst.pipe.tasks.postprocess.TransformObjectCatalogTask
+  consolidateObjectTable:
+    class: lsst.pipe.tasks.postprocess.ConsolidateObjectTableTask
+  forcedPhotCcd:
+    class: lsst.meas.base.forcedPhotCcd.ForcedPhotCcdTask
+    config:
+    - doApplyExternalPhotoCalib: false
+      doApplyExternalSkyWcs: false
+      doApplySkyCorr: false
+  getTemplate:
+    class: lsst.ip.diffim.getTemplate.GetMultiTractCoaddTemplateTask
+    config:
+    - connections.coaddExposures: goodSeeingCoadd
+  imageDifference:
+    class: lsst.pipe.tasks.imageDifference.ImageDifferenceFromTemplateTask
+    config:
+    - coaddName: goodSeeing
+      getTemplate.coaddName: goodSeeing
+      getTemplate.warpType: direct
+      connections.coaddName: goodSeeing
+      connections.coaddExposures: goodSeeingCoadd
+      connections.subtractedExposure: goodSeeingDiff_differenceExp
+  transformDiaSourceCat:
+    class: lsst.ap.association.TransformDiaSourceCatalogTask
+    config:
+    - doPackFlags: false
+      connections.coaddName: goodSeeing
+      connections.diaSourceSchema: goodSeeingDiff_diaSrc_schema
+      connections.diaSourceCat: goodSeeingDiff_diaSrc
+      connections.diffIm: goodSeeingDiff_differenceExp
+      connections.diaSourceTable: goodSeeingDiff_diaSrcTable
+  forcedPhotDiffim:
+    class: lsst.meas.base.ForcedPhotCcdTask
+    config:
+    - connections.measCat: forced_diff
+      connections.outputSchema: forced_diff_schema
+      connections.exposure: goodSeeingDiff_differenceExp
+  writeForcedSourceTable:
+    class: lsst.pipe.tasks.postprocess.WriteForcedSourceTableTask
+  makeVisitTable:
+    class: lsst.pipe.tasks.postprocess.MakeVisitTableTask
+  makeCcdVisitTable:
+    class: lsst.pipe.tasks.postprocess.MakeCcdVisitTableTask
+subsets:
+  step0:
+    subset:
+    - overscan
+    description: 'Tasks which should be run once, prior to initial data processing.
+
+      This includes construction of crosstalk sources for ISR/interchip crosstalk 
+      by running overscan correction on raw frames.'
+  step1:
+    subset:
+    - isr
+    - characterizeImage
+    - calibrate
+    - writeSourceTable
+    - transformSourceTable
+    description: 'Per-detector tasks that can be run together to start the DRP pipeline.
+    
+      These should never be run with ''tract'' or ''patch'' as part of the data ID
+      expression if any later steps will also be run, because downstream steps require
+      full visits and ''tract'' and ''patch'' constraints will always select partial
+      visits that overlap that region.'
+  step2:
+    subset:
+    - consolidateSourceTable
+    - consolidateVisitSummary
+    description: 'Per-visit tasks that can be run together, but only after ''step1''.
+    
+      These should never be run with ''tract'' or ''patch'' as part of the data ID
+      expression.'
+  step3:
+    subset:
+    - selectGoodSeeingVisits
+    - templateGen
+    - makeWarp
+    - assembleCoadd
+    - detection
+    - mergeDetections
+    - deblend
+    - measure
+    - mergeMeasurements
+    - forcedPhotCoadd
+    - writeObjectTable
+    - transformObjectTable
+    - consolidateObjectTable
+    description: 'Tract-level tasks that can be run together, but only after the ''step1''
+      and ''step2'' subsets.
+
+      These should be run with explicit ''tract'' constraints essentially all the
+      time, because otherwise quanta will be created for jobs with only partial visit
+      coverage.'
+  # step4:
+  #   subset:
+  #   - forcedPhotCcd
+  #   - getTemplate
+  #   - imageDifference
+  #   - transformDiaSourceCat
+  #   - forcedPhotDiffim
+  #   - writeForcedSourceTable
+  #   description: 'Detector-level tasks that can be run together, but only after the 
+  #     ''step1'', ''step2'' and ''step3'' subsets.
+
+  #     These detector-level tasks should not be run with ''tract'' or ''patch'' as
+  #     part of the data ID expression if all reference catalogs or diffIm templates
+  #     that cover these detector-level quanta are desired.'
+  step7:
+    subset:
+    - makeVisitTable
+    - makeCcdVisitTable
+    description: 'Tasks that should be run as the final step that require global inputs,
+      and can be run after the ''step3'' subset.
+
+      This step has global aggregation tasks to run over all visits, detectors, tracts,
+      etc.  This step should be run only with the instrument constraint in the data
+      query.'
