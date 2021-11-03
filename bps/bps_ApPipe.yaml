@@ -6,45 +6,47 @@ templateDataId: '{tract}_{patch}_{band}_{visit}_{exposure}_{detector}'
 
 # Just names, but UPDATE THIS AND KEEP THEM SHORT
 project: ApPipe
-campaign: smallrun_example
+campaign: DM-xxxxx
 
-submitPath: ${PWD}/bps/{outCollection}
+submitPath: ${PWD}/bps/{outputRun}
 computeSite: ncsapool
-# Memory allocated for each quantum, in MBs
+# The default BPS walltime is on the order of 3 days.
+# That's much more than the vast majority of jobs need,
+# and it can cause your jobs not to run if you're too close to a maintenance window.
+# Set the default walltime as appropriate for what you are running (12 hours below).
+site:
+  ncsapool:
+    profile:
+      condor:
+        +Walltime: 43200
+
+# Memory allocated for each quantum, in MBs; can be overridden on a per-task basis.
+# The bps default is 2048 MB, the same as this example, but it's kept here as a reminder.
 requestMemory: 2048
-# CPUs to use per quantum
-requestCpus: 1
 
 # Example arguments, like the ones you would send to pipetask run from the command line
 payload:
-  runInit: true
   # UPDATE THIS to also set the output collection name
   payloadName: DM-XXXXX_ApPipe_example
   # UPDATE THIS to point to the correct repository
   butlerConfig: /repo/main/butler.yaml
   # UPDATE THIS and be sure it includes collections with raws, calibs, refcats, skymaps, and templates
-  inCollection: HSC/defaults,'u/${USER}/templates'
-  # Note: keep timestamp in outCollection so you don't get a zillion sub-runs
-  output : 'u/${USER}/{payloadName}'
-  outCollection: '{output}/{timestamp}'
+  # The operator variable is used at facilities beyond bps and it defaults to the value of USER.
+  inCollection: HSC/defaults,'u/{operator}/templates'
+  # UPDATE THIS as it is the place you want to store output.
+  output: 'u/{operator}/{payloadName}'
+  outputRun: '{output}/{timestamp}'
   # UPDATE THIS to specify what data to process
   dataQuery: 'exposure IN (11690, 11692) AND detector in (49, 50)'
 
 # Various things for bps to customize about each pipeline task
 pipetask:
-  # Initialization (optional, but a good idea; treated like its own pipeline task)
-  pipetaskInit:
-    runQuantumCommand: '${CTRL_MPEXEC_DIR}/bin/pipetask --long-log run -b {butlerConfig} -i {inCollection} --output {output} --output-run {outCollection} --init-only --skip-existing --register-dataset-types --qgraph {qgraphFile} --clobber-partial-outputs --no-versions'
   # Option to list other pipeline tasks being run here with default overrides
+  makeWarp:
+    requestMemory: 8192
   imageDifference:
     requestMemory: 4096
 
-# Condor backend stuff
-wmsServiceClass: lsst.ctrl.bps.wms.htcondor.htcondor_service.HTCondorService
-clusterAlgorithm: lsst.ctrl.bps.quantum_clustering_funcs.single_quantum_clustering
-
-# Create quantum graph for use by all tasks
-createQuantumGraph: '${CTRL_MPEXEC_DIR}/bin/pipetask qgraph -d "{dataQuery}" -b {butlerConfig} -i {inCollection} -p {pipelineYaml} -q {qgraphFile} --qgraph-dot {qgraphFile}.dot'
-
-# Main pipetask run call
-runQuantumCommand: '${CTRL_MPEXEC_DIR}/bin/pipetask --long-log run -b {butlerConfig} -i {inCollection} --output {output} --output-run {outCollection} --extend-run --skip-init-writes --qgraph {qgraphFile} --clobber-partial-outputs --no-versions'
+# Extra options for qgraph generation; will skip existing quanta in the output collection
+# Note that --skip-existing-in will not work the first time you run a workflow.
+extraQgraphOptions: "--skip-existing-in {output}"
