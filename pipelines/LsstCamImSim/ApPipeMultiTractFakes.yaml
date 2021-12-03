@@ -1,0 +1,25 @@
+description: LsstCam AP Pipeline with synthetic/fake sources. Templates are inputs.
+# Remember:
+# (0) Ensure median calibration products and template coadds exist for the data being processed
+# (1) Execute `make_apdb.py`, e.g.,
+#     make_apdb.py -c isolation_level=READ_UNCOMMITTED
+#                  -c db_url="sqlite:////project/user/association.db"
+# (2) Run this pipeline, setting appropriate diaPipe configs
+#     (diaPipe configs must match the make_apdb.py configs)
+
+instrument: lsst.obs.lsst.LsstCamImSim
+imports:
+  - location: $AP_PIPE_DIR/pipelines/ApPipeMultiTractFakes.yaml
+    exclude:  # These tasks frome from obs_lsst's ApPipe.yaml instead
+      - processCcd
+  - location: $AP_PIPE_DIR/pipelines/LsstCamImSim/ApPipe.yaml
+    exclude:  # These tasks come from ApPipeMultiTractFakes.yaml instead
+      - imageDifference
+      - diaPipe
+      - transformDiaSrcCat
+
+tasks:
+  diaPipe:
+    class: lsst.ap.association.DiaPipelineTask
+    config:
+      # apdb.db_url: YOU MUST CONFIGURE THIS BEFORE RUNNING THE PIPELINE

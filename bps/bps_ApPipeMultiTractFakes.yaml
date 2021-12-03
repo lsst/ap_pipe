@@ -1,0 +1,44 @@
+# UPDATE THIS to the path to the pipeline to run
+# (You probably want to run a camera-specific ApPipeMultiTractFakes, not the generic one)
+pipelineYaml: '${AP_PIPE_DIR}/pipelines/ApPipeMultiTractFakes.yaml'
+
+# Just names, but UPDATE THIS AND KEEP THEM SHORT
+project: ApPipeMultiTractFakes
+campaign: DM-xxxxx
+
+submitPath: ${PWD}/bps/{outputRun}
+computeSite: ncsapool
+# Memory allocated for each quantum, in MB (if unspecified, default is 2048)
+requestMemory: 4096
+includeConfigs:
+  - ${CTRL_BPS_DIR}/python/lsst/ctrl/bps/etc/bps_defaults.yaml
+
+# UPDATE THIS set of arguments to mirror the ones you use with command-line pipetask run
+payload:
+  payloadName: DM-xxxxx-example
+  butlerConfig: /repo/main/butler.yaml
+  inCollection: DECam/defaults/hits2015,DECam/calib,u/mrawls/DM-30703-hits-crosstalk-sources,u/mrawls/DM-30703-HiTS2014-templates
+  dataQuery: "instrument='DECam' AND skymap='hsc_rings_v1' AND band IN ('g') AND exposure>410914 AND exposure<421607 AND detector NOT IN (2, 61)"
+
+# Option to override defaults for pipeline tasks being run
+pipetask:
+  imageDifference:
+    requestMemory: 8192
+
+
+# The default BPS walltime is on the order of 3 days.
+# That's much more than the vast majority of jobs need,
+# and it can cause your jobs not to run if you're too close to a maintenance window.
+# Set the default walltime as appropriate for what you are running (12 hours below).
+
+# site:
+#  ncsapool:
+#    profile:
+#      condor:
+#        +Walltime: 43200
+
+
+# Extra options for qgraph generation; will skip existing quanta in the output collection
+# Note that --skip-existing-in will not work the first time you run a workflow.
+
+# extraQgraphOptions: "--skip-existing-in {output}"
