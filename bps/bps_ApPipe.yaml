@@ -1,6 +1,6 @@
 # UPDATE THIS to the path to the pipeline to run
-# (You probably want to run a camera-specific ApPipe, not the generic one)
-pipelineYaml: '${AP_PIPE_DIR}/pipelines/ApPipe.yaml'
+# (You should run a camera-specific ApPipe, not the generic one)
+#pipelineYaml: '${AP_PIPE_DIR}/pipelines/CAMERA/ApPipe.yaml'
 
 # Just names, but UPDATE THIS AND KEEP THEM SHORT
 project: ApPipe

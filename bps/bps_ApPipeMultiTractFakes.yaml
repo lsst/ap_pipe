@@ -1,6 +1,6 @@
 # UPDATE THIS to the path to the pipeline to run
-# (You probably want to run a camera-specific ApPipeMultiTractFakes, not the generic one)
-pipelineYaml: '${AP_PIPE_DIR}/pipelines/ApPipeMultiTractFakes.yaml'
+# (You should run a camera-specific ApPipeMultiTractFakes, not the generic one)
+#pipelineYaml: '${AP_PIPE_DIR}/pipelines/CAMERA/ApPipeMultiTractFakes.yaml'
 
 # Just names, but UPDATE THIS AND KEEP THEM SHORT
 project: ApPipeMultiTractFakes
@@ -18,7 +18,7 @@ payload:
   payloadName: DM-xxxxx-example
   butlerConfig: /repo/main/butler.yaml
   inCollection: DECam/defaults/hits2015,DECam/calib,u/mrawls/DM-30703-hits-crosstalk-sources,u/mrawls/DM-30703-HiTS2014-templates
-  dataQuery: "instrument='DECam' AND skymap='hsc_rings_v1' AND band IN ('g') AND exposure>410914 AND exposure<421607 AND detector NOT IN (2, 61)"
+  dataQuery: "instrument='DECam' AND band IN ('g') AND exposure IN (410915..421606) AND detector NOT IN (2, 61)"
 
 # Option to override defaults for pipeline tasks being run
 pipetask:
