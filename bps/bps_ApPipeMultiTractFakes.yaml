@@ -1,9 +1,9 @@
 # UPDATE THIS to the path to the pipeline to run
-# (You should run a camera-specific ApPipe, not the generic one)
-#pipelineYaml: '${AP_PIPE_DIR}/pipelines/CAMERA/ApPipe.yaml'
+# (You should run a camera-specific ApPipeMultiTractFakes, not the generic one)
+#pipelineYaml: '${AP_PIPE_DIR}/pipelines/CAMERA/ApPipeMultiTractFakes.yaml'
 
 # Just names, but UPDATE THIS AND KEEP THEM SHORT
-project: ApPipe
+project: ApPipeMultiTractFakes
 campaign: DM-xxxxx
 
 submitPath: ${PWD}/bps/{outputRun}
@@ -17,9 +17,8 @@ includeConfigs:
 payload:
   payloadName: DM-xxxxx-example
   butlerConfig: /repo/main/butler.yaml
-  # (The operator variable defaults to $USER)
-  inCollection: HSC/defaults,'u/{operator}/templates'
-  dataQuery: "exposure IN (11690, 11692) AND detector in (49, 50)"
+  inCollection: DECam/defaults/hits2015,DECam/calib,u/mrawls/DM-30703-hits-crosstalk-sources,u/mrawls/DM-30703-HiTS2014-templates
+  dataQuery: "instrument='DECam' AND band IN ('g') AND exposure IN (410915..421606) AND detector NOT IN (2, 61)"
 
 # Option to override defaults for pipeline tasks being run
 pipetask:
