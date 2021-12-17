@@ -212,8 +212,8 @@ class CreateRandomApFakesTask(PipelineTask):
         decs = np.arcsin(randVect[:, 2])
         ras = np.arctan2(randVect[:, 1], randVect[:, 0])
 
-        return {self.config.decColName: decs,
-                self.config.raColName: ras}
+        return {self.config.dec_col: decs,
+                self.config.ra_col: ras}
 
     def _createRotMatrix(self, boundingCircle):
         """Compute the 3d rotation matrix to rotate the dec=90 pole to the
