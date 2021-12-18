@@ -162,16 +162,14 @@ class CreateRandomApFakesTask(PipelineTask):
             **self.createRandomPositions(nFakes, tractBoundingCircle, rng),
             **self.createVisitCoaddSubdivision(nFakes),
             **self.createRandomMagnitudes(nFakes, rng),
-            self.config.diskHLR: np.ones(nFakes, dtype="float"),
-            self.config.bulgeHLR: np.ones(nFakes, dtype="float"),
-            self.config.nDisk: np.ones(nFakes, dtype="float"),
-            self.config.nBulge: np.ones(nFakes, dtype="float"),
-            self.config.aDisk: np.ones(nFakes, dtype="float"),
-            self.config.aBulge: np.ones(nFakes, dtype="float"),
-            self.config.bDisk: np.ones(nFakes, dtype="float"),
-            self.config.bBulge: np.ones(nFakes, dtype="float"),
-            self.config.paDisk: np.ones(nFakes, dtype="float"),
-            self.config.paBulge: np.ones(nFakes, dtype="float"),
+            self.config.disk_semimajor_col: np.ones(nFakes, dtype="float"),
+            self.config.bulge_semimajor_col: np.ones(nFakes, dtype="float"),
+            self.config.disk_n_col: np.ones(nFakes, dtype="float"),
+            self.config.bulge_n_col: np.ones(nFakes, dtype="float"),
+            self.config.disk_axis_ratio_col: np.ones(nFakes, dtype="float"),
+            self.config.bulge_axis_ratio_col: np.ones(nFakes, dtype="float"),
+            self.config.disk_pa_col: np.zeros(nFakes, dtype="float"),
+            self.config.bulge_pa_col: np.ones(nFakes, dtype="float"),
             self.config.sourceType: nFakes * ["star"]}
 
         return Struct(fakeCat=pd.DataFrame(data=randData))
@@ -212,8 +210,8 @@ class CreateRandomApFakesTask(PipelineTask):
         decs = np.arcsin(randVect[:, 2])
         ras = np.arctan2(randVect[:, 1], randVect[:, 0])
 
-        return {self.config.decColName: decs,
-                self.config.raColName: ras}
+        return {self.config.dec_col: decs,
+                self.config.ra_col: ras}
 
     def _createRotMatrix(self, boundingCircle):
         """Compute the 3d rotation matrix to rotate the dec=90 pole to the

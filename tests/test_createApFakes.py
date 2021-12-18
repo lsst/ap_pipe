@@ -107,8 +107,8 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
         for idx, row in fakeCat.iterrows():
             self.assertTrue(
                 bCircle.contains(
-                    geom.SpherePoint(row[fakesTask.config.raColName],
-                                     row[fakesTask.config.decColName],
+                    geom.SpherePoint(row[fakesTask.config.ra_col],
+                                     row[fakesTask.config.dec_col],
                                      geom.radians).getVector()))
         self.assertEqual(fakeCat[fakesConfig.visitSourceFlagCol].sum(),
                          self.nInVisit)
@@ -133,13 +133,13 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
             nFakes=self.nSources,
             boundingCircle=bCircle,
             rng=self.rng)
-        self.assertEqual(self.nSources, len(randData[fakesTask.config.raColName]))
-        self.assertEqual(self.nSources, len(randData[fakesTask.config.decColName]))
+        self.assertEqual(self.nSources, len(randData[fakesTask.config.ra_col]))
+        self.assertEqual(self.nSources, len(randData[fakesTask.config.dec_col]))
         for idx in range(self.nSources):
             self.assertTrue(
                 bCircle.contains(
-                    geom.SpherePoint(randData[fakesTask.config.raColName][idx],
-                                     randData[fakesTask.config.decColName][idx],
+                    geom.SpherePoint(randData[fakesTask.config.ra_col][idx],
+                                     randData[fakesTask.config.dec_col][idx],
                                      geom.radians).getVector()))
 
     def testCreateRotMatrix(self):
