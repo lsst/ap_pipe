@@ -24,10 +24,16 @@ parameters:
   diffWarp: goodSeeingDiff_warpedExp
   diffMatch: goodSeeingDiff_matchedExp
   assocSrc: goodSeeingDiff_assocDiaSrc
+  templateExp: goodSeeingDiff_templateExp
   # TODO: end DM-30210 workaround
 tasks:
+  retrieveTemplate:  # For multi-tract difference imaging
+    class: lsst.ip.diffim.getTemplate.GetMultiTractCoaddTemplateTask
+    config:
+      connections.coaddExposures: goodSeeingCoadd
+      connections.outputExposure: parameters.templateExp
   imageDifference:
-    class: lsst.pipe.tasks.imageDifference.ImageDifferenceTask
+    class: lsst.pipe.tasks.imageDifference.ImageDifferenceFromTemplateTask
     config:
       doWriteWarpedExp: True             # Required for packaging alerts in diaPipe
       doSkySources: True
@@ -43,6 +49,7 @@ tasks:
       connections.warpedExposure: parameters.diffWarp
       connections.matchedExposure: parameters.diffMatch
       connections.diaSources: parameters.diaSrcCat
+      connections.inputTemplate: parameters.templateExp
       # TODO: end DM-30210 workaround
   transformDiaSrcCat:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
@@ -71,6 +78,7 @@ subsets:
       - isr
       - characterizeImage
       - calibrate
+      - retrieveTemplate
       - imageDifference
       - transformDiaSrcCat
       - diaPipe
@@ -84,6 +92,7 @@ contracts:
   - imageDifference.doWriteSubtractedExp is True
   - imageDifference.doSkySources == transformDiaSrcCat.doRemoveSkySources
   # Inputs and outputs must match
+  - retrieveTemplate.connections.outputExposure == imageDifference.connections.inputTemplate
   - imageDifference.connections.coaddName == transformDiaSrcCat.connections.coaddName
   - imageDifference.connections.fakesType == transformDiaSrcCat.connections.fakesType
   - imageDifference.connections.coaddName == diaPipe.connections.coaddName
