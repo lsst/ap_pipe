@@ -10,11 +10,11 @@ description: DECam AP Pipeline with synthetic/fake sources. Templates are inputs
 
 instrument: lsst.obs.decam.DarkEnergyCamera
 imports:
-  - location: $AP_PIPE_DIR/pipelines/ApPipeMultiTractFakes.yaml
+  - location: $AP_PIPE_DIR/pipelines/ApPipeWithFakes.yaml
     exclude:  # These tasks frome from DECam's ApPipe.yaml instead
       - processCcd
   - location: $AP_PIPE_DIR/pipelines/DarkEnergyCamera/ApPipe.yaml
-    exclude:  # These tasks come from ApPipeMultiTractFakes.yaml instead
+    exclude:  # These tasks come from ApPipeWithFakes.yaml instead
       - imageDifference
       - diaPipe
       - transformDiaSrcCat

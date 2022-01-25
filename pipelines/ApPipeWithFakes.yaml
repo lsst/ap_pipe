@@ -4,6 +4,20 @@ description: AP Pipeline with synthetic/fake sources. Templates are inputs.
 
 imports:
   - location: $AP_PIPE_DIR/pipelines/ApPipe.yaml
+parameters:
+  coaddName: goodSeeing
+  fakesType: 'fakes_'
+  # TODO: redundant connection definitions workaround for DM-30210
+  template: goodSeeingCoadd
+  diaSrcCat: fakes_goodSeeingDiff_diaSrc
+  diaSrcSchema: fakes_goodSeeingDiff_diaSrc_schema
+  diaSrcParquet: fakes_goodSeeingDiff_diaSrcTable
+  diff: fakes_goodSeeingDiff_differenceExp
+  diffScore: fakes_goodSeeingDiff_scoreExp
+  diffWarp: fakes_goodSeeingDiff_warpedExp
+  diffMatch: fakes_goodSeeingDiff_matchedExp
+  assocSrc: fakes_goodSeeingDiff_assocDiaSrc
+  templateExp: fakes_goodSeeingDiff_templateExp
 
 tasks:
   createFakes:
@@ -16,57 +30,31 @@ tasks:
   coaddFakes:
     class: lsst.pipe.tasks.insertFakes.InsertFakesTask
     config:
-      connections.coaddName: goodSeeing
+      connections.coaddName: parameters.coaddName
       doSubSelectSources: True
       select_col: 'isTemplateSource'
   processVisitFakes:
     class: lsst.pipe.tasks.processCcdWithFakes.ProcessCcdWithVariableFakesTask
     config:
-      connections.coaddName: goodSeeing
+      connections.coaddName: parameters.coaddName
       insertFakes.doSubSelectSources: True
       insertFakes.select_col: 'isVisitSource'
       calibrate.photoCal.match.referenceSelection.magLimit.fluxField: i_flux
       calibrate.photoCal.match.referenceSelection.magLimit.maximum: 22.0
-  retrieveTemplate:  # New task added for multi-tract difference imaging
-    class: lsst.ip.diffim.getTemplate.GetMultiTractCoaddTemplateTask
-    config:
-      connections.coaddExposures: goodSeeingCoadd
-      connections.outputExposure: fakes_goodSeeingDiff_templateExp
-  imageDifference:  # New task class for multi-tract difference imaging
+  imageDifference:
     class: lsst.pipe.tasks.imageDifference.ImageDifferenceFromTemplateTask
     config:
-      connections.fakesType: 'fakes_'
+      connections.fakesType: parameters.fakesType
       connections.exposure: fakes_calexp
-      connections.outputSchema: fakes_goodSeeingDiff_diaSrc_schema
-      connections.subtractedExposure: fakes_goodSeeingDiff_differenceExp
-      connections.scoreExposure: fakes_goodSeeingDiff_scoreExp
-      connections.warpedExposure: fakes_goodSeeingDiff_warpedExp
-      connections.matchedExposure: fakes_goodSeeingDiff_matchedExp
-      connections.diaSources: fakes_goodSeeingDiff_diaSrc
-      connections.inputTemplate: fakes_goodSeeingDiff_templateExp
-      # The following are copied from ApPipe.yaml (imageDifference class changed)
-      doWriteWarpedExp: True  # Required for packaging alerts in diaPipe
-      doSkySources: True
-      coaddName: goodSeeing
-      getTemplate.coaddName: goodSeeing
-      connections.coaddName: goodSeeing
   transformDiaSrcCat:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
     config:
-      connections.fakesType: 'fakes_'
-      connections.diaSourceSchema: fakes_goodSeeingDiff_diaSrc_schema
-      connections.diaSourceCat: fakes_goodSeeingDiff_diaSrc
-      connections.diffIm: fakes_goodSeeingDiff_differenceExp
-      connections.diaSourceTable: fakes_goodSeeingDiff_diaSrcTable
+      connections.fakesType: parameters.fakesType
   diaPipe:
     class: lsst.ap.association.DiaPipelineTask
     config:
       doWriteAssociatedSources: True
-      connections.fakesType: 'fakes_'
-      connections.diaSourceTable: fakes_goodSeeingDiff_diaSrcTable
-      connections.diffIm: fakes_goodSeeingDiff_differenceExp
-      connections.warpedExposure: fakes_goodSeeingDiff_warpedExp
-      connections.associatedDiaSources: fakes_goodSeeingDiff_assocDiaSrc
+      connections.fakesType: parameters.fakesType
       # apdb.db_url: YOU MUST CONFIGURE THIS BEFORE RUNNING THE PIPELINE
   fakesMatch:
     class: lsst.pipe.tasks.matchFakes.MatchFakesTask
