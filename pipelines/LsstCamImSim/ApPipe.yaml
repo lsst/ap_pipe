@@ -19,6 +19,7 @@ subsets:
       - isr
       - characterizeImage
       - calibrate
+      - retrieveTemplate
       - imageDifference
       - transformDiaSrcCat
       - diaPipe
