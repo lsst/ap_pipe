@@ -28,7 +28,7 @@ parameters:
   # TODO: end DM-30210 workaround
 tasks:
   retrieveTemplate:  # For multi-tract difference imaging
-    class: lsst.ip.diffim.getTemplate.GetMultiTractCoaddTemplateTask
+    class: lsst.ip.diffim.getTemplate.GetTemplateTask
     config:
       connections.coaddExposures: parameters.template
       connections.outputExposure: parameters.templateExp
@@ -37,8 +37,7 @@ tasks:
     config:
       doWriteWarpedExp: True             # Required for packaging alerts in diaPipe
       doSkySources: True
-      coaddName: parameters.coaddName              # Can be removed once ImageDifference no longer supports Gen 2
-      getTemplate.coaddName: parameters.coaddName  # Can be removed once ImageDifference no longer supports Gen 2
+      coaddName: parameters.coaddName  # Can be removed once ImageDifference no longer supports Gen 2
       connections.coaddName: parameters.coaddName
       # TODO: redundant connection definitions workaround for DM-30210
       connections.coaddExposures: parameters.template
