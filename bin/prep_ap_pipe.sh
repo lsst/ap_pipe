@@ -111,7 +111,7 @@ fi
 
 # Print what is happening for confirmation
 echo "The command to be slurmified is:"
-echo "ap_pipe.py ${REPO} --calib ${CALIB} --template ${TEMPLATE} --rerun ${RERUN} -c associator.level1_db.db_name=${APDB} -c differencer.getTemplate.warpType='psfMatched'"
+echo "ap_pipe.py ${REPO} --calib ${CALIB} --template ${TEMPLATE} --rerun ${RERUN} -c associator.level1_db.db_name=${APDB}
 echo "For all CCDs and visits in the ${FILTERNAME} filter using the obs-camera ${OBSCAMERA}."
 
 # Create a directory to write slurm outfiles to if it doesn't exist yet
@@ -156,7 +156,7 @@ echo "# Set up the stack, which now includes the needed ap_ packages">>${RUNFILE
 echo "source /software/lsstsw/stack/loadLSST.bash">>${RUNFILE}
 echo "setup lsst_distrib">>${RUNFILE}
 echo "">>${RUNFILE}
-echo "ap_pipe.py ${REPO} --calib ${CALIB} --template ${TEMPLATE} --rerun ${RERUN} -c associator.level1_db.db_name=${APDB} -c differencer.getTemplate.warpType='psfMatched' --id \$*">>${RUNFILE}
+echo "ap_pipe.py ${REPO} --calib ${CALIB} --template ${TEMPLATE} --rerun ${RERUN} -c associator.level1_db.db_name=${APDB} --id \$*">>${RUNFILE}
 
 chmod +x ${RUNFILE}
 
