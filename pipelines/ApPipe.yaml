@@ -30,6 +30,7 @@ tasks:
   retrieveTemplate:  # For multi-tract difference imaging
     class: lsst.ip.diffim.getTemplate.GetTemplateTask
     config:
+      connections.coaddName: parameters.coaddName
       connections.coaddExposures: parameters.template
       connections.outputExposure: parameters.templateExp
   imageDifference:
