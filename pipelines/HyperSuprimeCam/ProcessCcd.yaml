@@ -3,3 +3,10 @@ description: A set of tasks to run when processing raw images, specialized for H
 instrument: lsst.obs.subaru.HyperSuprimeCam
 imports:
   - location: $AP_PIPE_DIR/pipelines/ProcessCcd.yaml
+tasks:
+  calibrate:
+    class: lsst.pipe.tasks.calibrate.CalibrateTask
+    config:
+      file: $AP_PIPE_DIR/config/HSC/calibrate.py
+      # Do not integrate file and pipeline configs until obs config files are
+      # gone, to make it easier to check for changes on the obs side.
