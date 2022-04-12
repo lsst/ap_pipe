@@ -8,6 +8,10 @@ imports:
     exclude:
       - isr
 tasks:
+  characterizeImage:
+    class: lsst.pipe.tasks.characterizeImage.CharacterizeImageTask
+    config:
+      file: $AP_PIPE_DIR/config/DECam/characterizeImage.py
   calibrate:
     class: lsst.pipe.tasks.calibrate.CalibrateTask
     config:
