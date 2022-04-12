@@ -4,6 +4,12 @@ instrument: lsst.obs.subaru.HyperSuprimeCam
 imports:
   - location: $AP_PIPE_DIR/pipelines/ProcessCcd.yaml
 tasks:
+  characterizeImage:
+    class: lsst.pipe.tasks.characterizeImage.CharacterizeImageTask
+    config:
+      file: $AP_PIPE_DIR/config/HSC/characterizeImage.py
+      # Do not integrate file and pipeline configs until obs config files are
+      # gone, to make it easier to check for changes on the obs side.
   calibrate:
     class: lsst.pipe.tasks.calibrate.CalibrateTask
     config:
