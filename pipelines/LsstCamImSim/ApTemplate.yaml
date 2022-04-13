@@ -8,6 +8,19 @@ imports:
     exclude:  # These tasks come from LsstCamImSim/ProcessCcd.yaml instead
       - processCcd
 
+tasks:
+  makeWarp:
+    class: lsst.pipe.tasks.makeCoaddTempExp.MakeWarpTask
+    config:
+      file: $AP_PIPE_DIR/config/LSSTCam-imSim/makeWarp.py
+      # Do not integrate file and pipeline configs until obs config files are
+      # gone, to make it easier to check for changes on the obs side.
+      # Copy base pipeline's configs, so that they override Imsim settings.
+      doWriteEmptyWarps: True
+      doApplyExternalPhotoCalib: False
+      doApplyExternalSkyWcs: False
+      makePsfMatched: True
+
 subsets:
 # The singleFrameAp subset is identical to the one in
 # $AP_PIPE_DIR/pipelines/ApTemplate.yaml, but needs to be defined here because
