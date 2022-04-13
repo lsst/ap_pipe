@@ -11,6 +11,9 @@ import os.path
 
 from lsst.meas.astrom import MatchOptimisticBConfig
 
+# HACK: Throw away any changes imposed by obs configs, especially plugins.
+config = type(config)()
+
 obsConfigDir = os.path.dirname(__file__)
 
 # Cosmic rays
