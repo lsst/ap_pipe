@@ -21,6 +21,21 @@ tasks:
       doApplyExternalPhotoCalib: False
       doApplyExternalSkyWcs: False
       makePsfMatched: True
+  assembleCoadd:
+    class: lsst.pipe.tasks.assembleCoadd.CompareWarpAssembleCoaddTask
+    config:
+      file: $AP_PIPE_DIR/config/LSSTCam-imSim/assembleCoadd.py
+      # Do not integrate file and pipeline configs until obs config files are
+      # gone, to make it easier to check for changes on the obs side.
+      # Copy base pipeline's configs, so that they override Imsim settings.
+      doSelectVisits: True
+      doNImage: True
+      assembleStaticSkyModel.doSelectVisits: True
+      connections.outputCoaddName: parameters.coaddName
+      # TODO: redundant connection definitions workaround for DM-30210
+      connections.selectedVisits: parameters.selectedVisits
+      connections.coaddExposure: parameters.template
+      # TODO: end DM-30210 workaround
 
 subsets:
 # The singleFrameAp subset is identical to the one in
