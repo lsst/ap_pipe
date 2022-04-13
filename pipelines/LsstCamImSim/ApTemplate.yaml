@@ -15,7 +15,8 @@ tasks:
       file: $AP_PIPE_DIR/config/LSSTCam-imSim/makeWarp.py
       # Do not integrate file and pipeline configs until obs config files are
       # gone, to make it easier to check for changes on the obs side.
-      # Copy base pipeline's configs, so that they override Imsim settings.
+      # Config file wipes out all pre-existing configs, so copy base pipeline
+      # config on top.
       doWriteEmptyWarps: True
       doApplyExternalPhotoCalib: False
       doApplyExternalSkyWcs: False
