@@ -8,6 +8,9 @@ import os.path
 from lsst.meas.algorithms import ColorLimit
 from lsst.meas.astrom import MatchOptimisticBConfig
 
+# HACK: Throw away any changes imposed by obs configs, especially plugins.
+config = type(config)()
+
 ObsConfigDir = os.path.dirname(__file__)
 
 bgFile = os.path.join(ObsConfigDir, "background.py")
