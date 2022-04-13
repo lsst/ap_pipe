@@ -12,6 +12,9 @@ import os.path
 from lsst.meas.algorithms import ColorLimit
 from lsst.meas.astrom import MatchOptimisticBConfig
 
+# HACK: Throw away any changes imposed by obs configs, especially plugins.
+config = type(config)()
+
 obsConfigDir = os.path.join(os.path.dirname(__file__))
 
 # Astrometry/Photometry
