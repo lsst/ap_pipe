@@ -31,6 +31,9 @@ LSST Cam-specific overrides for CharacterizeImageTask
 
 import os.path
 
+# HACK: Throw away any changes imposed by obs configs, especially plugins.
+config = type(config)()
+
 obsConfigDir = os.path.join(os.path.dirname(__file__))
 
 bgFile = os.path.join(obsConfigDir, "background.py")
