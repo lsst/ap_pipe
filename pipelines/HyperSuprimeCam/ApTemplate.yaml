@@ -8,10 +8,14 @@ imports:
     exclude:  # These tasks come from HyperSuprimeCam/ProcessCcd.yaml instead
       - processCcd
 
+tasks:
+  skyCorr:  # From the HSC DRP-RC2.yaml. Alternative is `doApplySkyCorr: False` in makeWarp
+    class: lsst.pipe.drivers.skyCorrection.SkyCorrectionTask
+
 subsets:
 # The singleFrameAp subset is identical to the one in
 # $AP_PIPE_DIR/pipelines/ApTemplate.yaml, but needs to be defined here because
-# isr, characterizeImage, and calibrate are coming from the DECam-specific
+# isr, characterizeImage, and calibrate are coming from the HSC-specific
 # ProcessCcd pipeline.
   singleFrameAp:
     subset:
