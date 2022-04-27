@@ -8,7 +8,7 @@ parameters:
   coaddName: goodSeeing
   fakesType: 'fakes_'
   # TODO: redundant connection definitions workaround for DM-30210
-  template: goodSeeingCoadd
+  template: fakes_goodSeeingCoadd
   diaSrcCat: fakes_goodSeeingDiff_diaSrc
   diaSrcSchema: fakes_goodSeeingDiff_diaSrc_schema
   diaSrcParquet: fakes_goodSeeingDiff_diaSrcTable
