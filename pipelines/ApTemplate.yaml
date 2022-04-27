@@ -50,5 +50,15 @@ contracts:
   - makeWarp.makeDirect is True
   - makeWarp.makePsfMatched is True
   # Use of ConnectionsClass for templated fields is a workaround for DM-30210
+  - calibrate.connections.outputExposure ==
+      consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).calexp.name
+  - consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).visitSummary.name ==
+      selectGoodSeeingVisits.connections.ConnectionsClass(config=selectGoodSeeingVisits).visitSummaries.name
+  - calibrate.connections.outputExposure ==
+      makeWarp.connections.ConnectionsClass(config=makeWarp).calExpList.name
+  - consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).visitSummary.name ==
+      makeWarp.connections.ConnectionsClass(config=makeWarp).visitSummary.name
   - selectGoodSeeingVisits.connections.ConnectionsClass(config=selectGoodSeeingVisits).goodVisits.name ==
       assembleCoadd.connections.ConnectionsClass(config=assembleCoadd).selectedVisits.name
+  - makeWarp.connections.ConnectionsClass(config=makeWarp).psfMatched.name ==
+      assembleCoadd.connections.ConnectionsClass(config=assembleCoadd).psfMatchedWarps.name
