@@ -14,25 +14,11 @@ imports:
 parameters:
   # Pipeline configurable to run on both goodSeeing and deep templates, depending on dataset.
   coaddName: goodSeeing
-  # TODO: redundant connection definitions workaround for DM-30210
-  template: goodSeeingCoadd
-  diaSrcCat: goodSeeingDiff_diaSrc
-  diaSrcSchema: goodSeeingDiff_diaSrc_schema
-  diaSrcParquet: goodSeeingDiff_diaSrcTable
-  diff: goodSeeingDiff_differenceExp
-  diffScore: goodSeeingDiff_scoreExp
-  diffWarp: goodSeeingDiff_warpedExp
-  diffMatch: goodSeeingDiff_matchedExp
-  assocSrc: goodSeeingDiff_assocDiaSrc
-  templateExp: goodSeeingDiff_templateExp
-  # TODO: end DM-30210 workaround
 tasks:
   retrieveTemplate:  # For multi-tract difference imaging
     class: lsst.ip.diffim.getTemplate.GetTemplateTask
     config:
       connections.coaddName: parameters.coaddName
-      connections.coaddExposures: parameters.template
-      connections.outputExposure: parameters.templateExp
   imageDifference:
     class: lsst.pipe.tasks.imageDifference.ImageDifferenceFromTemplateTask
     config:
@@ -40,38 +26,15 @@ tasks:
       doSkySources: True
       coaddName: parameters.coaddName  # Can be removed once ImageDifference no longer supports Gen 2
       connections.coaddName: parameters.coaddName
-      # TODO: redundant connection definitions workaround for DM-30210
-      connections.coaddExposures: parameters.template
-      connections.dcrCoadds: dcrCoadd
-      connections.outputSchema: parameters.diaSrcSchema
-      connections.subtractedExposure: parameters.diff
-      connections.scoreExposure: parameters.diffScore
-      connections.warpedExposure: parameters.diffWarp
-      connections.matchedExposure: parameters.diffMatch
-      connections.diaSources: parameters.diaSrcCat
-      connections.inputTemplate: parameters.templateExp
-      # TODO: end DM-30210 workaround
   transformDiaSrcCat:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
     config:
       doRemoveSkySources: True
       connections.coaddName: parameters.coaddName
-      # TODO: redundant connection definitions workaround for DM-30210
-      connections.diaSourceSchema: parameters.diaSrcSchema
-      connections.diaSourceCat: parameters.diaSrcCat
-      connections.diffIm: parameters.diff
-      connections.diaSourceTable: parameters.diaSrcParquet
-      # TODO: end DM-30210 workaround
   diaPipe:
     class: lsst.ap.association.DiaPipelineTask
     config:
       connections.coaddName: parameters.coaddName
-      # TODO: redundant connection definitions workaround for DM-30210
-      connections.diaSourceTable: parameters.diaSrcParquet
-      connections.diffIm: parameters.diff
-      connections.warpedExposure: parameters.diffWarp
-      connections.associatedDiaSources: parameters.assocSrc
-      # TODO: end DM-30210 workaround
 subsets:
   apPipe:
     subset:
@@ -92,9 +55,16 @@ contracts:
   - imageDifference.doWriteSubtractedExp is True
   - imageDifference.doSkySources == transformDiaSrcCat.doRemoveSkySources
   # Inputs and outputs must match
-  - retrieveTemplate.connections.outputExposure == imageDifference.connections.inputTemplate
-  - imageDifference.connections.coaddName == transformDiaSrcCat.connections.coaddName
-  - imageDifference.connections.fakesType == transformDiaSrcCat.connections.fakesType
-  - imageDifference.connections.coaddName == diaPipe.connections.coaddName
-  - imageDifference.connections.fakesType == diaPipe.connections.fakesType
-  - transformDiaSrcCat.connections.diaSourceTable == diaPipe.connections.diaSourceTable
+  # Use of ConnectionsClass for templated fields is a workaround for DM-30210
+  - retrieveTemplate.connections.ConnectionsClass(config=retrieveTemplate).outputExposure.name ==
+      imageDifference.connections.ConnectionsClass(config=imageDifference).inputTemplate.name
+  - imageDifference.connections.ConnectionsClass(config=imageDifference).subtractedExposure.name ==
+      transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diffIm.name
+  - imageDifference.connections.ConnectionsClass(config=imageDifference).diaSources.name ==
+      transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diaSourceCat.name
+  - imageDifference.connections.ConnectionsClass(config=imageDifference).subtractedExposure.name ==
+        diaPipe.connections.ConnectionsClass(config=diaPipe).diffIm.name
+  - imageDifference.connections.ConnectionsClass(config=imageDifference).warpedExposure.name ==
+        diaPipe.connections.ConnectionsClass(config=diaPipe).warpedExposure.name
+  - transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diaSourceTable.name ==
+        diaPipe.connections.ConnectionsClass(config=diaPipe).diaSourceTable.name

@@ -6,19 +6,12 @@ imports:
   - location: $AP_PIPE_DIR/pipelines/ProcessCcd.yaml
 parameters:
   coaddName: goodSeeing
-  # TODO: redundant connection definitions workaround for DM-30210
-  selectedVisits: goodSeeingVisits
-  template: goodSeeingCoadd
-  # TODO: end DM-30210 workaround
 tasks:
   consolidateVisitSummary: lsst.pipe.tasks.postprocess.ConsolidateVisitSummaryTask
   selectGoodSeeingVisits:
     class: lsst.pipe.tasks.selectImages.BestSeeingQuantileSelectVisitsTask
     config:
       connections.coaddName: parameters.coaddName
-      # TODO: redundant connection definitions workaround for DM-30210
-      connections.goodVisits: parameters.selectedVisits
-      # TODO: end DM-30210 workaround
   makeWarp:
     class: lsst.pipe.tasks.makeCoaddTempExp.MakeWarpTask
     config:
@@ -33,10 +26,6 @@ tasks:
       doNImage: True
       assembleStaticSkyModel.doSelectVisits: True
       connections.outputCoaddName: parameters.coaddName
-      # TODO: redundant connection definitions workaround for DM-30210
-      connections.selectedVisits: parameters.selectedVisits
-      connections.coaddExposure: parameters.template
-      # TODO: end DM-30210 workaround
 
 subsets:
   singleFrameAp:
@@ -60,4 +49,6 @@ subsets:
 contracts:
   - makeWarp.makeDirect is True
   - makeWarp.makePsfMatched is True
-  - selectGoodSeeingVisits.connections.goodVisits == assembleCoadd.connections.selectedVisits
+  # Use of ConnectionsClass for templated fields is a workaround for DM-30210
+  - selectGoodSeeingVisits.connections.ConnectionsClass(config=selectGoodSeeingVisits).goodVisits.name ==
+      assembleCoadd.connections.ConnectionsClass(config=assembleCoadd).selectedVisits.name

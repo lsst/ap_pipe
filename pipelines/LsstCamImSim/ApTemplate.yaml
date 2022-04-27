@@ -33,10 +33,6 @@ tasks:
       doNImage: True
       assembleStaticSkyModel.doSelectVisits: True
       connections.outputCoaddName: parameters.coaddName
-      # TODO: redundant connection definitions workaround for DM-30210
-      connections.selectedVisits: parameters.selectedVisits
-      connections.coaddExposure: parameters.template
-      # TODO: end DM-30210 workaround
 
 subsets:
 # The singleFrameAp subset is identical to the one in

@@ -7,22 +7,12 @@ imports:
 parameters:
   coaddName: goodSeeing
   fakesType: 'fakes_'
-  # TODO: redundant connection definitions workaround for DM-30210
-  template: fakes_goodSeeingCoadd
-  diaSrcCat: fakes_goodSeeingDiff_diaSrc
-  diaSrcSchema: fakes_goodSeeingDiff_diaSrc_schema
-  diaSrcParquet: fakes_goodSeeingDiff_diaSrcTable
-  diff: fakes_goodSeeingDiff_differenceExp
-  diffScore: fakes_goodSeeingDiff_scoreExp
-  diffWarp: fakes_goodSeeingDiff_warpedExp
-  diffMatch: fakes_goodSeeingDiff_matchedExp
-  assocSrc: fakes_goodSeeingDiff_assocDiaSrc
-  templateExp: fakes_goodSeeingDiff_templateExp
 
 tasks:
   createFakes:
     class: lsst.ap.pipe.createApFakes.CreateRandomApFakesTask
     config:
+      connections.fakesType: parameters.fakesType
       magMin: 20
       magMax: 26
       fraction: 0
@@ -31,21 +21,26 @@ tasks:
     class: lsst.pipe.tasks.insertFakes.InsertFakesTask
     config:
       connections.coaddName: parameters.coaddName
+      connections.fakesType: parameters.fakesType
       doSubSelectSources: True
       select_col: 'isTemplateSource'
   processVisitFakes:
     class: lsst.pipe.tasks.processCcdWithFakes.ProcessCcdWithVariableFakesTask
     config:
       connections.coaddName: parameters.coaddName
+      connections.fakesType: parameters.fakesType
       insertFakes.doSubSelectSources: True
       insertFakes.select_col: 'isVisitSource'
       calibrate.photoCal.match.referenceSelection.magLimit.fluxField: i_flux
       calibrate.photoCal.match.referenceSelection.magLimit.maximum: 22.0
+  retrieveTemplate:
+    class: lsst.ip.diffim.getTemplate.GetTemplateTask
+    config:
+      connections.fakesType: parameters.fakesType
   imageDifference:
     class: lsst.pipe.tasks.imageDifference.ImageDifferenceFromTemplateTask
     config:
       connections.fakesType: parameters.fakesType
-      connections.exposure: fakes_calexp
   transformDiaSrcCat:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
     config:
@@ -60,16 +55,24 @@ tasks:
     class: lsst.pipe.tasks.matchFakes.MatchFakesTask
     config:
       connections.coaddName: parameters.coaddName
+      connections.fakesType: parameters.fakesType
       matchDistanceArcseconds: 0.5
 
 contracts:
-  - createFakes.connections.fakesType == coaddFakes.connections.fakesType
-  - createFakes.connections.fakesType == processVisitFakes.connections.fakesType
-  - createFakes.connections.fakesType == imageDifference.connections.fakesType
-  - createFakes.connections.fakesType == diaPipe.connections.fakesType
-  - createFakes.connections.fakesType == fakesMatch.connections.fakesType
-  - coaddFakes.connections.coaddName == processVisitFakes.connections.coaddName
-  - coaddFakes.connections.coaddName == imageDifference.connections.coaddName
-  - coaddFakes.connections.coaddName == diaPipe.connections.coaddName
-  - coaddFakes.connections.coaddName == fakesMatch.connections.coaddName
-  - retrieveTemplate.connections.outputExposure == imageDifference.connections.inputTemplate
+  # Use of ConnectionsClass for templated fields is a workaround for DM-30210
+  - createFakes.connections.ConnectionsClass(config=createFakes).fakeCat.name ==
+      coaddFakes.connections.ConnectionsClass(config=coaddFakes).fakeCat.name
+  - createFakes.connections.ConnectionsClass(config=createFakes).fakeCat.name ==
+      processVisitFakes.connections.ConnectionsClass(config=processVisitFakes).fakeCats.name
+  - coaddFakes.connections.ConnectionsClass(config=coaddFakes).imageWithFakes.name ==
+      retrieveTemplate.connections.ConnectionsClass(config=retrieveTemplate).coaddExposures.name
+  - processVisitFakes.connections.ConnectionsClass(config=processVisitFakes).outputExposure.name ==
+      imageDifference.connections.ConnectionsClass(config=imageDifference).exposure.name
+  - createFakes.connections.ConnectionsClass(config=createFakes).fakeCat.name ==
+      fakesMatch.connections.ConnectionsClass(config=fakesMatch).fakeCats.name
+  - imageDifference.connections.ConnectionsClass(config=imageDifference).subtractedExposure.name ==
+      fakesMatch.connections.ConnectionsClass(config=fakesMatch).diffIm.name
+  - diaPipe.connections.ConnectionsClass(config=diaPipe).associatedDiaSources.name ==
+      fakesMatch.connections.ConnectionsClass(config=fakesMatch).associatedDiaSources.name
+  - retrieveTemplate.connections.ConnectionsClass(config=retrieveTemplate).outputExposure.name ==
+      imageDifference.connections.ConnectionsClass(config=imageDifference).inputTemplate.name
