@@ -10,9 +10,18 @@ tasks:
       connections.newBFKernel: bfk
       doDefect: False
       doBrighterFatter: True
+  characterizeImage:
+    class: lsst.pipe.tasks.characterizeImage.CharacterizeImageTask
+    config:
+      file: $AP_PIPE_DIR/config/LsstCam-imSim/characterizeImage.py
+      # Do not integrate file and pipeline configs until obs config files are
+      # gone, to make it easier to check for changes on the obs side.
   calibrate:
     class: lsst.pipe.tasks.calibrate.CalibrateTask
     config:
+      file: $AP_PIPE_DIR/config/LSSTCam-imSim/calibrate.py
+      # Do not integrate file and pipeline configs until obs config files are
+      # gone, to make it easier to check for changes on the obs side.
       connections.astromRefCat: 'cal_ref_cat_2_2'
       connections.photoRefCat: 'cal_ref_cat_2_2'
       astromRefObjLoader.ref_dataset_name: 'cal_ref_cat_2_2'

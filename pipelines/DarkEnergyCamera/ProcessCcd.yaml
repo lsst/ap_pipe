@@ -8,9 +8,16 @@ imports:
     exclude:
       - isr
 tasks:
+  characterizeImage:
+    class: lsst.pipe.tasks.characterizeImage.CharacterizeImageTask
+    config:
+      file: $AP_PIPE_DIR/config/DECam/characterizeImage.py
   calibrate:
     class: lsst.pipe.tasks.calibrate.CalibrateTask
     config:
+      file: $AP_PIPE_DIR/config/DECam/calibrate.py
+      # Do not integrate file and pipeline configs until obs config files are
+      # gone, to make it easier to check for changes on the obs side.
       photoCal.match.referenceSelection.magLimit.fluxField: 'i_flux'
       photoCal.match.referenceSelection.magLimit.maximum: 22.0
 subsets:

@@ -20,6 +20,19 @@ imports:
       - transformDiaSrcCat
 
 tasks:
+  processVisitFakes:
+  class: lsst.pipe.tasks.processCcdWithFakes.ProcessCcdWithVariableFakesTask
+  config:
+    file: $AP_PIPE_DIR/config/HSC/processCcdWithFakes.py
+    # Do not integrate file and pipeline configs until obs config files are
+    # gone, to make it easier to check for changes on the obs side.
+    # Config file wipes out all pre-existing configs, so copy base pipeline
+    # config on top.
+    connections.coaddName: parameters.coaddName
+    insertFakes.doSubSelectSources: True
+    insertFakes.select_col: 'isVisitSource'
+    calibrate.photoCal.match.referenceSelection.magLimit.fluxField: i_flux
+    calibrate.photoCal.match.referenceSelection.magLimit.maximum: 22.0
   diaPipe:
     class: lsst.ap.association.DiaPipelineTask
     config:
