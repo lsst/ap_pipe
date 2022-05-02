@@ -3,7 +3,7 @@ description: AP Pipeline with synthetic/fake sources. Templates are inputs.
 # You almost certainly want to run one of those, and not this one.
 
 imports:
-  - location: $AP_PIPE_DIR/pipelines/ApPipe.yaml
+  - location: $AP_PIPE_DIR/pipelines/ProcessCcd.yaml
 parameters:
   coaddName: goodSeeing
   fakesType: 'fakes_'
@@ -36,19 +36,27 @@ tasks:
   retrieveTemplate:
     class: lsst.ip.diffim.getTemplate.GetTemplateTask
     config:
+      connections.coaddName: parameters.coaddName
       connections.fakesType: parameters.fakesType
   imageDifference:
     class: lsst.pipe.tasks.imageDifference.ImageDifferenceFromTemplateTask
     config:
+      connections.coaddName: parameters.coaddName
+      coaddName: parameters.coaddName  # Can be removed once ImageDifference no longer supports Gen 2
       connections.fakesType: parameters.fakesType
+      doWriteWarpedExp: True             # Required for packaging alerts in diaPipe
+      doSkySources: True
   transformDiaSrcCat:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
     config:
+      connections.coaddName: parameters.coaddName
       connections.fakesType: parameters.fakesType
+      doRemoveSkySources: True
   diaPipe:
     class: lsst.ap.association.DiaPipelineTask
     config:
       doWriteAssociatedSources: True
+      connections.coaddName: parameters.coaddName
       connections.fakesType: parameters.fakesType
       # apdb.db_url: YOU MUST CONFIGURE THIS BEFORE RUNNING THE PIPELINE
   fakesMatch:
@@ -57,8 +65,28 @@ tasks:
       connections.coaddName: parameters.coaddName
       connections.fakesType: parameters.fakesType
       matchDistanceArcseconds: 0.5
+subsets:
+  # processCcd imported unchanged from ProcessCcd.yaml
+  apPipe:
+    subset:
+      - isr
+      - characterizeImage
+      - calibrate
+      - retrieveTemplate
+      - imageDifference
+      - transformDiaSrcCat
+      - diaPipe
+    description: >
+      An alias of ApPipe to use in higher-level pipelines.
 
 contracts:
+  # DiaPipelineTask needs diaSource fluxes, catalogs, warped exposures, and difference exposures
+  - imageDifference.doMeasurement is True
+  - imageDifference.doWriteSources is True
+  - imageDifference.doWriteWarpedExp is True
+  - imageDifference.doWriteSubtractedExp is True
+  - imageDifference.doSkySources == transformDiaSrcCat.doRemoveSkySources
+  # Inputs and outputs must match.
   # Use of ConnectionsClass for templated fields is a workaround for DM-30210
   - createFakes.connections.ConnectionsClass(config=createFakes).fakeCat.name ==
       coaddFakes.connections.ConnectionsClass(config=coaddFakes).fakeCat.name
@@ -66,6 +94,16 @@ contracts:
       processVisitFakes.connections.ConnectionsClass(config=processVisitFakes).fakeCats.name
   - coaddFakes.connections.ConnectionsClass(config=coaddFakes).imageWithFakes.name ==
       retrieveTemplate.connections.ConnectionsClass(config=retrieveTemplate).coaddExposures.name
+  - imageDifference.connections.ConnectionsClass(config=imageDifference).subtractedExposure.name ==
+      transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diffIm.name
+  - imageDifference.connections.ConnectionsClass(config=imageDifference).diaSources.name ==
+      transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diaSourceCat.name
+  - imageDifference.connections.ConnectionsClass(config=imageDifference).subtractedExposure.name ==
+      diaPipe.connections.ConnectionsClass(config=diaPipe).diffIm.name
+  - imageDifference.connections.ConnectionsClass(config=imageDifference).warpedExposure.name ==
+      diaPipe.connections.ConnectionsClass(config=diaPipe).warpedExposure.name
+  - transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diaSourceTable.name ==
+      diaPipe.connections.ConnectionsClass(config=diaPipe).diaSourceTable.name
   - processVisitFakes.connections.ConnectionsClass(config=processVisitFakes).outputExposure.name ==
       imageDifference.connections.ConnectionsClass(config=imageDifference).exposure.name
   - createFakes.connections.ConnectionsClass(config=createFakes).fakeCat.name ==
