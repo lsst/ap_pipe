@@ -111,6 +111,8 @@ contracts:
       diaPipe.connections.ConnectionsClass(config=diaPipe).diffIm.name
   - imageDifferenceWithFakes.connections.ConnectionsClass(config=imageDifferenceWithFakes).warpedExposure.name ==
       diaPipe.connections.ConnectionsClass(config=diaPipe).warpedExposure.name
+  - imageDifferenceWithFakes.connections.ConnectionsClass(config=imageDifferenceWithFakes).exposure.name ==
+      diaPipe.connections.ConnectionsClass(config=diaPipe).exposure.name
   - transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diaSourceTable.name ==
       diaPipe.connections.ConnectionsClass(config=diaPipe).diaSourceTable.name
   - processVisitFakes.connections.ConnectionsClass(config=processVisitFakes).outputExposure.name ==

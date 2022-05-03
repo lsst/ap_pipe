@@ -66,5 +66,7 @@ contracts:
         diaPipe.connections.ConnectionsClass(config=diaPipe).diffIm.name
   - imageDifference.connections.ConnectionsClass(config=imageDifference).warpedExposure.name ==
         diaPipe.connections.ConnectionsClass(config=diaPipe).warpedExposure.name
+  - imageDifference.connections.ConnectionsClass(config=imageDifference).exposure.name ==
+      diaPipe.connections.ConnectionsClass(config=diaPipe).exposure.name
   - transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diaSourceTable.name ==
         diaPipe.connections.ConnectionsClass(config=diaPipe).diaSourceTable.name
