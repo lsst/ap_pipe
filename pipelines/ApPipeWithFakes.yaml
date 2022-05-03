@@ -64,7 +64,7 @@ tasks:
       connections.fakesType: parameters.fakesType
       # apdb.db_url: YOU MUST CONFIGURE THIS BEFORE RUNNING THE PIPELINE
   fakesMatch:
-    class: lsst.pipe.tasks.matchFakes.MatchFakesTask
+    class: lsst.pipe.tasks.matchFakes.MatchVariableFakesTask
     config:
       connections.coaddName: parameters.coaddName
       connections.fakesType: parameters.fakesType
