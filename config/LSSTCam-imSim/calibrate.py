@@ -50,6 +50,8 @@ for refObjLoader in (config.astromRefObjLoader,
                      ):
     refObjLoader.load(os.path.join(obsConfigDir, 'filterMap.py'))
     refObjLoader.ref_dataset_name = 'cal_ref_cat'
+    # Use the filterMap instead of the "any" filter.
+    refObjLoader.anyFilterMapsToThis = None
 
 config.connections.astromRefCat = "cal_ref_cat"
 config.connections.photoRefCat = "cal_ref_cat"
@@ -100,6 +102,11 @@ config.astrometry.referenceSelector.doUnresolved = True
 config.astrometry.referenceSelector.unresolved.name = "resolved"
 config.astrometry.referenceSelector.unresolved.minimum = None
 config.astrometry.referenceSelector.unresolved.maximum = 0.5
+
+config.astromRefObjLoader.load(os.path.join(obsConfigDir, "filterMap.py"))
+# Use the filterMap instead of the "any" filter.
+config.astromRefObjLoader.anyFilterMapsToThis = None
+config.photoRefObjLoader.load(os.path.join(obsConfigDir, "filterMap.py"))
 
 config.astrometry.doMagnitudeOutlierRejection = True
 # Set threshold above which astrometry will be considered a failure (DM-32129)
