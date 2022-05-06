@@ -9,7 +9,7 @@ from lsst.meas.algorithms import ColorLimit
 from lsst.meas.astrom import MatchOptimisticBConfig
 
 # HACK: Throw away any changes imposed by obs configs, especially plugins.
-config = type(config)()
+config.loadFromString(type(config)().saveToString())
 
 ObsConfigDir = os.path.dirname(__file__)
 
