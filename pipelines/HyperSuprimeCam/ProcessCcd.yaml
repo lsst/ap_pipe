@@ -10,6 +10,11 @@ tasks:
       file: $AP_PIPE_DIR/config/HSC/characterizeImage.py
       # Do not integrate file and pipeline configs until obs config files are
       # gone, to make it easier to check for changes on the obs side.
+      # Config file wipes out all pre-existing configs, so copy base pipeline
+      # config on top.
+      python: |
+        config.measurePsf.makePsfCandidates.kernelSize = 25
+        config.measurePsf.psfDeterminer["piff"].kernelSize = 25
   calibrate:
     class: lsst.pipe.tasks.calibrate.CalibrateTask
     config:

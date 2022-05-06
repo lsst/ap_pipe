@@ -12,6 +12,11 @@ tasks:
     class: lsst.pipe.tasks.characterizeImage.CharacterizeImageTask
     config:
       file: $AP_PIPE_DIR/config/DECam/characterizeImage.py
+      # Config file wipes out all pre-existing configs, so copy base pipeline
+      # config on top.
+      python: |
+        config.measurePsf.makePsfCandidates.kernelSize = 25
+        config.measurePsf.psfDeterminer["piff"].kernelSize = 25
   calibrate:
     class: lsst.pipe.tasks.calibrate.CalibrateTask
     config:
