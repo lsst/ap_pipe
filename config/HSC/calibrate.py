@@ -9,7 +9,7 @@ from lsst.meas.algorithms import ColorLimit
 from lsst.meas.astrom import MatchOptimisticBConfig
 
 # HACK: Throw away any changes imposed by obs configs, especially plugins.
-config = type(config)()
+config.loadFromString(type(config)().saveToString())
 
 ObsConfigDir = os.path.dirname(__file__)
 
@@ -25,6 +25,8 @@ for refObjLoader in (config.astromRefObjLoader,
     refObjLoader.load(os.path.join(ObsConfigDir, "filterMap.py"))
     # This is the Gen2 configuration option.
     refObjLoader.ref_dataset_name = "ps1_pv3_3pi_20170110"
+    # Use the filterMap instead of the "any" filter.
+    refObjLoader.anyFilterMapsToThis = None
 
 # These are the Gen3 configuration options for reference catalog name.
 config.connections.photoRefCat = "ps1_pv3_3pi_20170110"

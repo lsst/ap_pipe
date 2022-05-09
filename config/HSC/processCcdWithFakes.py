@@ -6,7 +6,7 @@
 import os.path
 
 # HACK: Throw away any changes imposed by obs configs, especially plugins.
-config = type(config)()
+config.loadFromString(type(config)().saveToString())
 
 ObsConfigDir = os.path.dirname(__file__)
 calFile = os.path.join(ObsConfigDir, "calibrate.py")

@@ -6,7 +6,7 @@
 import os.path
 
 # HACK: Throw away any changes imposed by obs configs.
-config = type(config)()
+config.loadFromString(type(config)().saveToString())
 
 # Load configs shared between assembleCoadd and makeCoaddTempExp
 config.load(os.path.join(os.path.dirname(__file__), "coaddBase.py"))

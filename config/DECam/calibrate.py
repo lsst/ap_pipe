@@ -13,31 +13,14 @@ from lsst.meas.algorithms import ColorLimit
 from lsst.meas.astrom import MatchOptimisticBConfig
 
 # HACK: Throw away any changes imposed by obs configs, especially plugins.
-config = type(config)()
+config.loadFromString(type(config)().saveToString())
 
 obsConfigDir = os.path.join(os.path.dirname(__file__))
 
-# Astrometry/Photometry
-# This sets the reference catalog name for Gen2.
-for refObjLoader in (config.astromRefObjLoader,
-                     config.photoRefObjLoader,
-                     ):
-    refObjLoader.ref_dataset_name = "ps1_pv3_3pi_20170110"
-    # Note the u-band results may not be useful without a color term
-    refObjLoader.filterMap['u'] = 'g'
-    refObjLoader.filterMap['Y'] = 'y'
-    refObjLoader.filterMap['N419'] = 'g'
-    refObjLoader.filterMap['N540'] = 'g'
-    refObjLoader.filterMap['N708'] = 'i'
-    refObjLoader.filterMap['N964'] = 'z'
-
-# This sets up the reference catalog for Gen3.
-config.connections.astromRefCat = "ps1_pv3_3pi_20170110"
-config.connections.photoRefCat = "ps1_pv3_3pi_20170110"
+config.photoRefObjLoader.load(os.path.join(obsConfigDir, "filterMap.py"))
 
 # Photometric calibration: use color terms
 config.photoCal.applyColorTerms = True
-config.photoCal.photoCatName = "ps1_pv3_3pi_20170110"
 colors = config.photoCal.match.referenceSelection.colorLimits
 # The following two color limits are adopted from obs_subaru for the HSC SSP survey
 colors["g-r"] = ColorLimit(primary="g_flux", secondary="r_flux", minimum=0.0)
