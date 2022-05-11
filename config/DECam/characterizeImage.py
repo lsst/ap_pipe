@@ -28,19 +28,6 @@ config.measurePsf.starSelector["objectSize"].sourceFluxField = "base_PsfFlux_ins
 config.measurePsf.starSelector["objectSize"].widthMin = 0.9
 config.measurePsf.starSelector["objectSize"].fluxMin = 4000
 
-# Astrometry/Photometry
-# This sets the reference catalog name for Gen2.
-# Note that in Gen3, we've stopped pretending (which is what Gen2 does,
-# for backwards compatibility) that charImage uses a reference catalog.
-config.refObjLoader.ref_dataset_name = "ps1_pv3_3pi_20170110"
-# Note the u-band results may not be useful without a color term
-config.refObjLoader.filterMap['u'] = 'g'
-config.refObjLoader.filterMap['Y'] = 'y'
-config.refObjLoader.filterMap['N419'] = 'g'
-config.refObjLoader.filterMap['N540'] = 'g'
-config.refObjLoader.filterMap['N708'] = 'i'
-config.refObjLoader.filterMap['N964'] = 'z'
-
 # Set to match defaults currently used in HSC production runs (e.g. S15B)
 config.catalogCalculation.plugins['base_ClassificationExtendedness'].fluxRatio = 0.95
 
