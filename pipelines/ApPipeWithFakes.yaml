@@ -1,28 +1,22 @@
 description: AP Pipeline with synthetic/fake sources. Templates are inputs.
 # This pipeline is imported by camera-specific pipelines.
 # You almost certainly want to run one of those, and not this one.
+#
+# All tasks that take fake sources as input have the word "Fakes" in the label.
+# This is for disambiguation and forward-compatibility with parallel tasks that
+# use unmodified inputs, either here or in ap_verify.
 
 imports:
-  - location: $AP_PIPE_DIR/pipelines/ApPipe.yaml
+  - location: $AP_PIPE_DIR/pipelines/ProcessCcd.yaml
 parameters:
   coaddName: goodSeeing
   fakesType: 'fakes_'
-  # TODO: redundant connection definitions workaround for DM-30210
-  template: goodSeeingCoadd
-  diaSrcCat: fakes_goodSeeingDiff_diaSrc
-  diaSrcSchema: fakes_goodSeeingDiff_diaSrc_schema
-  diaSrcParquet: fakes_goodSeeingDiff_diaSrcTable
-  diff: fakes_goodSeeingDiff_differenceExp
-  diffScore: fakes_goodSeeingDiff_scoreExp
-  diffWarp: fakes_goodSeeingDiff_warpedExp
-  diffMatch: fakes_goodSeeingDiff_matchedExp
-  assocSrc: fakes_goodSeeingDiff_assocDiaSrc
-  templateExp: fakes_goodSeeingDiff_templateExp
 
 tasks:
   createFakes:
     class: lsst.ap.pipe.createApFakes.CreateRandomApFakesTask
     config:
+      connections.fakesType: parameters.fakesType
       magMin: 20
       magMax: 26
       fraction: 0
@@ -31,45 +25,103 @@ tasks:
     class: lsst.pipe.tasks.insertFakes.InsertFakesTask
     config:
       connections.coaddName: parameters.coaddName
+      connections.fakesType: parameters.fakesType
       doSubSelectSources: True
       select_col: 'isTemplateSource'
   processVisitFakes:
     class: lsst.pipe.tasks.processCcdWithFakes.ProcessCcdWithVariableFakesTask
     config:
       connections.coaddName: parameters.coaddName
+      connections.fakesType: parameters.fakesType
       insertFakes.doSubSelectSources: True
       insertFakes.select_col: 'isVisitSource'
       calibrate.photoCal.match.referenceSelection.magLimit.fluxField: i_flux
       calibrate.photoCal.match.referenceSelection.magLimit.maximum: 22.0
-  imageDifference:
+  retrieveTemplateWithFakes:
+    class: lsst.ip.diffim.getTemplate.GetTemplateTask
+    config:
+      connections.coaddName: parameters.coaddName
+      connections.fakesType: parameters.fakesType
+  imageDifferenceWithFakes:
     class: lsst.pipe.tasks.imageDifference.ImageDifferenceFromTemplateTask
     config:
+      connections.coaddName: parameters.coaddName
+      coaddName: parameters.coaddName  # Can be removed once ImageDifference no longer supports Gen 2
       connections.fakesType: parameters.fakesType
-      connections.exposure: fakes_calexp
-  transformDiaSrcCat:
+      doWriteWarpedExp: True             # Required for packaging alerts in diaPipe
+      doSkySources: True
+  transformDiaSrcCatWithFakes:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
     config:
+      connections.coaddName: parameters.coaddName
       connections.fakesType: parameters.fakesType
+      doRemoveSkySources: True
   diaPipe:
     class: lsst.ap.association.DiaPipelineTask
     config:
       doWriteAssociatedSources: True
+      connections.coaddName: parameters.coaddName
       connections.fakesType: parameters.fakesType
       # apdb.db_url: YOU MUST CONFIGURE THIS BEFORE RUNNING THE PIPELINE
   fakesMatch:
-    class: lsst.pipe.tasks.matchFakes.MatchFakesTask
+    class: lsst.pipe.tasks.matchFakes.MatchVariableFakesTask
     config:
       connections.coaddName: parameters.coaddName
+      connections.fakesType: parameters.fakesType
       matchDistanceArcseconds: 0.5
+subsets:
+  # processCcd imported unchanged from ProcessCcd.yaml
+  prepareFakes:
+    subset:
+      - createFakes
+      - coaddFakes
+    description: >
+      Creation of fake sources.
+  apPipeWithFakes:
+    subset:
+      - processVisitFakes
+      - retrieveTemplateWithFakes
+      - imageDifferenceWithFakes
+      - transformDiaSrcCatWithFakes
+      - diaPipe
+      - fakesMatch
+    description: >
+      The AP pipeline with fakes. Requires apPipe and prepareFakes subsets.
 
 contracts:
-  - createFakes.connections.fakesType == coaddFakes.connections.fakesType
-  - createFakes.connections.fakesType == processVisitFakes.connections.fakesType
-  - createFakes.connections.fakesType == imageDifference.connections.fakesType
-  - createFakes.connections.fakesType == diaPipe.connections.fakesType
-  - createFakes.connections.fakesType == fakesMatch.connections.fakesType
-  - coaddFakes.connections.coaddName == processVisitFakes.connections.coaddName
-  - coaddFakes.connections.coaddName == imageDifference.connections.coaddName
-  - coaddFakes.connections.coaddName == diaPipe.connections.coaddName
-  - coaddFakes.connections.coaddName == fakesMatch.connections.coaddName
-  - retrieveTemplate.connections.outputExposure == imageDifference.connections.inputTemplate
+  # DiaPipelineTask needs diaSource fluxes, catalogs, warped exposures, and difference exposures
+  - imageDifferenceWithFakes.doMeasurement is True
+  - imageDifferenceWithFakes.doWriteSources is True
+  - imageDifferenceWithFakes.doWriteWarpedExp is True
+  - imageDifferenceWithFakes.doWriteSubtractedExp is True
+  - imageDifferenceWithFakes.doSkySources == transformDiaSrcCatWithFakes.doRemoveSkySources
+  # Inputs and outputs must match.
+  # Use of ConnectionsClass for templated fields is a workaround for DM-30210
+  - createFakes.connections.ConnectionsClass(config=createFakes).fakeCat.name ==
+      coaddFakes.connections.ConnectionsClass(config=coaddFakes).fakeCat.name
+  - createFakes.connections.ConnectionsClass(config=createFakes).fakeCat.name ==
+      processVisitFakes.connections.ConnectionsClass(config=processVisitFakes).fakeCats.name
+  - coaddFakes.connections.ConnectionsClass(config=coaddFakes).imageWithFakes.name ==
+      retrieveTemplateWithFakes.connections.ConnectionsClass(config=retrieveTemplateWithFakes).coaddExposures.name
+  - imageDifferenceWithFakes.connections.ConnectionsClass(config=imageDifferenceWithFakes).subtractedExposure.name ==
+      transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diffIm.name
+  - imageDifferenceWithFakes.connections.ConnectionsClass(config=imageDifferenceWithFakes).diaSources.name ==
+      transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diaSourceCat.name
+  - imageDifferenceWithFakes.connections.ConnectionsClass(config=imageDifferenceWithFakes).subtractedExposure.name ==
+      diaPipe.connections.ConnectionsClass(config=diaPipe).diffIm.name
+  - imageDifferenceWithFakes.connections.ConnectionsClass(config=imageDifferenceWithFakes).warpedExposure.name ==
+      diaPipe.connections.ConnectionsClass(config=diaPipe).warpedExposure.name
+  - imageDifferenceWithFakes.connections.ConnectionsClass(config=imageDifferenceWithFakes).exposure.name ==
+      diaPipe.connections.ConnectionsClass(config=diaPipe).exposure.name
+  - transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diaSourceTable.name ==
+      diaPipe.connections.ConnectionsClass(config=diaPipe).diaSourceTable.name
+  - processVisitFakes.connections.ConnectionsClass(config=processVisitFakes).outputExposure.name ==
+      imageDifferenceWithFakes.connections.ConnectionsClass(config=imageDifferenceWithFakes).exposure.name
+  - createFakes.connections.ConnectionsClass(config=createFakes).fakeCat.name ==
+      fakesMatch.connections.ConnectionsClass(config=fakesMatch).fakeCats.name
+  - imageDifferenceWithFakes.connections.ConnectionsClass(config=imageDifferenceWithFakes).subtractedExposure.name ==
+      fakesMatch.connections.ConnectionsClass(config=fakesMatch).diffIm.name
+  - diaPipe.connections.ConnectionsClass(config=diaPipe).associatedDiaSources.name ==
+      fakesMatch.connections.ConnectionsClass(config=fakesMatch).associatedDiaSources.name
+  - retrieveTemplateWithFakes.connections.ConnectionsClass(config=retrieveTemplateWithFakes).outputExposure.name ==
+      imageDifferenceWithFakes.connections.ConnectionsClass(config=imageDifferenceWithFakes).inputTemplate.name
