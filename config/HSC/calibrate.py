@@ -73,8 +73,6 @@ config.doWriteMatchesDenormalized = True
 config.detection.isotropicGrow = True
 
 config.measurement.load(os.path.join(ObsConfigDir, "apertures.py"))
-config.measurement.load(os.path.join(ObsConfigDir, "kron.py"))
-config.measurement.load(os.path.join(ObsConfigDir, "hsm.py"))
 
 # Deblender
 config.deblend.maxFootprintSize = 0
