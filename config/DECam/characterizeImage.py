@@ -37,6 +37,8 @@ config.detection.isotropicGrow = True
 
 # Activate calibration of measurements: required for aperture corrections
 config.measurement.load(os.path.join(obsConfigDir, "apertures.py"))
+# hsm shapes are the preferred shape measurement (over SdssShape).
+config.measurement.load(os.path.join(obsConfigDir, "../hsm.py"))
 
 # Deblender
 config.deblend.maskLimits["NO_DATA"] = 0.25  # Ignore sources that are in the vignetted region
