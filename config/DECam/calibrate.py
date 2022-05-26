@@ -65,8 +65,6 @@ config.doWriteMatchesDenormalized = True
 config.detection.isotropicGrow = True
 
 config.measurement.load(os.path.join(obsConfigDir, "apertures.py"))
-config.measurement.load(os.path.join(obsConfigDir, "kron.py"))
-config.measurement.load(os.path.join(obsConfigDir, "hsm.py"))
 
 # Deblender
 # These configs match obs_subaru, to facilitate 1:1 comparisons between DECam and HSC

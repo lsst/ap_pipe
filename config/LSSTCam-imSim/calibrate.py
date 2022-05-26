@@ -76,8 +76,6 @@ config.detection.isotropicGrow = True
 
 # Activate calibration of measurements: required for aperture corrections
 config.measurement.load(os.path.join(obsConfigDir, "apertures.py"))
-config.measurement.load(os.path.join(obsConfigDir, "kron.py"))
-config.measurement.load(os.path.join(obsConfigDir, "hsm.py"))
 
 # Deblender
 config.deblend.maxFootprintSize = 0
