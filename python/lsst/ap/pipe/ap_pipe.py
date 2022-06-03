@@ -275,7 +275,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
             solarSystemObjectTable=None,
             diffIm=sensorRef.get(diffType + "Diff_differenceExp"),
             exposure=sensorRef.get("calexp"),
-            warpedExposure=sensorRef.get(diffType + "Diff_warpedExp"),
+            template=sensorRef.get(diffType + "Diff_warpedExp"),
             ccdExposureIdBits=sensorRef.get("ccdExposureId_bits"),
             band=diffIm.getFilter().bandLabel,
         )
