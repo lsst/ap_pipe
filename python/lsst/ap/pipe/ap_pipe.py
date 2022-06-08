@@ -267,7 +267,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
         transformResult = self.transformDiaSrcCat.run(
             diaSourceCat=sensorRef.get(diffType + "Diff_diaSrc"),
             diffIm=diffIm,
-            band=diffIm.getFilterLabel().bandLabel,
+            band=diffIm.getFilter().bandLabel,
             ccdVisitId=diffIm.getInfo().getVisitInfo().getExposureId())
 
         results = self.diaPipe.run(
@@ -277,7 +277,7 @@ class ApPipeTask(pipeBase.CmdLineTask):
             exposure=sensorRef.get("calexp"),
             warpedExposure=sensorRef.get(diffType + "Diff_warpedExp"),
             ccdExposureIdBits=sensorRef.get("ccdExposureId_bits"),
-            band=diffIm.getFilterLabel().bandLabel,
+            band=diffIm.getFilter().bandLabel,
         )
 
         # apdb_marker triggers metrics processing; let them try to read
