@@ -19,6 +19,7 @@ tasks:
       doApplyExternalPhotoCalib: False
       doApplyExternalSkyWcs: False
       makePsfMatched: True
+      doApplyFinalizedPsf: False
   assembleCoadd:
     class: lsst.pipe.tasks.assembleCoadd.CompareWarpAssembleCoaddTask
     config:
