@@ -1,13 +1,7 @@
 description: ProcessCcd - A set of tasks to run when processing raw images.
 tasks:
   isr: lsst.ip.isr.IsrTask
-  characterizeImage:
-    class: lsst.pipe.tasks.characterizeImage.CharacterizeImageTask
-    # We want a larger psf kernel, to include the calibFlux 12 pixel radius.
-    config:
-      python: |
-        config.measurePsf.makePsfCandidates.kernelSize = 25
-        config.measurePsf.psfDeterminer["piff"].kernelSize = 25
+  characterizeImage: lsst.pipe.tasks.characterizeImage.CharacterizeImageTask
   calibrate: lsst.pipe.tasks.calibrate.CalibrateTask
 subsets:
   processCcd:
