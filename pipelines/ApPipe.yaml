@@ -65,7 +65,7 @@ contracts:
       transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diaSourceCat.name
   - imageDifference.connections.ConnectionsClass(config=imageDifference).subtractedExposure.name ==
         diaPipe.connections.ConnectionsClass(config=diaPipe).diffIm.name
-  - imageDifference.connections.ConnectionsClass(config=imageDifference).template.name ==
+  - imageDifference.connections.ConnectionsClass(config=imageDifference).inputTemplate.name ==
         diaPipe.connections.ConnectionsClass(config=diaPipe).template.name
   - imageDifference.connections.ConnectionsClass(config=imageDifference).exposure.name ==
       diaPipe.connections.ConnectionsClass(config=diaPipe).exposure.name

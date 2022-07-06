@@ -109,7 +109,7 @@ contracts:
       transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diaSourceCat.name
   - imageDifferenceWithFakes.connections.ConnectionsClass(config=imageDifferenceWithFakes).subtractedExposure.name ==
       diaPipe.connections.ConnectionsClass(config=diaPipe).diffIm.name
-  - imageDifferenceWithFakes.connections.ConnectionsClass(config=imageDifferenceWithFakes).template.name ==
+  - imageDifferenceWithFakes.connections.ConnectionsClass(config=imageDifferenceWithFakes).inputTemplate.name ==
       diaPipe.connections.ConnectionsClass(config=diaPipe).template.name
   - imageDifferenceWithFakes.connections.ConnectionsClass(config=imageDifferenceWithFakes).exposure.name ==
       diaPipe.connections.ConnectionsClass(config=diaPipe).exposure.name
