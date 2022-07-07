@@ -44,6 +44,9 @@ config.doApplyExternalSkyWcs = False
 # FUTURE: Set to True when we have sky background estimate
 config.doApplySkyCorr = False
 
+# This is properly configured in ApTemplate.yaml, but must also be here for now
+config.doApplyFinalizedPsf = False
+
 # This file was inserted from obs_lsst/config/imsim/makeWarp.py as part of
 # DM-31063. Feel free to modify this file to better reflect the needs of AP;
 # however, when it comes time to permanently remove the obs_* configs, we

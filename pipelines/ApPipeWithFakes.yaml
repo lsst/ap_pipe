@@ -6,6 +6,12 @@ description: AP Pipeline with synthetic/fake sources. Templates are inputs.
 # This is for disambiguation and forward-compatibility with parallel tasks that
 # use unmodified inputs, either here or in ap_verify.
 
+# WARNING: some camera-specific pipelines importing this pipeline presently
+# blow away all the configs that are set in this file.
+# To update a pipeline config prior to DM-35504, you MUST put it in either,
+# e.g., $AP_PIPE_DIR/config/$CAMERA/someTask.py, or in a camera-specific,
+# pipeline, e.g., $AP_PIPE_DIR/pipelines/$CAMERA/ApPipeWithFakes.yaml.
+
 imports:
   - location: $AP_PIPE_DIR/pipelines/ProcessCcd.yaml
 parameters:
