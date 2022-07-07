@@ -2,6 +2,12 @@ description: The AP template building pipeline
 # Look in subdirectories of $AP_PIPE_DIR/pipelines to find customized pipelines
 # for each camera. Those pipelines import this general template-building pipeline.
 
+# WARNING: some camera-specific pipelines importing this pipeline presently
+# blow away all the configs that are set in this file.
+# To update a pipeline config prior to DM-35504, you MUST put it in either,
+# e.g., $AP_PIPE_DIR/config/$CAMERA/someTask.py, or in a camera-specific,
+# pipeline, e.g., $AP_PIPE_DIR/pipelines/$CAMERA/ApTemplate.yaml.
+
 imports:
   - location: $AP_PIPE_DIR/pipelines/ProcessCcd.yaml
 parameters:

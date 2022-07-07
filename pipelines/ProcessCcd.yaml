@@ -1,4 +1,11 @@
 description: ProcessCcd - A set of tasks to run when processing raw images.
+
+# WARNING: some camera-specific pipelines importing this pipeline presently
+# blow away all the configs that are set in this file.
+# To update a pipeline config prior to DM-35504, you MUST put it in either,
+# e.g., $AP_PIPE_DIR/config/$CAMERA/someTask.py, or in a camera-specific,
+# pipeline, e.g., $AP_PIPE_DIR/pipelines/$CAMERA/ProcessCcd.yaml.
+
 tasks:
   isr: lsst.ip.isr.IsrTask
   characterizeImage: lsst.pipe.tasks.characterizeImage.CharacterizeImageTask

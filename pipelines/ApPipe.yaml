@@ -9,6 +9,12 @@ description: End to end Alert Production pipeline
 # Option to specify connection_timeout for sqlite APDBs encountering lock errors, i.e.,
 # -c diaPipe:apdb.connection_timeout: 240
 
+# WARNING: camera-specific pipelines importing this pipeline may
+# blow away all the configs that are set in this file.
+# To update a pipeline config prior to DM-35504, you MUST put it in either,
+# e.g., $AP_PIPE_DIR/config/$CAMERA/someTask.py, or in a camera-specific,
+# pipeline, e.g., $AP_PIPE_DIR/pipelines/$CAMERA/ApPipe.yaml.
+
 imports:
   - location: $AP_PIPE_DIR/pipelines/ProcessCcd.yaml
 parameters:
