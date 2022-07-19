@@ -12,12 +12,10 @@ Setting up the Alert Production Database for ap_pipe
 
 .. |make_apdb| replace:: :doc:`make_apdb.py <scripts/make_apdb.py>`
 
-.. |ap_pipe| replace:: :command:`ap_pipe.py`
-
 .. |pipetask| replace:: :command:`pipetask`
 
 
-In its default configuration, the Alert Production Pipeline, as represented by :lsst-task:`lsst.ap.pipe.ApPipeTask` (Gen 2) or :file:`pipelines/ApPipe.yaml` (Gen 3), relies on a database to save and load DIASources and DIAObjects.
+In its default configuration, the Alert Production Pipeline, as represented by :file:`pipelines/ApPipe.yaml`, relies on a database to save and load DIASources and DIAObjects.
 When running as part of the operational system, this database will be provided externally.
 However, during testing and development, developers can run |make_apdb| to set up their own database.
 This page provides an overview of how to use |make_apdb|.
@@ -28,8 +26,6 @@ Configuring the database
 ========================
 
 The database is configured using `~lsst.dax.apdb.ApdbConfig`.
-|ap_pipe| command line users can pass configuration information to the script through the :option:`--config <ap_pipe.py --config>` and :option:`--configfile <ap_pipe.py --configfile>` command-line options, using the prefix ``diaPipe.apdb.`` to distinguish APDB information from other pipeline configuration.
-|make_apdb| configures the database directly through :option:`--config` and :option:`--config-file` (different spelling, for consistency with |pipetask|), with no prefix.
 
 For |pipetask| users, the APDB is configured with the :option:`--config <pipetask run --config>` and :option:`--config-file <pipetask run --config-file>` options.
 APDB configuration info uses the prefix ``diaPipe:apdb.``, with a colon, but is otherwise the same.
@@ -44,15 +40,6 @@ Should the user wish to use the pipeline on data containing bands not in the ``u
 Examples
 ========
 
-Databases can be configured using direct config overrides (see :ref:`ap-pipe-pipeline-tutorial-gen2` for an explanation of the |ap_pipe| command line):
-
-.. prompt:: bash
-
-   make_apdb.py -c db_url="sqlite:///databases/apdb.db"
-   ap_pipe.py -c diaPipe.apdb.db_url="sqlite:///databases/apdb.db" differencer.coaddName=dcr repo --calib repo/calibs --rerun myrun --id [optional IDs to process]
-
-The user is responsible for making sure the two APDB configurations are consistent.
-
 In Gen 3, this becomes (see :ref:`ap-pipe-pipeline-tutorial` for an explanation of |pipetask|):
 
 .. prompt:: bash
@@ -62,7 +49,7 @@ In Gen 3, this becomes (see :ref:`ap-pipe-pipeline-tutorial` for an explanation 
 
 .. warning::
 
-   As in Gen 2, make sure the APDB is created with a configuration consistent with the one used by the pipeline.
+   Make sure the APDB is created with a configuration consistent with the one used by the pipeline.
    Note that the pipeline file given by ``-p`` may include APDB config overrides of its own.
    You can double-check what configuration is being run by calling :command:`pipetask run` with the ``--show config="apdb*"`` argument, though this lists *all* configuration options, including those left at their defaults.
 
@@ -70,18 +57,16 @@ Databases can also be set up using :ref:`config files <command-line-task-config-
 
 .. code-block:: py
    :caption: myApdbConfig.py
-
    config.db_url = "sqlite:///databases/apdb.db"
 
 .. prompt:: bash
 
    make_apdb.py -C myApdbConfig.py
-   ap_pipe.py repo --calib repo/calibs --rerun myrun -C myApPipeConfig.py --id [optional ID to process]
+   pipetask run -p ApPipe.yaml -C myApPipeConfig.py  -b repo -o myrun
 
 .. _section-ap-pipe-apdb-seealso:
 
 Further reading
 ===============
 
-- :doc:`pipeline-tutorial-gen2`
 - :doc:`pipeline-tutorial`
