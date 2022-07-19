@@ -44,7 +44,7 @@ To process your ingested data, run
 In this case, a ``processed/<timestamp>`` collection will be created within ``repo`` and the results will be written there.
 See :doc:`apdb` for more information on :command:`make_apdb.py`.
 
-This example command only processes observations corresponding to visits 123456 and 123457, both with only detector 42 (the Gen 2 terms "ccd" and "ccdnum" are no longer used).
+This example command only processes observations corresponding to visits 123456 and 123457, both with only detector 42.
 
 The example creates a "chained" output collection that can refer back to its inputs.
 If you prefer to have a standalone output collection, you may instead run

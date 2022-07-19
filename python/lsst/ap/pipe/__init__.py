@@ -21,5 +21,4 @@
 # see <https://www.lsstcorp.org/LegalNotices/>.
 #
 
-from .ap_pipe import *
 from .version import *
