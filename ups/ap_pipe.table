@@ -12,8 +12,5 @@ setupRequired(pipe_tasks)
 
 setupRequired(ap_association)
 
-setupOptional(ap_pipe_testdata)
-setupOptional(obs_decam)
-
 envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
 envPrepend(PATH, ${PRODUCT_DIR}/bin)
