@@ -20,8 +20,8 @@ The AP Pipeline calls several main tasks and their associated subtasks:
 #. `~lsst.ip.isr.IsrTask`, which performs image reduction;
 #. `~lsst.pipe.tasks.characterizeImage.CharacterizeImageTask`, which estimates the background and point-spread function of an image;
 #. `~lsst.pipe.tasks.calibrate.CalibrateTask`, which performs photometric and astrometric calibration;
-#. `~lsst.pipe.tasks.imageDifference.ImageDifferenceTask`, which uses many utilities from
-   :doc:`lsst.ip.diffim </modules/lsst.ip.diffim/index>`; and
+#. `~lsst.ip.diffim.subtractImages.AlardLuptonSubtractTask`, which subtracts a warped template from an image;
+#. `~lsst.ip.diffim.detectAndMeasure.DetectAndMeasureTask`, which detects and measures diaSources on an image difference and
 #. `~lsst.ap.association.DiaPipelineTask`, which makes a catalog of
    Difference Image Analysis (DIA) Objects from the DIASources created
    during image differencing.

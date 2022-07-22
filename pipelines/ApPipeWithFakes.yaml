@@ -48,13 +48,16 @@ tasks:
     config:
       connections.coaddName: parameters.coaddName
       connections.fakesType: parameters.fakesType
-  imageDifferenceWithFakes:
-    class: lsst.pipe.tasks.imageDifference.ImageDifferenceFromTemplateTask
+  subtractImagesWithFakes:
+    class: lsst.ip.diffim.subtractImages.AlardLuptonSubtractTask
     config:
       connections.coaddName: parameters.coaddName
-      coaddName: parameters.coaddName  # Can be removed once ImageDifference no longer supports Gen 2
       connections.fakesType: parameters.fakesType
-      doWriteWarpedExp: True             # Required for packaging alerts in diaPipe
+  detectAndMeasureWithFakes:
+    class: lsst.ip.diffim.detectAndMeasure.DetectAndMeasureTask
+    config:
+      connections.coaddName: parameters.coaddName
+      connections.fakesType: parameters.fakesType
       doSkySources: True
   transformDiaSrcCatWithFakes:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
@@ -87,7 +90,8 @@ subsets:
     subset:
       - processVisitFakes
       - retrieveTemplateWithFakes
-      - imageDifferenceWithFakes
+      - subtractImagesWithFakes
+      - detectAndMeasureWithFakes
       - transformDiaSrcCatWithFakes
       - diaPipe
       - fakesMatch
@@ -95,12 +99,7 @@ subsets:
       The AP pipeline with fakes. Requires apPipe and prepareFakes subsets.
 
 contracts:
-  # DiaPipelineTask needs diaSource fluxes, catalogs, warped exposures, and difference exposures
-  - imageDifferenceWithFakes.doMeasurement is True
-  - imageDifferenceWithFakes.doWriteSources is True
-  - imageDifferenceWithFakes.doWriteWarpedExp is True
-  - imageDifferenceWithFakes.doWriteSubtractedExp is True
-  - imageDifferenceWithFakes.doSkySources == transformDiaSrcCatWithFakes.doRemoveSkySources
+  - detectAndMeasureWithFakes.doSkySources == transformDiaSrcCatWithFakes.doRemoveSkySources
   # Inputs and outputs must match.
   # Use of ConnectionsClass for templated fields is a workaround for DM-30210
   - createFakes.connections.ConnectionsClass(config=createFakes).fakeCat.name ==
@@ -109,25 +108,29 @@ contracts:
       processVisitFakes.connections.ConnectionsClass(config=processVisitFakes).fakeCats.name
   - coaddFakes.connections.ConnectionsClass(config=coaddFakes).imageWithFakes.name ==
       retrieveTemplateWithFakes.connections.ConnectionsClass(config=retrieveTemplateWithFakes).coaddExposures.name
-  - imageDifferenceWithFakes.connections.ConnectionsClass(config=imageDifferenceWithFakes).subtractedExposure.name ==
+  - detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).subtractedMeasuredExposure.name ==
       transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diffIm.name
-  - imageDifferenceWithFakes.connections.ConnectionsClass(config=imageDifferenceWithFakes).diaSources.name ==
+  - detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).diaSources.name ==
       transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diaSourceCat.name
-  - imageDifferenceWithFakes.connections.ConnectionsClass(config=imageDifferenceWithFakes).subtractedExposure.name ==
+  - detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).subtractedMeasuredExposure.name ==
       diaPipe.connections.ConnectionsClass(config=diaPipe).diffIm.name
-  - imageDifferenceWithFakes.connections.ConnectionsClass(config=imageDifferenceWithFakes).inputTemplate.name ==
+  - subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).template.name ==
       diaPipe.connections.ConnectionsClass(config=diaPipe).template.name
-  - imageDifferenceWithFakes.connections.ConnectionsClass(config=imageDifferenceWithFakes).exposure.name ==
+  - subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).science.name ==
       diaPipe.connections.ConnectionsClass(config=diaPipe).exposure.name
   - transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diaSourceTable.name ==
       diaPipe.connections.ConnectionsClass(config=diaPipe).diaSourceTable.name
   - processVisitFakes.connections.ConnectionsClass(config=processVisitFakes).outputExposure.name ==
-      imageDifferenceWithFakes.connections.ConnectionsClass(config=imageDifferenceWithFakes).exposure.name
+      subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).science.name
   - createFakes.connections.ConnectionsClass(config=createFakes).fakeCat.name ==
       fakesMatch.connections.ConnectionsClass(config=fakesMatch).fakeCats.name
-  - imageDifferenceWithFakes.connections.ConnectionsClass(config=imageDifferenceWithFakes).subtractedExposure.name ==
+  - detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).subtractedMeasuredExposure.name ==
       fakesMatch.connections.ConnectionsClass(config=fakesMatch).diffIm.name
   - diaPipe.connections.ConnectionsClass(config=diaPipe).associatedDiaSources.name ==
       fakesMatch.connections.ConnectionsClass(config=fakesMatch).associatedDiaSources.name
-  - retrieveTemplateWithFakes.connections.ConnectionsClass(config=retrieveTemplateWithFakes).outputExposure.name ==
-      imageDifferenceWithFakes.connections.ConnectionsClass(config=imageDifferenceWithFakes).inputTemplate.name
+  - retrieveTemplateWithFakes.connections.ConnectionsClass(config=retrieveTemplateWithFakes).template.name ==
+      subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).template.name
+  - subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).difference.name ==
+      detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).difference.name
+  - subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).science.name ==
+      detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).science.name

@@ -84,7 +84,7 @@ Again, as of March 2022 this assumes you are running on one of the lsst-devl mac
   # Various things for bps to customize about each pipeline task.
   pipetask:
     # Here you can set options to various pipeline tasks if they should run with something other than the defaults you specified above.
-    imageDifference:
+    subtractImages:
       requestMemory: 4096
 
 Notes on the yaml file
@@ -100,7 +100,7 @@ Notes on the yaml file
 * The default wall time for jobs is around 72 hours; you can override that value by setting `+Walltime` as shown (time should be given in seconds).
 * In general don't ask for more resources (CPUs, memory, disk space, wall time, etc.) than you know you need.
 * Note that you must use the long option names in a yaml file for the corresponding pipetask options, e.g. `butlerConfig` instead of `-i`, `dataQuery` instead of `-d`, etc.
-* You can request default resource requirements such as memory or run time at the top level of the yaml (see the `requestMemory` line above), but you can give other values for specific task types if you want (for example see the higher requestMemory value in the imageDifference section under `pipetask`).
+* You can request default resource requirements such as memory or run time at the top level of the yaml (see the `requestMemory` line above), but you can give other values for specific task types if you want (for example see the higher requestMemory value in the subtractImages section under `pipetask`).
 * Don't forget to set your butler, input and output collections, and any other absolute paths according to your own work area.
 
 .. _section-ap-pipe-pipeline-bps-submit:
