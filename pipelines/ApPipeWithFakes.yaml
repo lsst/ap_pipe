@@ -108,29 +108,29 @@ contracts:
       processVisitFakes.connections.ConnectionsClass(config=processVisitFakes).fakeCats.name
   - coaddFakes.connections.ConnectionsClass(config=coaddFakes).imageWithFakes.name ==
       retrieveTemplateWithFakes.connections.ConnectionsClass(config=retrieveTemplateWithFakes).coaddExposures.name
-  - detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).subtractedMeasuredExposure.name ==
-      transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diffIm.name
-  - detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).diaSources.name ==
-      transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diaSourceCat.name
-  - detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).subtractedMeasuredExposure.name ==
-      diaPipe.connections.ConnectionsClass(config=diaPipe).diffIm.name
-  - subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).template.name ==
-      diaPipe.connections.ConnectionsClass(config=diaPipe).template.name
-  - subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).science.name ==
-      diaPipe.connections.ConnectionsClass(config=diaPipe).exposure.name
-  - transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diaSourceTable.name ==
-      diaPipe.connections.ConnectionsClass(config=diaPipe).diaSourceTable.name
-  - processVisitFakes.connections.ConnectionsClass(config=processVisitFakes).outputExposure.name ==
-      subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).science.name
-  - createFakes.connections.ConnectionsClass(config=createFakes).fakeCat.name ==
-      fakesMatch.connections.ConnectionsClass(config=fakesMatch).fakeCats.name
-  - detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).subtractedMeasuredExposure.name ==
-      fakesMatch.connections.ConnectionsClass(config=fakesMatch).diffIm.name
-  - diaPipe.connections.ConnectionsClass(config=diaPipe).associatedDiaSources.name ==
-      fakesMatch.connections.ConnectionsClass(config=fakesMatch).associatedDiaSources.name
   - retrieveTemplateWithFakes.connections.ConnectionsClass(config=retrieveTemplateWithFakes).template.name ==
       subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).template.name
   - subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).difference.name ==
       detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).difference.name
   - subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).science.name ==
       detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).science.name
+  - subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).template.name ==
+      diaPipe.connections.ConnectionsClass(config=diaPipe).template.name
+  - subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).science.name ==
+      diaPipe.connections.ConnectionsClass(config=diaPipe).exposure.name
+  - detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).subtractedMeasuredExposure.name ==
+      transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diffIm.name
+  - detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).diaSources.name ==
+      transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diaSourceCat.name
+  - detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).subtractedMeasuredExposure.name ==
+      diaPipe.connections.ConnectionsClass(config=diaPipe).diffIm.name
+  - detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).subtractedMeasuredExposure.name ==
+      fakesMatch.connections.ConnectionsClass(config=fakesMatch).diffIm.name
+  - transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diaSourceTable.name ==
+      diaPipe.connections.ConnectionsClass(config=diaPipe).diaSourceTable.name
+  - processVisitFakes.connections.ConnectionsClass(config=processVisitFakes).outputExposure.name ==
+      subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).science.name
+  - createFakes.connections.ConnectionsClass(config=createFakes).fakeCat.name ==
+      fakesMatch.connections.ConnectionsClass(config=fakesMatch).fakeCats.name
+  - diaPipe.connections.ConnectionsClass(config=diaPipe).associatedDiaSources.name ==
+      fakesMatch.connections.ConnectionsClass(config=fakesMatch).associatedDiaSources.name
