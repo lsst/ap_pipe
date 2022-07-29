@@ -9,7 +9,7 @@ lsst.ap.pipe
 .. Paragraph that describes what this Python module does and links to related modules and frameworks.
 
 The ``lsst.ap.pipe`` module links together a set of common image processing tasks so that a user may run one command on a dataset of raw, ingested images rather than several.
-The Alert Production (AP) pipeline includes the following key data processing Tasks for LSST Prompt Data Products: `~lsst.ip.isr.IsrTask`, `~lsst.pipe.tasks.characterizeImage.CharacterizeImageTask`, `~lsst.pipe.tasks.calibrate.CalibrateTask`, `~lsst.pipe.tasks.imageDifference.ImageDifferenceTask`, and `~lsst.ap.association.DiaPipelineTask`.
+The Alert Production (AP) pipeline includes the following key data processing Tasks for LSST Prompt Data Products: `~lsst.ip.isr.IsrTask`, `~lsst.pipe.tasks.characterizeImage.CharacterizeImageTask`, `~lsst.pipe.tasks.calibrate.CalibrateTask`, `~lsst.ip.diffim.subtractImages.AlardLuptonSubtractTask`, `~lsst.ip.diffim.detectAndMeasure.DetectAndMeasureTask`, and `~lsst.ap.association.DiaPipelineTask`.
 
 At present, the alert production pipeline is implemented using the Gen 3 framework:
 

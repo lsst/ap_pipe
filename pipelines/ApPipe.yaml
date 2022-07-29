@@ -25,14 +25,16 @@ tasks:
     class: lsst.ip.diffim.getTemplate.GetTemplateTask
     config:
       connections.coaddName: parameters.coaddName
-  imageDifference:
-    class: lsst.pipe.tasks.imageDifference.ImageDifferenceFromTemplateTask
+  subtractImages:
+    class: lsst.ip.diffim.subtractImages.AlardLuptonSubtractTask
     config:
-      doWriteWarpedExp: True             # Required for packaging alerts in diaPipe
-      doSkySources: True
-      doApplyFinalizedPsf: False
-      coaddName: parameters.coaddName  # Can be removed once ImageDifference no longer supports Gen 2
       connections.coaddName: parameters.coaddName
+      doApplyFinalizedPsf: False
+  detectAndMeasure:
+    class: lsst.ip.diffim.detectAndMeasure.DetectAndMeasureTask
+    config:
+      connections.coaddName: parameters.coaddName
+      doSkySources: True
   transformDiaSrcCat:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
     config:
@@ -49,31 +51,31 @@ subsets:
       - characterizeImage
       - calibrate
       - retrieveTemplate
-      - imageDifference
+      - subtractImages
+      - detectAndMeasure
       - transformDiaSrcCat
       - diaPipe
     description: >
       An alias of ApPipe to use in higher-level pipelines.
 contracts:
-  # DiaPipelineTask needs diaSource fluxes, catalogs, warped exposures, and difference exposures
-  - imageDifference.doMeasurement is True
-  - imageDifference.doWriteSources is True
-  - imageDifference.doWriteWarpedExp is True
-  - imageDifference.doWriteSubtractedExp is True
-  - imageDifference.doSkySources == transformDiaSrcCat.doRemoveSkySources
+  - detectAndMeasure.doSkySources == transformDiaSrcCat.doRemoveSkySources
   # Inputs and outputs must match
   # Use of ConnectionsClass for templated fields is a workaround for DM-30210
-  - retrieveTemplate.connections.ConnectionsClass(config=retrieveTemplate).outputExposure.name ==
-      imageDifference.connections.ConnectionsClass(config=imageDifference).inputTemplate.name
-  - imageDifference.connections.ConnectionsClass(config=imageDifference).subtractedExposure.name ==
-      transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diffIm.name
-  - imageDifference.connections.ConnectionsClass(config=imageDifference).diaSources.name ==
-      transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diaSourceCat.name
-  - imageDifference.connections.ConnectionsClass(config=imageDifference).subtractedExposure.name ==
-        diaPipe.connections.ConnectionsClass(config=diaPipe).diffIm.name
-  - imageDifference.connections.ConnectionsClass(config=imageDifference).inputTemplate.name ==
-        diaPipe.connections.ConnectionsClass(config=diaPipe).template.name
-  - imageDifference.connections.ConnectionsClass(config=imageDifference).exposure.name ==
+  - retrieveTemplate.connections.ConnectionsClass(config=retrieveTemplate).template.name ==
+      subtractImages.connections.ConnectionsClass(config=subtractImages).template.name
+  - subtractImages.connections.ConnectionsClass(config=subtractImages).difference.name ==
+      detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).difference.name
+  - subtractImages.connections.ConnectionsClass(config=subtractImages).science.name ==
+      detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).science.name
+  - subtractImages.connections.ConnectionsClass(config=subtractImages).template.name ==
+      diaPipe.connections.ConnectionsClass(config=diaPipe).template.name
+  - subtractImages.connections.ConnectionsClass(config=subtractImages).science.name ==
       diaPipe.connections.ConnectionsClass(config=diaPipe).exposure.name
+  - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
+      transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diffIm.name
+  - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).diaSources.name ==
+      transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diaSourceCat.name
+  - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
+        diaPipe.connections.ConnectionsClass(config=diaPipe).diffIm.name
   - transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diaSourceTable.name ==
         diaPipe.connections.ConnectionsClass(config=diaPipe).diaSourceTable.name

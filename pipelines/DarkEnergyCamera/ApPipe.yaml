@@ -20,7 +20,8 @@ subsets:
       - characterizeImage
       - calibrate
       - retrieveTemplate
-      - imageDifference
+      - subtractImages
+      - detectAndMeasure
       - transformDiaSrcCat
       - diaPipe
     description: >

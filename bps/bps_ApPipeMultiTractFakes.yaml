@@ -22,7 +22,7 @@ payload:
 
 # Option to override defaults for pipeline tasks being run
 pipetask:
-  imageDifference:
+  subtractImages:
     requestMemory: 8192
 
 

@@ -16,7 +16,8 @@ imports:
   - location: $AP_PIPE_DIR/pipelines/DarkEnergyCamera/ApPipe.yaml
     exclude:  # These tasks come from ApPipeWithFakes.yaml instead
       - retrieveTemplate
-      - imageDifference
+      - subtractImages
+      - detectAndMeasure
       - diaPipe
       - transformDiaSrcCat
 
