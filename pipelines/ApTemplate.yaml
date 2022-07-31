@@ -19,7 +19,7 @@ tasks:
     config:
       connections.coaddName: parameters.coaddName
   makeWarp:
-    class: lsst.pipe.tasks.makeCoaddTempExp.MakeWarpTask
+    class: lsst.pipe.tasks.makeWarp.MakeWarpTask
     config:
       doWriteEmptyWarps: True
       doApplyExternalPhotoCalib: False

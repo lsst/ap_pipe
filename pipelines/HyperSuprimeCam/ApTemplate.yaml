@@ -12,7 +12,7 @@ tasks:
   skyCorr:  # From the HSC DRP-RC2.yaml. Alternative is `doApplySkyCorr: False` in makeWarp
     class: lsst.pipe.drivers.skyCorrection.SkyCorrectionTask
   makeWarp:
-    class: lsst.pipe.tasks.makeCoaddTempExp.MakeWarpTask
+    class: lsst.pipe.tasks.makeWarp.MakeWarpTask
     config:
       file: $AP_PIPE_DIR/config/HSC/makeWarp.py
       # Do not integrate file and pipeline configs until obs config files are

@@ -10,7 +10,7 @@ imports:
 
 tasks:
   makeWarp:
-    class: lsst.pipe.tasks.makeCoaddTempExp.MakeWarpTask
+    class: lsst.pipe.tasks.makeWarp.MakeWarpTask
     config:
       file: $AP_PIPE_DIR/config/LSSTCam-imSim/makeWarp.py
       # Do not integrate file and pipeline configs until obs config files are
