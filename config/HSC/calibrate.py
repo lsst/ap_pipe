@@ -19,6 +19,9 @@ bgFile = os.path.join(ObsConfigDir, "background.py")
 config.detection.background.load(bgFile)
 
 # Reference catalogs
+# TODO: remove this section once DM-27858 is resolved
+# (note that as of DM-27013, we adopted Gaia DR2 as the default astrometric,
+# reference catalog, and this config block overrides that to use PS1 instead)
 for refObjLoader in (config.astromRefObjLoader,
                      config.photoRefObjLoader,
                      ):
@@ -27,7 +30,6 @@ for refObjLoader in (config.astromRefObjLoader,
     refObjLoader.ref_dataset_name = "ps1_pv3_3pi_20170110"
     # Use the filterMap instead of the "any" filter.
     refObjLoader.anyFilterMapsToThis = None
-
 # These are the Gen3 configuration options for reference catalog name.
 config.connections.photoRefCat = "ps1_pv3_3pi_20170110"
 config.connections.astromRefCat = "ps1_pv3_3pi_20170110"
@@ -50,7 +52,7 @@ for matchConfig in (config.astrometry,
         matchConfig.matcher.maxMatchDistArcSec = 2.0
         matchConfig.sourceSelector.active.excludePixelFlags = False
 
-# Set to match defaults curretnly used in HSC production runs (e.g. S15B)
+# Set to match defaults currently used in HSC production runs (e.g. S15B)
 config.catalogCalculation.plugins['base_ClassificationExtendedness'].fluxRatio = 0.95
 
 config.photoCal.applyColorTerms = True
