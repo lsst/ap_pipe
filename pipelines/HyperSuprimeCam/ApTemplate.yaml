@@ -10,7 +10,7 @@ imports:
 
 tasks:
   skyCorr:  # From the HSC DRP-RC2.yaml. Alternative is `doApplySkyCorr: False` in makeWarp
-    class: lsst.pipe.drivers.skyCorrection.SkyCorrectionTask
+    class: lsst.pipe.tasks.skyCorrection.SkyCorrectionTask
   makeWarp:
     class: lsst.pipe.tasks.makeCoaddTempExp.MakeWarpTask
     config:
