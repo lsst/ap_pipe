@@ -49,7 +49,6 @@ for refObjLoader in (config.astromRefObjLoader,
                      config.photoRefObjLoader,
                      ):
     refObjLoader.load(os.path.join(obsConfigDir, 'filterMap.py'))
-    refObjLoader.ref_dataset_name = 'cal_ref_cat'
     # Use the filterMap instead of the "any" filter.
     refObjLoader.anyFilterMapsToThis = None
 

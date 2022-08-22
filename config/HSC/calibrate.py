@@ -26,8 +26,6 @@ for refObjLoader in (config.astromRefObjLoader,
                      config.photoRefObjLoader,
                      ):
     refObjLoader.load(os.path.join(ObsConfigDir, "filterMap.py"))
-    # This is the Gen2 configuration option.
-    refObjLoader.ref_dataset_name = "ps1_pv3_3pi_20170110"
     # Use the filterMap instead of the "any" filter.
     refObjLoader.anyFilterMapsToThis = None
 # These are the Gen3 configuration options for reference catalog name.
