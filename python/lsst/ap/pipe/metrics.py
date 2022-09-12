@@ -115,7 +115,7 @@ class ApFakesCompletenessMetricTask(MetricTask):
             Catalog of fakes that were inserted into the ccdExposure matched
             to their detected counterparts.
         band : `str`
-            Single character name of the observed band for this quanta.
+            Name of the band whose magnitudes are to be analyzed.
 
         Returns
         -------
