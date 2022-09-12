@@ -111,7 +111,7 @@ class ApFakesCompletenessMetricTask(MetricTask):
 
         Parameters
         ----------
-        matchedFakes : `lsst.afw.table.SourceCatalog` or `None`
+        matchedFakes : `lsst.afw.table.SourceCatalog`
             Catalog of fakes that were inserted into the ccdExposure matched
             to their detected counterparts.
         band : `str`
@@ -124,22 +124,18 @@ class ApFakesCompletenessMetricTask(MetricTask):
             ``measurement``
                 the ratio (`lsst.verify.Measurement` or `None`)
         """
-        if matchedFakes is not None:
-            magnitudes = np.fabs(matchedFakes[f"{self.config.mag_col}" % band])
-            magCutFakes = matchedFakes[np.logical_and(magnitudes > self.config.magMin,
-                                                      magnitudes < self.config.magMax)]
-            if len(magCutFakes) <= 0.0:
-                raise MetricComputationError(
-                    "No matched fakes catalog sources found; Completeness is "
-                    "ill defined.")
-            else:
-                meas = Measurement(
-                    self.config.metricName,
-                    ((magCutFakes["diaSourceId"] > 0).sum() / len(magCutFakes))
-                    * u.dimensionless_unscaled)
+        magnitudes = np.fabs(matchedFakes[f"{self.config.mag_col}" % band])
+        magCutFakes = matchedFakes[np.logical_and(magnitudes > self.config.magMin,
+                                                  magnitudes < self.config.magMax)]
+        if len(magCutFakes) <= 0.0:
+            raise MetricComputationError(
+                "No matched fakes catalog sources found; Completeness is "
+                "ill defined.")
         else:
-            self.log.info("Nothing to do: no matched catalog found.")
-            meas = None
+            meas = Measurement(
+                self.config.metricName,
+                ((magCutFakes["diaSourceId"] > 0).sum() / len(magCutFakes))
+                * u.dimensionless_unscaled)
         return Struct(measurement=meas)
 
 
@@ -174,7 +170,7 @@ class ApFakesCountMetricTask(ApFakesCompletenessMetricTask):
 
         Parameters
         ----------
-        matchedFakes : `lsst.afw.table.SourceCatalog` or `None`
+        matchedFakes : `lsst.afw.table.SourceCatalog`
             Catalog of fakes that were inserted into the ccdExposure matched
             to their detected counterparts.
         band : `str`
@@ -187,13 +183,9 @@ class ApFakesCountMetricTask(ApFakesCompletenessMetricTask):
             ``measurement``
                 the ratio (`lsst.verify.Measurement` or `None`)
         """
-        if matchedFakes is not None:
-            magnitudes = np.fabs(matchedFakes[f"{self.config.mag_col}" % band])
-            magCutFakes = matchedFakes[np.logical_and(magnitudes > self.config.magMin,
-                                                      magnitudes < self.config.magMax)]
-            meas = Measurement(self.config.metricName,
-                               len(magCutFakes) * u.count)
-        else:
-            self.log.info("Nothing to do: no matched catalog supplied.")
-            meas = None
+        magnitudes = np.fabs(matchedFakes[f"{self.config.mag_col}" % band])
+        magCutFakes = matchedFakes[np.logical_and(magnitudes > self.config.magMin,
+                                                  magnitudes < self.config.magMax)]
+        meas = Measurement(self.config.metricName,
+                           len(magCutFakes) * u.count)
         return Struct(measurement=meas)

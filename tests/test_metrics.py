@@ -100,14 +100,6 @@ class TestApCompletenessTask(MetricTaskTestCase):
             ((self.expectedAllMatched / self.targetSources) * u.dimensionless_unscaled).value,
             places=2)
 
-    def testMissingData(self):
-        """Test the run method with no data.
-        """
-        result = self.task.run(None, None)
-        testUtils.assertValidOutput(self.task, result)
-        meas = result.measurement
-        self.assertIsNone(meas)
-
     def testValidEmpty(self):
         """Test the run method with a valid but zero result.
         """
@@ -184,14 +176,6 @@ class TestApCountTask(MetricTaskTestCase):
             meas.quantity.value,
             (self.expectedAllMatched * u.count).value,
             places=2)
-
-    def testMissingData(self):
-        """Test the run method with no data.
-        """
-        result = self.task.run(None, None)
-        testUtils.assertValidOutput(self.task, result)
-        meas = result.measurement
-        self.assertIsNone(meas)
 
     def testValidEmpty(self):
         """Test the run method with a valid but zero result.
