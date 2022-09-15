@@ -90,20 +90,18 @@ class ApFakesCompletenessMetricTask(MetricTask):
     ConfigClass = ApFakesCompletenessMetricConfig
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
-        try:
-            inputs = butlerQC.get(inputRefs)
-            inputs["band"] = butlerQC.quantum.dataId["band"]
-            outputs = self.run(**inputs)
-            if outputs.measurement is not None:
-                butlerQC.put(outputs, outputRefs)
-            else:
-                self.log.debug("Skipping measurement of %r on %s "
-                               "as not applicable.", self, inputRefs)
-        except MetricComputationError:
-            # Apparently lsst.log doesn't have built-in exception support?
-            self.log.error(
-                "Measurement of %r failed on %s->%s",
-                self, inputRefs, outputRefs, exc_info=True)
+        """Do Butler I/O to provide in-memory objects for run.
+
+        This specialization of runQuantum passes the band ID to `run`.
+        """
+        inputs = butlerQC.get(inputRefs)
+        inputs["band"] = butlerQC.quantum.dataId["band"]
+        outputs = self.run(**inputs)
+        if outputs.measurement is not None:
+            butlerQC.put(outputs, outputRefs)
+        else:
+            self.log.debug("Skipping measurement of %r on %s "
+                           "as not applicable.", self, inputRefs)
 
     def run(self, matchedFakes, band):
         """Compute the completeness of recovered fakes within a magnitude
