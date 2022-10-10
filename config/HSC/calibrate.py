@@ -18,19 +18,15 @@ bgFile = os.path.join(ObsConfigDir, "background.py")
 # Cosmic rays and background estimation
 config.detection.background.load(bgFile)
 
-# Reference catalogs
-# TODO: remove this section once DM-27858 is resolved
-# (note that as of DM-27013, we adopted Gaia DR2 as the default astrometric,
-# reference catalog, and this config block overrides that to use PS1 instead)
-for refObjLoader in (config.astromRefObjLoader,
-                     config.photoRefObjLoader,
-                     ):
-    refObjLoader.load(os.path.join(ObsConfigDir, "filterMap.py"))
-    # Use the filterMap instead of the "any" filter.
-    refObjLoader.anyFilterMapsToThis = None
-# These are the Gen3 configuration options for reference catalog name.
-config.connections.photoRefCat = "ps1_pv3_3pi_20170110"
+# Use PS1 for HSC astrometric calibration; Gaia is not dense enough to work
+# for all of the the deep and narrower HSC images.
 config.connections.astromRefCat = "ps1_pv3_3pi_20170110"
+config.astromRefObjLoader.load(os.path.join(ObsConfigDir, "filterMap.py"))
+# Gaia uses anyFilterMapsToThis: override it for PS1.
+config.astromRefObjLoader.anyFilterMapsToThis = None
+
+# Use the HSC filterMap for PS1 photometric calibration.
+config.photoRefObjLoader.load(os.path.join(ObsConfigDir, "filterMap.py"))
 
 # Better astrometry matching
 config.astrometry.matcher.numBrightStars = 150
