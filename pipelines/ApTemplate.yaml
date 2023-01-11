@@ -19,8 +19,12 @@ tasks:
     config:
       connections.coaddName: parameters.coaddName
   makeWarp:
-    class: lsst.pipe.tasks.makeCoaddTempExp.MakeWarpTask
+    class: lsst.pipe.tasks.makeWarp.MakeWarpTask
     config:
+      # The upstream default is now finalVisitSummary, which doesn't exist
+      # in this pipeline since there's nothing to update relative to the
+      # original visitSummary.
+      connections.visitSummary: visitSummary
       doWriteEmptyWarps: True
       doApplyExternalPhotoCalib: False
       doApplyExternalSkyWcs: False
