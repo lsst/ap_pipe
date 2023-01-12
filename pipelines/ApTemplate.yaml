@@ -7,7 +7,12 @@ imports:
 parameters:
   coaddName: goodSeeing
 tasks:
-  consolidateVisitSummary: lsst.pipe.tasks.postprocess.ConsolidateVisitSummaryTask
+  consolidateVisitSummary:
+    class: lsst.pipe.tasks.postprocess.ConsolidateVisitSummaryTask
+    config:
+      connections.calexp: "{calexpType}calexp"
+      connections.visitSummary: "{calexpType}visitSummary"
+      connections.visitSummarySchema: "{calexpType}visitSummary_schema"
   selectGoodSeeingVisits:
     class: lsst.pipe.tasks.selectImages.BestSeeingQuantileSelectVisitsTask
     config:
@@ -18,7 +23,7 @@ tasks:
       # The upstream default is now finalVisitSummary, which doesn't exist
       # in this pipeline since there's nothing to update relative to the
       # original visitSummary.
-      connections.visitSummary: visitSummary
+      connections.visitSummary: "{calexpType}visitSummary"
       doWriteEmptyWarps: True
       doApplyExternalPhotoCalib: False
       doApplyExternalSkyWcs: False
