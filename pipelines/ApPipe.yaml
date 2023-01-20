@@ -35,6 +35,11 @@ tasks:
     config:
       connections.coaddName: parameters.coaddName
       doSkySources: True
+      python: |
+        import lsst.meas.extensions.shapeHSM
+        config.measurement.slots.psfShape = "ext_shapeHSM_HsmPsfMoments"
+        config.measurement.slots.shape = "ext_shapeHSM_HsmSourceMoments"
+        config.measurement.plugins.names |= ["ext_shapeHSM_HsmSourceMoments", "ext_shapeHSM_HsmPsfMoments"]
   transformDiaSrcCat:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
     config:
