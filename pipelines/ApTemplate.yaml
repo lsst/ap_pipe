@@ -23,6 +23,7 @@ tasks:
     class: lsst.pipe.tasks.selectImages.BestSeeingQuantileSelectVisitsTask
     config:
       connections.coaddName: parameters.coaddName
+      connections.visitSummaries: "{calexpType}visitSummary"
   makeWarp:
     class: lsst.pipe.tasks.makeWarp.MakeWarpTask
     config:
