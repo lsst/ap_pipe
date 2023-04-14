@@ -21,5 +21,5 @@
 # see <https://www.lsstcorp.org/LegalNotices/>.
 #
 
-import pkgutil, lsstimport
+import pkgutil
 __path__ = pkgutil.extend_path(__path__, __name__)
