@@ -13,7 +13,7 @@ description: AP Pipeline with synthetic/fake sources. Templates are inputs.
 # pipeline, e.g., $AP_PIPE_DIR/pipelines/$CAMERA/ApPipeWithFakes.yaml.
 
 imports:
-  - location: $AP_PIPE_DIR/pipelines/ProcessCcd.yaml
+  - location: $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcd.yaml
 parameters:
   coaddName: goodSeeing
   fakesType: 'fakes_'

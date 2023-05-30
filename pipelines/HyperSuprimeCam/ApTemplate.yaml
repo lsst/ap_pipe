@@ -4,7 +4,7 @@ description: The AP template building pipeline specialized for HSC
 instrument: lsst.obs.subaru.HyperSuprimeCam
 imports:
   - location: $AP_PIPE_DIR/pipelines/HyperSuprimeCam/ProcessCcd.yaml
-  - location: $AP_PIPE_DIR/pipelines/ApTemplate.yaml
+  - location: $AP_PIPE_DIR/pipelines/_ingredients/ApTemplate.yaml
     exclude:  # These tasks come from HyperSuprimeCam/ProcessCcd.yaml instead
       - processCcd
 
@@ -39,9 +39,9 @@ tasks:
 
 subsets:
 # The singleFrameAp subset is identical to the one in
-# $AP_PIPE_DIR/pipelines/ApTemplate.yaml, but needs to be defined here because
-# isr, characterizeImage, and calibrate are coming from the HSC-specific
-# ProcessCcd pipeline.
+# $AP_PIPE_DIR/pipelines/_ingredients/ApTemplate.yaml, but needs to be defined
+# here because isr, characterizeImage, and calibrate are coming from the
+# HSC-specific ProcessCcd pipeline.
   singleFrameAp:
     subset:
       - isr

@@ -16,7 +16,7 @@ description: End to end Alert Production pipeline
 # pipeline, e.g., $AP_PIPE_DIR/pipelines/$CAMERA/ApPipe.yaml.
 
 imports:
-  - location: $AP_PIPE_DIR/pipelines/ProcessCcd.yaml
+  - location: $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcd.yaml
 parameters:
   # Pipeline configurable to run on both goodSeeing and deep templates, depending on dataset.
   coaddName: goodSeeing
