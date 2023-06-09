@@ -6,12 +6,16 @@
 project: ApPipe
 campaign: DM-xxxxx
 
-submitPath: ${PWD}/bps/{outputRun}
-computeSite: ncsapool
+computeSite:
+  site:
+    s3df:
+      profile:
+        condor:
+          +Walltime: 43200
 # Memory allocated for each quantum, in MB (if unspecified, default is 2048)
 requestMemory: 4096
 includeConfigs:
-  - ${CTRL_BPS_DIR}/python/lsst/ctrl/bps/etc/bps_defaults.yaml
+  - ${AP_PIPE_DIR}/bps/clustering/clustering_ApPipe.yaml
 
 # UPDATE THIS set of arguments to mirror the ones you use with command-line pipetask run
 payload:
@@ -33,11 +37,15 @@ pipetask:
 # Set the default walltime as appropriate for what you are running (12 hours below).
 
 # site:
-#  ncsapool:
-#    profile:
-#      condor:
-#        +Walltime: 43200
+#   s3df:
+#     profile:
+#       condor:
+#         +Walltime: 43200
 
+# Set the appropriate wms service class for the batch system
+# you're using (HTCondor, Parsl, Slurm, triple Slurm, etc.)
+# See https://developer.lsst.io/usdf/batch.html for details of doing this at S3DF. 
+wmsServiceClass: lsst.ctrl.bps.htcondor.HTCondorService
 
 # Extra options for qgraph generation; will skip existing quanta in the output collection
 # Note that --skip-existing-in will not work the first time you run a workflow.

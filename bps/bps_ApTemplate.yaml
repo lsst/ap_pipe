@@ -8,17 +8,21 @@ templateDataId: '{tract}_{patch}_{band}_{visit}_{exposure}_{detector}'
 project: ApTemplate
 campaign: DM-xxxxx
 
-submitPath: ${PWD}/bps/{outputRun}
-computeSite: ncsapool
+computeSite:
 # The default BPS walltime is on the order of 3 days.
 # That's much more than the vast majority of jobs need,
 # and it can cause your jobs not to run if you're too close to a maintenance window.
 # Set the default walltime as appropriate for what you are running (12 hours below).
 site:
-  ncsapool:
+  s3df:
     profile:
       condor:
         +Walltime: 43200
+includeConfigs:
+  - ${AP_PIPE_DIR}/bps/clustering/clustering_ApTemplate.yaml
+# if you are running on data that needs skyCorr, such as HSC, comment out the previous line
+# and use this one instead:
+#  - ${AP_PIPE_DIR}/bps/clustering/clustering_HSC_ApTemplate.yaml
 
 # Memory allocated for each quantum, in MBs; can be overridden on a per-task basis.
 # The bps default is 2048 MB, the same as this example, but it's kept here as a reminder.
@@ -43,6 +47,11 @@ pipetask:
   # Option to list other pipeline tasks being run here with default overrides
   makeWarp:
     requestMemory: 8192
+
+# Set the appropriate wms service class for the batch system
+# you're using (HTCondor, Parsl, Slurm, triple Slurm, etc.)
+# See https://developer.lsst.io/usdf/batch.html for details of doing this at S3DF. 
+wmsServiceClass: lsst.ctrl.bps.htcondor.HTCondorService
 
 # Extra options for qgraph generation; will skip existing quanta in the output collection
 # Note that --skip-existing-in will not work the first time you run a workflow.
