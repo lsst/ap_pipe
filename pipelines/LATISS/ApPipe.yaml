@@ -1,0 +1,4 @@
+description: AP pipeline specialized for LATISS
+instrument: lsst.obs.lsst.Latiss
+imports:
+  - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipe.yaml
