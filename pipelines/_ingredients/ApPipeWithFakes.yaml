@@ -24,9 +24,9 @@ tasks:
     config:
       connections.fakesType: parameters.fakesType
       magMin: 20
-      magMax: 26
+      magMax: 27
       fraction: 0
-      fakeDensity: 2000
+      fakeDensity: 5000
   coaddFakes:
     class: lsst.pipe.tasks.insertFakes.InsertFakesTask
     config:

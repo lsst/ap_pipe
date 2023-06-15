@@ -153,7 +153,8 @@ class CreateRandomApFakesTask(PipelineTask):
 
         self.log.info(
             f"Creating {nFakes} star fakes over tractId={tractId} with "
-            f"bounding circle area: {tractArea} deg^2")
+            f"bounding circle area: {tractArea:.4f} deg^2 and "
+            f"magnitude range: [{self.config.magMin, self.config.magMax}]")
 
         # Concatenate the data and add dummy values for the unused variables.
         # Set all data to PSF like objects.
