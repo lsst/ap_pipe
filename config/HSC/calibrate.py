@@ -23,9 +23,6 @@ config.astromRefObjLoader.anyFilterMapsToThis = None
 # Use the HSC filterMap for PS1 photometric calibration.
 config.photoRefObjLoader.load(os.path.join(ObsConfigDir, "filterMap.py"))
 
-# Better astrometry matching
-config.astrometry.matcher.numBrightStars = 150
-
 # Set to match defaults currently used in HSC production runs (e.g. S15B)
 config.astrometry.wcsFitter.numRejIter = 3
 config.astrometry.wcsFitter.order = 3
@@ -41,9 +38,6 @@ for matchConfig in (config.astrometry,
         matchConfig.matcher.maxMatchDistArcSec = 2.0
         matchConfig.sourceSelector.active.excludePixelFlags = False
 
-# Set to match defaults currently used in HSC production runs (e.g. S15B)
-config.catalogCalculation.plugins['base_ClassificationExtendedness'].fluxRatio = 0.95
-
 config.photoCal.applyColorTerms = True
 config.photoCal.photoCatName = "ps1_pv3_3pi_20170110"
 colors = config.photoCal.match.referenceSelection.colorLimits
@@ -58,18 +52,7 @@ config.photoCal.colorterms.load(os.path.join(ObsConfigDir, 'colorterms.py'))
 config.requireAstrometry = True
 config.requirePhotoCal = True
 
-config.doWriteMatchesDenormalized = True
-
-# Detection
-config.detection.isotropicGrow = True
-
 config.measurement.load(os.path.join(ObsConfigDir, "apertures.py"))
-
-# Deblender
-config.deblend.maxFootprintSize = 0
-# Ignore sources that are in the vignetted region
-config.deblend.maskLimits["NO_DATA"] = 0.25
-config.deblend.maxFootprintArea = 10000
 
 config.measurement.plugins.names |= ["base_Jacobian", "base_FPPosition"]
 config.measurement.plugins["base_Jacobian"].pixelScale = 0.168
