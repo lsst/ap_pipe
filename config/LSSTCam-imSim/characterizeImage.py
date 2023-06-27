@@ -36,13 +36,9 @@ config.loadFromString(type(config)().saveToString())
 
 obsConfigDir = os.path.join(os.path.dirname(__file__))
 
-bgFile = os.path.join(obsConfigDir, "background.py")
-
 # Cosmic rays and background estimation
 config.repair.cosmicray.nCrPixelMax = 1000000
 config.repair.cosmicray.cond3_fac2 = 0.4
-config.background.load(bgFile)
-config.detection.background.load(bgFile)
 
 # Enable temporary local background subtraction
 config.detection.doTempLocalBackground=True

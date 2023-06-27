@@ -14,11 +14,6 @@ ObsConfigDir = os.path.dirname(__file__)
 # We do not import the full file directly because only a minimal form of
 # calibrateTask is used during `processCcdWithFakesTask`.
 
-bgFile = os.path.join(ObsConfigDir, "background.py")
-
-# Cosmic rays and background estimation
-config.calibrate.detection.background.load(bgFile)
-
 # Set to match defaults currently used in HSC production runs (e.g. S15B)
 config.calibrate.catalogCalculation.plugins['base_ClassificationExtendedness'].fluxRatio = 0.95
 

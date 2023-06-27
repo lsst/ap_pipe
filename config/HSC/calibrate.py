@@ -13,11 +13,6 @@ config.loadFromString(type(config)().saveToString())
 
 ObsConfigDir = os.path.dirname(__file__)
 
-bgFile = os.path.join(ObsConfigDir, "background.py")
-
-# Cosmic rays and background estimation
-config.detection.background.load(bgFile)
-
 # Use PS1 for HSC astrometric calibration; Gaia is not dense enough to work
 # for all of the the deep and narrower HSC images.
 config.connections.astromRefCat = "ps1_pv3_3pi_20170110"
