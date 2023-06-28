@@ -88,6 +88,7 @@ config.astrometry.doMagnitudeOutlierRejection = True
 config.astrometry.maxMeanDistanceArcsec = 0.05
 
 # Reduce Chebyshev polynomial order for background fitting (DM-30820)
+# imsim has a constant offset background.
 config.detection.background.approxOrderX = 1
 config.detection.tempLocalBackground.approxOrderX = 1
 config.detection.tempWideBackground.approxOrderX = 1

@@ -57,6 +57,7 @@ config.measurement.plugins["base_Jacobian"].pixelScale = 0.2
 # would be useful here.
 
 # Reduce Chebyshev polynomial order for background fitting (DM-30820)
+# imsim has a constant offset background.
 config.background.approxOrderX = 1
 config.detection.background.approxOrderX = 1
 config.detection.tempLocalBackground.approxOrderX = 1
