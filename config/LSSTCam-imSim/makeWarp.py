@@ -37,15 +37,8 @@ config.makePsfMatched = True
 config.warpAndPsfMatch.psfMatch.kernel['AL'].alardSigGauss = [1.0, 2.0, 4.5]
 config.modelPsf.defaultFwhm = 7.7
 
-# FUTURE: Set both to True when we decide to run jointcal
-config.doApplyExternalPhotoCalib = False
-config.doApplyExternalSkyWcs = False
-
 # FUTURE: Set to True when we have sky background estimate
 config.doApplySkyCorr = False
-
-# This is properly configured in ApTemplate.yaml, but must also be here for now
-config.doApplyFinalizedPsf = False
 
 # This file was inserted from obs_lsst/config/imsim/makeWarp.py as part of
 # DM-31063. Feel free to modify this file to better reflect the needs of AP;
