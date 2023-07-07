@@ -57,6 +57,7 @@ Databases can also be set up using :ref:`config files <command-line-task-config-
 
 .. code-block:: py
    :caption: myApdbConfig.py
+
    config.db_url = "sqlite:///databases/apdb.db"
 
 .. prompt:: bash
