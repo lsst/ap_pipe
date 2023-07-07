@@ -29,7 +29,7 @@ tasks:
     class: lsst.ip.diffim.subtractImages.AlardLuptonSubtractTask
     config:
       connections.coaddName: parameters.coaddName
-      doApplyFinalizedPsf: False
+      doApplyExternalCalibrations: False
   detectAndMeasure:
     class: lsst.ip.diffim.detectAndMeasure.DetectAndMeasureTask
     config:
