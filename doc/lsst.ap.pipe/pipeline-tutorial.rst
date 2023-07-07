@@ -39,7 +39,12 @@ To process your ingested data, run
 
    mkdir apdb/
    make_apdb.py -c db_url="sqlite:///apdb.db"
-   pipetask run -p ${AP_PIPE_DIR}/pipelines/DECam/ApPipe.yaml --register-dataset-types -c parameters:coaddName=deep -c isr:connections.bias=cpBias -c isr:connections.flat=cpFlat -c diaPipe:apdb.db_url="sqlite:///apdb.db" -b repo/ -i "DECam/defaults,DECam/raw/all" -o processed -d "visit in (123456, 123457) and detector=42"
+   pipetask run -p ${AP_PIPE_DIR}/pipelines/DECam/ApPipe.yaml \
+       --register-dataset-types -c parameters:coaddName=deep \
+       -c isr:connections.bias=cpBias -c isr:connections.flat=cpFlat \
+       -c diaPipe:apdb.db_url="sqlite:///apdb.db" -b repo/ \
+       -i "DECam/defaults,DECam/raw/all" -o processed \
+       -d "visit in (123456, 123457) and detector=42"
 
 In this case, a ``processed/<timestamp>`` collection will be created within ``repo`` and the results will be written there.
 See :doc:`apdb` for more information on :command:`make_apdb.py`.
@@ -51,7 +56,12 @@ If you prefer to have a standalone output collection, you may instead run
 
 .. prompt:: bash
 
-   pipetask run -p ${AP_PIPE_DIR}/pipelines/DECam/ApPipe.yaml --register-dataset-types -c parameters:coaddName=deep -c isr:connections.bias=cpBias -c isr:connections.flat=cpFlat -c diaPipe:apdb.db_url="sqlite:///apdb.db" -b repo/ -i "DECam/defaults,DECam/raw/all" --output-run processed -d "visit in (123456, 123457) and detector=42"
+   pipetask run -p ${AP_PIPE_DIR}/pipelines/DECam/ApPipe.yaml \
+       --register-dataset-types -c parameters:coaddName=deep \
+       -c isr:connections.bias=cpBias -c isr:connections.flat=cpFlat \
+       -c diaPipe:apdb.db_url="sqlite:///apdb.db" -b repo/ \
+       -i "DECam/defaults,DECam/raw/all" --output-run processed \
+       -d "visit in (123456, 123457) and detector=42"
 
 .. note::
 
