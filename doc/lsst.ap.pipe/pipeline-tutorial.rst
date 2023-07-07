@@ -31,15 +31,15 @@ AP pipeline on the command line
 Like most Vera Rubin Observatory pipelines, the AP Pipeline is run with an external runner called ``pipetask``.
 This can be found in the ``ctrl_mpexec`` package, which is included as part of ``lsst_distrib``.
 
-The pipeline itself is configured in `ap_pipe/pipelines/ApPipe.yaml <https://github.com/lsst/ap_pipe/blob/master/pipelines/ApPipe.yaml>`_.
+The pipeline itself is configured in `ap_pipe/pipelines/DECam/ApPipe.yaml <https://github.com/lsst/ap_pipe/blob/master/pipelines/DECam/ApPipe.yaml>`_.
 
 To process your ingested data, run
 
 .. prompt:: bash
 
    mkdir apdb/
-   make_apdb.py -c db_url="sqlite:///apdb/association.db"
-   pipetask run -p ${AP_PIPE_DIR}/pipelines/ApPipe.yaml --instrument lsst.obs.decam.DarkEnergyCamera --register-dataset-types -c diaPipe:apdb.db_url="sqlite:///apdb.db" -b repo/ -i "templates/deep,skymaps,DECam/raw/all,DECam/calib,refcats" -o processed -d "visit in (123456, 123457) and detector=42"
+   make_apdb.py -c db_url="sqlite:///apdb.db"
+   pipetask run -p ${AP_PIPE_DIR}/pipelines/DECam/ApPipe.yaml --register-dataset-types -c parameters:coaddName=deep -c isr:connections.bias=cpBias -c isr:connections.flat=cpFlat -c diaPipe:apdb.db_url="sqlite:///apdb.db" -b repo/ -i "DECam/defaults,DECam/raw/all" -o processed -d "visit in (123456, 123457) and detector=42"
 
 In this case, a ``processed/<timestamp>`` collection will be created within ``repo`` and the results will be written there.
 See :doc:`apdb` for more information on :command:`make_apdb.py`.
@@ -51,12 +51,12 @@ If you prefer to have a standalone output collection, you may instead run
 
 .. prompt:: bash
 
-   pipetask run -p ${AP_PIPE_DIR}/pipelines/ApPipe.yaml --instrument lsst.obs.decam.DarkEnergyCamera --register-dataset-types -c diaPipe:apdb.db_url="sqlite:///apdb.db" -b repo/ -i "templates/deep,skymaps,DECam/raw/all,DECam/calib,refcats" --output-run processed -d "visit in (123456, 123457) and detector=42"
+   pipetask run -p ${AP_PIPE_DIR}/pipelines/DECam/ApPipe.yaml --register-dataset-types -c parameters:coaddName=deep -c isr:connections.bias=cpBias -c isr:connections.flat=cpFlat -c diaPipe:apdb.db_url="sqlite:///apdb.db" -b repo/ -i "DECam/defaults,DECam/raw/all" --output-run processed -d "visit in (123456, 123457) and detector=42"
 
 .. note::
 
-   If you are using the default (SQLite) association database, you must :doc:`configure </modules/lsst.pipe.base/command-line-task-config-howto>` the database location, or ``ap_pipe`` will not run.
-   The location is a path to a new or existing database file to be used for source associations (including associations with previously known objects, if the database already exists).
+   You must :doc:`configure </modules/lsst.pipe.base/command-line-task-config-howto>` the database location, or ``ap_pipe`` will not run.
+   For the default (SQLite) association database, the location is a path to a new or existing database file to be used for source associations (including associations with previously known objects, if the database already exists).
    In the examples above, it is configured with the ``-c`` option, but a personal config file may be more convenient if you intend to run ``ap_pipe`` many times.
 
 .. note::
@@ -76,8 +76,7 @@ The result from running ``ap_pipe`` should look something like
 
 .. code-block:: none
 
-   apdb/
-      association.db   <--- the Alert Production Database with DIAObjects
+   apdb.db   <--- the Alert Production Database with DIAObjects
    repo/
       contains_no_user_servicable_files/
 
@@ -103,8 +102,9 @@ Supplemental information
 Running on other cameras
 ------------------------
 
-Running ap_pipe on cameras other than DECam works much the same way:.
+Running ap_pipe on cameras other than DECam works much the same way.
 You need to provide a repository containing raws, calibs, and templates appropriate for the camera.
+There are versions of the AP pipeline for DECam, HSC, LATISS, and ImSim.
 
 Common errors
 -------------
