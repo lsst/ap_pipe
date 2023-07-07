@@ -44,12 +44,12 @@ To process your ingested data, run
        -c isr:connections.bias=cpBias -c isr:connections.flat=cpFlat \
        -c diaPipe:apdb.db_url="sqlite:///apdb.db" -b repo/ \
        -i "DECam/defaults,DECam/raw/all" -o processed \
-       -d "visit in (123456, 123457) and detector=42"
+       -d "visit in (411420, 419802) and detector=10"
 
 In this case, a ``processed/<timestamp>`` collection will be created within ``repo`` and the results will be written there.
 See :doc:`apdb` for more information on :command:`make_apdb.py`.
 
-This example command only processes observations corresponding to visits 123456 and 123457, both with only detector 42.
+This example command only processes observations corresponding to visits 411420 and 419802, both with only detector 10.
 
 The example creates a "chained" output collection that can refer back to its inputs.
 If you prefer to have a standalone output collection, you may instead run
@@ -61,7 +61,7 @@ If you prefer to have a standalone output collection, you may instead run
        -c isr:connections.bias=cpBias -c isr:connections.flat=cpFlat \
        -c diaPipe:apdb.db_url="sqlite:///apdb.db" -b repo/ \
        -i "DECam/defaults,DECam/raw/all" --output-run processed \
-       -d "visit in (123456, 123457) and detector=42"
+       -d "visit in (411420, 419802) and detector=10"
 
 .. note::
 
