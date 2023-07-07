@@ -49,9 +49,7 @@ For the AP Pipeline to successfully process data, the following must be present 
 - **Calibration products** (biases, flats, and possibly others, depending on the instrument)
 
 - **Template images** for difference imaging.
-  These are of type ``deepCoadd`` by default, but the AP pipeline can be configured to use other types.
-
-.. TODO: update default for DM-14601
+  These are of type ``goodSeeingCoadd`` by default, but the AP pipeline can be configured to use other types (and :doc:`the Pipeline Tutorial <pipeline-tutorial>` does so).
 
 .. _ap_verify_hits2015: https://github.com/lsst/ap_verify_hits2015/
 
