@@ -18,6 +18,3 @@ config.modelPsf.defaultFwhm = 7.7
 config.warpAndPsfMatch.psfMatch.kernel['AL'].alardSigGauss = [1.0, 2.0, 4.5]
 config.warpAndPsfMatch.warp.warpingKernelName = 'lanczos5'
 config.coaddPsf.warpingKernelName = 'lanczos5'
-
-# This is properly configured in ApTemplate.yaml, but must also be here for now
-config.doApplyFinalizedPsf = False

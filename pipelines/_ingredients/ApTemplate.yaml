@@ -31,11 +31,11 @@ tasks:
       # in this pipeline since there's nothing to update relative to the
       # original visitSummary.
       connections.visitSummary: "{calexpType}visitSummary"
+      # The original visitSummary also doesn't have PSFs, so use the calexp
+      # PSFs (and ApCorrMaps).
+      useVisitSummaryPsf: False
       doWriteEmptyWarps: True
-      doApplyExternalPhotoCalib: False
-      doApplyExternalSkyWcs: False
       makePsfMatched: True
-      doApplyFinalizedPsf: False
   assembleCoadd:
     class: lsst.pipe.tasks.assembleCoadd.CompareWarpAssembleCoaddTask
     config:

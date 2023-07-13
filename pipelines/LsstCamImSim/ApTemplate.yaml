@@ -18,9 +18,8 @@ tasks:
       # Config file wipes out all pre-existing configs, so copy base pipeline
       # config on top.
       connections.visitSummary: "{calexpType}visitSummary"
+      useVisitSummaryPsf: False
       doWriteEmptyWarps: True
-      doApplyExternalPhotoCalib: False
-      doApplyExternalSkyWcs: False
       makePsfMatched: True
   assembleCoadd:
     class: lsst.pipe.tasks.assembleCoadd.CompareWarpAssembleCoaddTask
