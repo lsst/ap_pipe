@@ -53,10 +53,11 @@ In Gen 3, this becomes (see :ref:`ap-pipe-pipeline-tutorial` for an explanation 
    Note that the pipeline file given by ``-p`` may include APDB config overrides of its own.
    You can double-check what configuration is being run by calling :command:`pipetask run` with the ``--show config="apdb*"`` argument, though this lists *all* configuration options, including those left at their defaults.
 
-Databases can also be set up using :ref:`config files <command-line-task-config-howto-configfile>`:
+Databases can also be set up using :ref:`config files <command-line-config-howto-configfile>`:
 
 .. code-block:: py
    :caption: myApdbConfig.py
+
    config.db_url = "sqlite:///databases/apdb.db"
 
 .. prompt:: bash
