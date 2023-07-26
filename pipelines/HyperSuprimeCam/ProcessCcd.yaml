@@ -3,6 +3,7 @@ description: A set of tasks to run when processing raw images, specialized for H
 instrument: lsst.obs.subaru.HyperSuprimeCam
 imports:
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcd.yaml
+# TODO DM-40388: Remove the below tasks block once the new pipeline is vetted.
 tasks:
   characterizeImage:
     class: lsst.pipe.tasks.characterizeImage.CharacterizeImageTask

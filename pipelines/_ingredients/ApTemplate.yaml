@@ -48,6 +48,7 @@ subsets:
   singleFrameAp:
     subset:
       - isr
+      # TODO DM-40389: replace these with calibrateImage
       - characterizeImage
       - calibrate
       - consolidateVisitSummary

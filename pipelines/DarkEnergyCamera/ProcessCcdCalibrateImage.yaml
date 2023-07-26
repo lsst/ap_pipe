@@ -1,0 +1,20 @@
+# TODO DM-40388: This file will replace ProcessCcd.yaml, once the new pipeline is vetted.
+description: A set of tasks to run when processing raw images, specialized for DECam
+# You must run $AP_PIPE_DIR/pipelines/DarkEnergyCamera/RunIsrForCrosstalkSources.yaml first!
+
+instrument: lsst.obs.decam.DarkEnergyCamera
+imports:
+  - location: $AP_PIPE_DIR/pipelines/DarkEnergyCamera/RunIsrWithCrosstalk.yaml
+  - location: $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcdCalibrateImage.yaml
+    exclude:
+      - isr
+subsets:
+# processCcd must be redefined from
+# $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcd.yaml because its isr was
+# excluded.
+  processCcd:
+    subset:
+      - isr
+      - calibrateImage
+    description: >
+      An alias of ProcessCcd to use in higher-level pipelines.

@@ -1,0 +1,28 @@
+# TODO DM-40388: This file will replace ApPipe.yaml, once the new pipeline is vetted.
+description: End to end AP pipeline specialized for DECam
+# (1) Run $AP_PIPE_DIR/pipelines/DarkEnergyCamera/RunIsrForCrosstalkSources.yaml
+# (2) Execute `make_apdb.py`, e.g.,
+#     make_apdb.py -c db_url="sqlite:////project/user/association.db"
+# (3) Run this pipeline, setting appropriate diaPipe configs
+#     (diaPipe configs should match the make_apdb.py configs)
+
+instrument: lsst.obs.decam.DarkEnergyCamera
+imports:
+  - location: $AP_PIPE_DIR/pipelines/DarkEnergyCamera/ProcessCcdCalibrateImage.yaml
+  - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipeCalibrateImage.yaml
+    exclude:  # These tasks come from DarkEnergyCamera/ProcessCcdCalibrateImage.yaml instead
+      - processCcd
+subsets:
+# apPipe must be redefined from $AP_PIPE_DIR/pipelines/_ingredients/ApPipeCalibrateImage.yaml
+# because its processCcd was excluded.
+  apPipe:
+    subset:
+      - isr
+      - calibrateImage
+      - retrieveTemplate
+      - subtractImages
+      - detectAndMeasure
+      - transformDiaSrcCat
+      - diaPipe
+    description: >
+      An alias of ApPipe to use in higher-level pipelines.
