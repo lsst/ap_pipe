@@ -4,9 +4,6 @@ tasks:
   isr:
     class: lsst.ip.isr.IsrTask
     config:
-      connections.ccdExposure: 'raw'
       connections.crosstalkSources: 'overscanRaw'
-      connections.bias: 'bias'  # DECam default is still 'cpBias'
-      connections.flat: 'flat'  # DECam default is still 'cpFlat'
       doOverscan: True
       doCrosstalk: True
