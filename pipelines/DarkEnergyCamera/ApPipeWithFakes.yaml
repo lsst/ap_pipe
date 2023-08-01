@@ -3,8 +3,7 @@ description: DECam AP Pipeline with synthetic/fake sources. Templates are inputs
 # (0) Ensure median calibration products and template coadds exist for the data being processed
 # (1) Run $AP_PIPE_DIR/pipelines/DarkEnergyCamera/RunIsrForCrosstalkSources.yaml
 # (2) Execute `make_apdb.py`, e.g.,
-#     make_apdb.py -c isolation_level=READ_UNCOMMITTED
-#                  -c db_url="sqlite:////project/user/association.db"
+#     make_apdb.py -c db_url="sqlite:////project/user/association.db"
 # (3) Run this pipeline, setting appropriate diaPipe configs
 #     (diaPipe configs must match the make_apdb.py configs)
 
