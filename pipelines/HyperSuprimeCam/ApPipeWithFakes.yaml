@@ -44,6 +44,7 @@ tasks:
       # Config file wipes out all pre-existing configs, so copy base pipeline
       # config on top.
       connections.coaddName: parameters.coaddName
+      connections.fakesType: parameters.fakesType
       insertFakes.doSubSelectSources: True
       insertFakes.select_col: 'isVisitSource'
       calibrate.photoCal.match.referenceSelection.magLimit.fluxField: i_flux
