@@ -34,8 +34,6 @@ tasks:
       connections.fakesType: parameters.fakesType
       insertFakes.doSubSelectSources: True
       insertFakes.select_col: 'isVisitSource'
-      calibrate.photoCal.match.referenceSelection.magLimit.fluxField: i_flux
-      calibrate.photoCal.match.referenceSelection.magLimit.maximum: 22.0
   diaPipe:
     class: lsst.ap.association.DiaPipelineTask
     config:
