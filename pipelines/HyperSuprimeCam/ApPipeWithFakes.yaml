@@ -12,26 +12,14 @@ imports:
     exclude:  # These tasks frome from HSC's ApPipe.yaml instead
       - processCcd
   - location: $AP_PIPE_DIR/pipelines/HyperSuprimeCam/ApPipe.yaml
-    exclude:  # These tasks come from ApPipeWithFakes.yaml instead
+    exclude:  # These tasks come from _ingredients/ApPipeWithFakes.yaml instead
       - retrieveTemplate
       - subtractImages
       - detectAndMeasure
       - diaPipe
       - transformDiaSrcCat
-parameters:
-  coaddName: goodSeeing
-  fakesType: 'fakes_'
 
 tasks:
-  createFakes:
-    class: lsst.ap.pipe.createApFakes.CreateRandomApFakesTask
-    config:
-      connections.fakesType: parameters.fakesType
-      magMin: 20
-      magMax: 27
-      fraction: 0
-      fakeDensity: 5000
-
   processVisitFakes:
     class: lsst.pipe.tasks.processCcdWithFakes.ProcessCcdWithVariableFakesTask
     config:
