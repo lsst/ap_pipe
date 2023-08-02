@@ -55,10 +55,6 @@ config.photoCal.match.referenceSelection.magLimit.maximum = 22.0
 # select only stars for photometry calibration
 config.photoCal.match.sourceSelection.unresolved.maximum = 0.5
 
-# Demand astrometry and photoCal succeed
-config.requireAstrometry = True
-config.requirePhotoCal = True
-
 # Activate calibration of measurements: required for aperture corrections
 config.measurement.load(os.path.join(obsConfigDir, "apertures.py"))
 
