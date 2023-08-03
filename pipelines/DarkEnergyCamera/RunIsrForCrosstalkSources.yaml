@@ -4,7 +4,6 @@ tasks:
   overscan:
     class: lsst.ip.isr.IsrTask
     config:
-      connections.ccdExposure: 'raw'
       connections.outputExposure: 'overscanRaw'
       doBias: False
       doOverscan: True

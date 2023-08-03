@@ -11,17 +11,19 @@ tasks:
   characterizeImage:
     class: lsst.pipe.tasks.characterizeImage.CharacterizeImageTask
     config:
+      # HACK: workaround for DM-31047, remove once we're no longer loading
+      # DRP-specific obs configs.
       file: $AP_PIPE_DIR/config/DECam/characterizeImage.py
       # Config file wipes out all pre-existing configs, so copy base pipeline
       # config on top.
   calibrate:
     class: lsst.pipe.tasks.calibrate.CalibrateTask
     config:
+      # HACK: workaround for DM-31047, remove once we're no longer loading
+      # DRP-specific obs configs.
       file: $AP_PIPE_DIR/config/DECam/calibrate.py
-      # Do not integrate file and pipeline configs until obs config files are
-      # gone, to make it easier to check for changes on the obs side.
-      photoCal.match.referenceSelection.magLimit.fluxField: 'i_flux'
-      photoCal.match.referenceSelection.magLimit.maximum: 22.0
+      # Do not integrate file and pipeline configs until DM-31047 fixed, to
+      # make it easier to check for changes on the obs side.
 subsets:
 # processCcd must be redefined from
 # $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcd.yaml because its isr was

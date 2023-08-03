@@ -4,6 +4,5 @@ tasks:
   isr:
     class: lsst.ip.isr.isrTask.IsrTask
     config:
-      connections.ccdExposure: 'raw'
       doLinearize: False
       doCrosstalk: True

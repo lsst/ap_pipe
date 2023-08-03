@@ -14,9 +14,11 @@ tasks:
   makeWarp:
     class: lsst.pipe.tasks.makeWarp.MakeWarpTask
     config:
+      # HACK: workaround for DM-31047, remove once we're no longer loading
+      # DRP-specific obs configs.
       file: $AP_PIPE_DIR/config/HSC/makeWarp.py
-      # Do not integrate file and pipeline configs until obs config files are
-      # gone, to make it easier to check for changes on the obs side.
+      # Do not integrate file and pipeline configs until DM-31047 fixed, to
+      # make it easier to check for changes on the obs side.
       # Config file wipes out all pre-existing configs, so copy base pipeline
       # config on top.
       connections.visitSummary: "{calexpType}visitSummary"
@@ -26,9 +28,11 @@ tasks:
   assembleCoadd:
     class: lsst.pipe.tasks.assembleCoadd.CompareWarpAssembleCoaddTask
     config:
+      # HACK: workaround for DM-31047, remove once we're no longer loading
+      # DRP-specific obs configs.
       file: $AP_PIPE_DIR/config/HSC/assembleCoadd.py
-      # Do not integrate file and pipeline configs until obs config files are
-      # gone, to make it easier to check for changes on the obs side.
+      # Do not integrate file and pipeline configs until DM-31047 fixed, to
+      # make it easier to check for changes on the obs side.
       # Config file wipes out all pre-existing configs, so copy base pipeline
       # config on top.
       doSelectVisits: True
