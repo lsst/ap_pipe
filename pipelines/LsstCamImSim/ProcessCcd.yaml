@@ -4,12 +4,6 @@ imports:
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcd.yaml
 
 tasks:
-  isr:
-    class: lsst.ip.isr.IsrTask
-    config:
-      connections.newBFKernel: bfk
-      doDefect: False
-      doBrighterFatter: True
   characterizeImage:
     class: lsst.pipe.tasks.characterizeImage.CharacterizeImageTask
     config:

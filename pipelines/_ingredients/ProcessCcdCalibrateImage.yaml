@@ -1,0 +1,25 @@
+# TODO DM-40388: This file will replace ProcessCcd.yaml, once the new pipeline is vetted.
+description: ProcessCcd - A set of tasks to run when processing raw images.
+
+# WARNING: some camera-specific pipelines importing this pipeline presently
+# blow away all the configs that are set in this file.
+# To update a pipeline config prior to DM-35504, you MUST put it in either,
+# e.g., $AP_PIPE_DIR/config/$CAMERA/someTask.py, or in a camera-specific,
+# pipeline, e.g., $AP_PIPE_DIR/pipelines/$CAMERA/ProcessCcdCalibrateImage.yaml.
+
+tasks:
+  isr: lsst.ip.isr.IsrTask
+  calibrateImage:
+    class: lsst.pipe.tasks.calibrateImage.CalibrateImageTask
+    config:
+      # TODO DM-39796: Temporary, until these become the repair defaults.
+      python: >
+        config.psf_repair.cosmicray.nCrPixelMax = 1000000;
+        config.psf_repair.cosmicray.cond3_fac2 = 0.4;
+subsets:
+  processCcd:
+    subset:
+      - isr
+      - calibrateImage
+    description: >
+      An alias of ProcessCcd to use in higher-level pipelines.

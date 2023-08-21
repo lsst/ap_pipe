@@ -12,6 +12,7 @@
 clusterAlgorithm: lsst.ctrl.bps.quantum_clustering_funcs.dimension_clustering
 cluster:
   singleFrame:
+    # TODO DM-40389: replace this with isr,calibrateImage
     pipetasks: isr,characterizeImage,calibrate
     dimensions: visit,detector
     equalDimensions: visit:exposure
