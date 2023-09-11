@@ -11,7 +11,7 @@ imports:
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithFakes.yaml
     exclude:  # These tasks frome from HSC's ApPipe.yaml instead
       - processCcd
-  - location: $AP_PIPE_DIR/pipelines/HyperSuprimeCam/ApPipe.yaml
+  - location: $AP_PIPE_DIR/pipelines/HSC/ApPipe.yaml
     exclude:  # These tasks come from _ingredients/ApPipeWithFakes.yaml instead
       - retrieveTemplate
       - subtractImages

@@ -1,22 +1,20 @@
-description: The AP template building pipeline specialized for HSC
+description: The AP template building pipeline specialized for ImSim
 # This pipeline assumes the working repo has raws, calibs, refcats, and a skymap.
 
-instrument: lsst.obs.subaru.HyperSuprimeCam
+instrument: lsst.obs.lsst.LsstCamImSim
 imports:
-  - location: $AP_PIPE_DIR/pipelines/HyperSuprimeCam/ProcessCcd.yaml
+  - location: $AP_PIPE_DIR/pipelines/LSSTCam-imSim/ProcessCcd.yaml
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ApTemplate.yaml
-    exclude:  # These tasks come from HyperSuprimeCam/ProcessCcd.yaml instead
+    exclude:  # These tasks come from LSSTCam-imSim/ProcessCcd.yaml instead
       - processCcd
 
 tasks:
-  skyCorr:  # From the HSC DRP-RC2.yaml. Alternative is `doApplySkyCorr: False` in makeWarp
-    class: lsst.pipe.tasks.skyCorrection.SkyCorrectionTask
   makeWarp:
     class: lsst.pipe.tasks.makeWarp.MakeWarpTask
     config:
       # HACK: workaround for DM-31047, remove once we're no longer loading
       # DRP-specific obs configs.
-      file: $AP_PIPE_DIR/config/HSC/makeWarp.py
+      file: $AP_PIPE_DIR/config/LSSTCam-imSim/makeWarp.py
       # Do not integrate file and pipeline configs until DM-31047 fixed, to
       # make it easier to check for changes on the obs side.
       # Config file wipes out all pre-existing configs, so copy base pipeline
@@ -30,7 +28,7 @@ tasks:
     config:
       # HACK: workaround for DM-31047, remove once we're no longer loading
       # DRP-specific obs configs.
-      file: $AP_PIPE_DIR/config/HSC/assembleCoadd.py
+      file: $AP_PIPE_DIR/config/LSSTCam-imSim/assembleCoadd.py
       # Do not integrate file and pipeline configs until DM-31047 fixed, to
       # make it easier to check for changes on the obs side.
       # Config file wipes out all pre-existing configs, so copy base pipeline
@@ -40,13 +38,11 @@ tasks:
       assembleStaticSkyModel.doSelectVisits: True
       connections.outputCoaddName: parameters.coaddName
 
-# TODO DM-40389: Remove this entire block once we are using calibrateImage in
-# the base _ingredients/ApTemplate.yaml.
 subsets:
 # The singleFrameAp subset is identical to the one in
 # $AP_PIPE_DIR/pipelines/_ingredients/ApTemplate.yaml, but needs to be defined
 # here because isr, characterizeImage, and calibrate are coming from the
-# HSC-specific ProcessCcd pipeline.
+# ImSim-specific ProcessCcd pipeline.
   singleFrameAp:
     subset:
       - isr
