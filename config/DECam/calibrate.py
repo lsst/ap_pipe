@@ -30,10 +30,6 @@ config.photoCal.match.referenceSelection.magLimit.fluxField = "i_flux"
 config.photoCal.match.referenceSelection.magLimit.maximum = 22.0
 config.photoCal.colorterms.load(os.path.join(obsConfigDir, 'colorterms.py'))
 
-# Number of bright stars to use. Sets the max number of patterns that can be tested.
-# This config matches obs_subaru, to facilitate 1:1 comparisons between DECam and HSC
-config.astrometry.matcher.numBrightStars = 150
-
 # The Task default was reduced from 4 to 2 on RFC-577. We believe that 4 is
 # more appropriate for use with DECam data until a Jointcal-derived distortion
 # model is available (DM-24431); at that point, this override should likely be
@@ -51,26 +47,8 @@ for matchConfig in (config.astrometry,
         matchConfig.matcher.maxMatchDistArcSec = 2.0
         matchConfig.sourceSelector.active.excludePixelFlags = False
 
-# Set to match defaults currently used in HSC production runs (e.g. S15B+)
-config.catalogCalculation.plugins['base_ClassificationExtendedness'].fluxRatio = 0.95
-
-# Demand astrometry and photoCal succeed
-config.requireAstrometry = True
-config.requirePhotoCal = True
-
-config.doWriteMatchesDenormalized = True
-
-# Detection
-# This config matches obs_subaru, to facilitate 1:1 comparisons between DECam and HSC
-config.detection.isotropicGrow = True
 
 config.measurement.load(os.path.join(obsConfigDir, "apertures.py"))
-
-# Deblender
-# These configs match obs_subaru, to facilitate 1:1 comparisons between DECam and HSC
-config.deblend.maxFootprintSize = 0
-config.deblend.maskLimits["NO_DATA"] = 0.25  # Ignore sources that are in the vignetted region
-config.deblend.maxFootprintArea = 10000
 
 config.measurement.plugins.names |= ["base_Jacobian", "base_FPPosition"]
 config.measurement.plugins["base_Jacobian"].pixelScale = 0.263

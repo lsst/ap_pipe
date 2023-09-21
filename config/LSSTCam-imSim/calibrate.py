@@ -36,14 +36,6 @@ config.loadFromString(type(config)().saveToString())
 
 obsConfigDir = os.path.join(os.path.dirname(__file__))
 
-bgFile = os.path.join(obsConfigDir, "background.py")
-
-# Cosmic rays and background estimation
-config.detection.background.load(bgFile)
-
-# Enable temporary local background subtraction
-config.detection.doTempLocalBackground  = True
-
 # Reference catalog
 for refObjLoader in (config.astromRefObjLoader,
                      config.photoRefObjLoader,
@@ -55,9 +47,6 @@ for refObjLoader in (config.astromRefObjLoader,
 config.connections.astromRefCat = "cal_ref_cat"
 config.connections.photoRefCat = "cal_ref_cat"
 
-# Set to match defaults currenyly used in HSC production runs (e.g. S15B)
-config.catalogCalculation.plugins['base_ClassificationExtendedness'].fluxRatio = 0.95
-
 # No color term in simulation at the moment
 config.photoCal.applyColorTerms = False
 config.photoCal.match.referenceSelection.doMagLimit = True
@@ -66,27 +55,12 @@ config.photoCal.match.referenceSelection.magLimit.maximum = 22.0
 # select only stars for photometry calibration
 config.photoCal.match.sourceSelection.unresolved.maximum = 0.5
 
-# Demand astrometry and photoCal succeed
-config.requireAstrometry = True
-config.requirePhotoCal = True
-
-# Detection
-config.detection.isotropicGrow = True
-
 # Activate calibration of measurements: required for aperture corrections
 config.measurement.load(os.path.join(obsConfigDir, "apertures.py"))
-
-# Deblender
-config.deblend.maxFootprintSize = 0
-config.deblend.maskLimits["NO_DATA"] = 0.25 # Ignore sources that are in the vignetted region
-config.deblend.maxFootprintArea = 10000
 
 config.measurement.plugins.names |= ["base_Jacobian", "base_FPPosition"]
 
 config.measurement.plugins["base_Jacobian"].pixelScale = 0.2
-
-# Prevent spurious detections in vignetting areas
-config.detection.thresholdType = 'pixel_stdev'
 
 # This file was inserted from obs_lsst/config/imsim/calibrate.py as part of
 # DM-31063. Feel free to modify this file to better reflect the needs of AP;
@@ -110,6 +84,7 @@ config.astrometry.doMagnitudeOutlierRejection = True
 config.astrometry.maxMeanDistanceArcsec = 0.05
 
 # Reduce Chebyshev polynomial order for background fitting (DM-30820)
+# imsim has a constant offset background.
 config.detection.background.approxOrderX = 1
 config.detection.tempLocalBackground.approxOrderX = 1
 config.detection.tempWideBackground.approxOrderX = 1

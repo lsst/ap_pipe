@@ -36,40 +36,19 @@ config.loadFromString(type(config)().saveToString())
 
 obsConfigDir = os.path.join(os.path.dirname(__file__))
 
-bgFile = os.path.join(obsConfigDir, "background.py")
-
 # Cosmic rays and background estimation
 config.repair.cosmicray.nCrPixelMax = 1000000
 config.repair.cosmicray.cond3_fac2 = 0.4
-config.background.load(bgFile)
-config.detection.background.load(bgFile)
-
-# Enable temporary local background subtraction
-config.detection.doTempLocalBackground=True
 
 # PSF determination
 config.measurePsf.reserve.fraction = 0.2
-config.measurePsf.starSelector["objectSize"].sourceFluxField = 'base_PsfFlux_instFlux'
-
-# Set to match defaults currenyly used in HSC production runs (e.g. S15B)
-config.catalogCalculation.plugins['base_ClassificationExtendedness'].fluxRatio = 0.95
-
-# Detection
-config.detection.isotropicGrow = True
 
 # Activate calibration of measurements: required for aperture corrections
 config.measurement.load(os.path.join(obsConfigDir, "apertures.py"))
 
-# Deblender
-config.deblend.maskLimits["NO_DATA"] = 0.25 # Ignore sources that are in the vignetted region
-config.deblend.maxFootprintArea = 10000
-
 config.measurement.plugins.names |= ["base_Jacobian", "base_FPPosition"]
 
 config.measurement.plugins["base_Jacobian"].pixelScale = 0.2
-
-# Prevent spurious detections in vignetting areas
-config.detection.thresholdType ='pixel_stdev'
 
 # This file was inserted from obs_lsst/config/imsim/characterizeImage.py as
 # part of DM-31063. Feel free to modify this file to better reflect the needs
@@ -78,15 +57,12 @@ config.detection.thresholdType ='pixel_stdev'
 # would be useful here.
 
 # Reduce Chebyshev polynomial order for background fitting (DM-30820)
+# imsim has a constant offset background.
 config.background.approxOrderX = 1
 config.detection.background.approxOrderX = 1
 config.detection.tempLocalBackground.approxOrderX = 1
 config.detection.tempWideBackground.approxOrderX = 1
 config.repair.cosmicray.background.approxOrderX = 1
-
-# Select candidates for PSF modeling based on S/N threshold (DM-17043 & DM-16785)
-config.measurePsf.starSelector["objectSize"].doFluxLimit = False
-config.measurePsf.starSelector["objectSize"].doSignalToNoiseLimit = True
 
 # S/N cuts for computing aperture corrections to include only objects that
 # were used in the PSF model and have PSF flux S/N greater than the minimum

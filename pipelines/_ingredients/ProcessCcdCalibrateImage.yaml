@@ -11,11 +11,6 @@ tasks:
   isr: lsst.ip.isr.IsrTask
   calibrateImage:
     class: lsst.pipe.tasks.calibrateImage.CalibrateImageTask
-    config:
-      # TODO DM-39796: Temporary, until these become the repair defaults.
-      python: >
-        config.psf_repair.cosmicray.nCrPixelMax = 1000000;
-        config.psf_repair.cosmicray.cond3_fac2 = 0.4;
 subsets:
   processCcd:
     subset:
