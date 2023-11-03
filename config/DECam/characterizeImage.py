@@ -44,14 +44,3 @@ config.measureApCorr.sourceSelector['science'].signalToNoise.maximum = None
 config.measureApCorr.sourceSelector['science'].signalToNoise.fluxField = "base_PsfFlux_instFlux"
 config.measureApCorr.sourceSelector['science'].signalToNoise.errField = "base_PsfFlux_instFluxErr"
 config.measureApCorr.sourceSelector.name = "science"
-
-config.ref_match.sourceSelector.name = 'matcher'
-for matchConfig in (config.ref_match,
-                    ):
-    matchConfig.sourceFluxType = 'Psf'
-    matchConfig.sourceSelector.active.sourceFluxType = 'Psf'
-    matchConfig.matcher.maxOffsetPix = 250
-    if isinstance(matchConfig.matcher, MatchOptimisticBConfig):
-        matchConfig.matcher.allowedNonperpDeg = 0.2
-        matchConfig.matcher.maxMatchDistArcSec = 2.0
-        matchConfig.sourceSelector.active.excludePixelFlags = False
