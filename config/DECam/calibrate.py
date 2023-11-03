@@ -37,10 +37,8 @@ config.photoCal.colorterms.load(os.path.join(obsConfigDir, 'colorterms.py'))
 # See Slack: https://lsstc.slack.com/archives/C2B6X08LS/p1586468459084600
 config.astrometry.wcsFitter.order = 4
 
-for matchConfig in (config.astrometry,
-                    ):
-    if isinstance(matchConfig.matcher, MatchOptimisticBConfig):
-        matchConfig.sourceSelector.active.excludePixelFlags = False
+if isinstance(config.astrometry.matcher, MatchOptimisticBConfig):
+    config.astrometry.sourceSelector.active.excludePixelFlags = False
 
 
 config.measurement.load(os.path.join(obsConfigDir, "apertures.py"))
