@@ -41,7 +41,6 @@ for matchConfig in (config.astrometry,
                     ):
     matchConfig.sourceFluxType = 'Psf'
     matchConfig.sourceSelector.active.sourceFluxType = 'Psf'
-    matchConfig.matcher.maxOffsetPix = 250
     if isinstance(matchConfig.matcher, MatchOptimisticBConfig):
         matchConfig.matcher.allowedNonperpDeg = 0.2
         matchConfig.matcher.maxMatchDistArcSec = 2.0
