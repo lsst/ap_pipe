@@ -46,10 +46,17 @@ config.doApplySkyCorr = False
 # should check that none of the changes made there since April 12, 2022 would
 # be useful here.
 
-# Set thresholds for PSF fidelity of visit/detector to get included in coadd.
-# These thresholds have been conditioned based on the w_2021_48 processing
-# of the test-med-1 dataset and the w_2021_40 processing of the ~5-yr depth
-# 4431 tract (and considering the HSC thresholds by comparing the metric
-# distributions). See DM-32625 for details.
-config.select.maxEllipResidual = 0.0045
-config.select.maxScaledSizeScatter = 0.006
+# These thresholds were originally conditioned based on the w_2021_48
+# processing of the test-med-1 dataset and the w_2021_40 processing of the
+# ~5-yr depth 4431 tract (and considering the HSC thresholds by comparing the
+# metric distributions). See DM-32625 for details.
+#
+# After switching to Piff for PSF estimation, these proved too tight for at
+# least ci_imsim.  The updates just added a bit of padding top of what was
+# needed to get all images in ci_imsim through.
+#
+# The maxScaledSizeScatter has been increased further to reflect the new
+# metric definition (which results in higher values for this metric).  See
+# DM-40668 & DM-41838 for details.
+config.select.maxEllipResidual = 0.005
+config.select.maxScaledSizeScatter = 0.011
