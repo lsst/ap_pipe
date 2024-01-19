@@ -11,12 +11,8 @@ imports:
     exclude:  # These tasks come from LsstCamImSim/ApPipe.yaml instead
       - processCcd
   - location: $AP_PIPE_DIR/pipelines/LSSTCam-imSim/ApPipe.yaml
-    exclude:  # These tasks come from the ApPipeWithFakes.yaml
-      - retrieveTemplate
-      - subtractImages
-      - detectAndMeasure
-      - diaPipe
-      - transformDiaSrcCat
+    include:  # All other tasks come from the ApPipeWithFakes.yaml
+      - processCcd
 
 tasks:
   diaPipe:
