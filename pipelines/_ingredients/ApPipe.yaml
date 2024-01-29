@@ -35,6 +35,11 @@ tasks:
     config:
       connections.coaddName: parameters.coaddName
       doSkySources: True
+  filterDiaSrcCat:
+    class: lsst.ap.association.FilterDiaSourceCatalogTask
+    config:
+      doRemoveSkySources: True
+      connections.coaddName: parameters.coaddName
   rbClassify:
     class: lsst.meas.transiNet.RBTransiNetTask
     config:
@@ -62,6 +67,7 @@ subsets:
       - rbClassify
       - transformDiaSrcCat
       - diaPipe
+      - filterDiaSrcCat
     description: >
       An alias of ApPipe to use in higher-level pipelines.
 contracts:
@@ -80,11 +86,13 @@ contracts:
       diaPipe.connections.ConnectionsClass(config=diaPipe).exposure.name
   - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
       rbClassify.connections.ConnectionsClass(config=rbClassify).difference.name
-  - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).diaSources.name ==
+  - filterDiaSrcCat.connections.ConnectionsClass(config=filterDiaSrcCat).filteredDiaSourceCat.name ==
       rbClassify.connections.ConnectionsClass(config=rbClassify).diaSources.name
   - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
       transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diffIm.name
   - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).diaSources.name ==
+      filterDiaSrcCat.connections.ConnectionsClass(config=filterDiaSrcCat).diaSourceCat.name
+  - filterDiaSrcCat.connections.ConnectionsClass(config=filterDiaSrcCat).filteredDiaSourceCat.name ==
       transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diaSourceCat.name
   - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
         diaPipe.connections.ConnectionsClass(config=diaPipe).diffIm.name
