@@ -21,14 +21,6 @@ Assuming you are on one of the lsst-devl machines (paths may differ if you are n
   . /software/lsstsw/stack/loadLSST.bash
   setup lsst_distrib -t your_favorite_weekly
 
-As of March 2022 there is a need to do one more thing after the usual setups in order to pick up the appropriate HTCondor libraries:
-
-.. prompt:: bash
-
-  export PYTHONPATH=$PYTHONPATH:/usr/lib64/python3.6/site-packages
-
-It is not known how long it will continue to be necessary, but since the new directory is appended to PYTHONPATH, any newer packages would be picked up first.
-
 .. _section-ap-pipe-pipeline-bps-yaml:
 
 Creating a yaml file
@@ -39,45 +31,47 @@ Typically it will contain info about the processing campaign, desired input and 
 
 Here's an example .yaml file governing what gets passed to pipetask.
 It is simply a slightly modified version of the example in `ap_pipe/bps/bps_ApPipe.yaml <https://github.com/lsst/ap_pipe/blob/main/bps/bps_ApPipe.yaml>`_.
-Again, as of March 2022 this assumes you are running on one of the lsst-devl machines at NCSA.
+Again, as of September 2023 this assumes you are running on one of the lsst-devl machines at USDF.
 
 .. code-block:: yaml
 
-
   # Path to the pipeline to run
-
   pipelineYaml: '/path/to/my/pipeline.yaml'
-  # Format for job names and job output filenames
-  templateDataId: '{tract}_{patch}_{band}_{visit}_{exposure}_{detector}'
+  
+  # Names to help organize runs
   project: ApPipe
   campaign: my_example
   
   # Directory where files associated with your submission, such as logs, will go.
+  # Default is shown.
   submitPath: ${PWD}/bps/{outputRun}
-  computeSite: ncsapool
+  
+  # Specify WMS plugin (HTCondor, Parsl, Slurm, triple Slurm, etc.); HTCondor is default.
+  wmsServiceClass: lsst.ctrl.bps.htcondor.HTCondorService
+  
+  # Specify compute site and specific site settings.
+  computeSite: s3df
   site:
-    ncsapool:
+    s3df:
       profile:
         condor:
-          +Walltime: 28800
-  # Memory allocated for each quantum, in MBs
+          +Walltime: 7200
+          
+  # Memory allocated for each quantum, in MBs; 2048 is default.
   requestMemory: 2048
+  
   # CPUs to use per quantum; 1 is default.
   requestCpus: 1
   
-  # Arguments you would pass to pipetask run if running from the command line instead of in a bps job.
-  # Further arguments are given in the calls to 'runQuantumCommand' (see below).
+  # The submit yaml must specify the following arguments:
+  # Default arguments provided by bps (not included here) are listed in the ctrl_bps documentation (see below).
   payload:
-    # Specifies whether to run --init-only on each pipetask run before doing the real pipetask run.
-    runInit: true
     # This will set the output collection name.
     payloadName: my_example_name
     # Same as -b on the command line.
-    butlerConfig: /datasets/hsc/gen3repo/rc2w50_ssw02/butler.yaml
+    butlerConfig: /sdf/group/rubin/repo/main/butler.yaml
     # Same as -i on the command line; actual input collections may differ from what is shown here.
-    inCollection: HSC/calib,HSC/raw/all,refcats,u/diffim_sprint/templates_bestThirdSeeing
-    # Same as -o on the command line. Note: must specify outCollection with timestamp so you don't get innumerable sub-runs.
-    output : 'u/${USER}/{payloadName}'
+    inCollection: HSC/calib,HSC/raw/all,refcats,u/elhoward/DM-38242/templates
     # Same as -d on the command line. Here is an example of a small data query just for testing.
     dataQuery: 'exposure IN (11690, 11692) AND detector in (49, 50)'
   
@@ -89,10 +83,10 @@ Again, as of March 2022 this assumes you are running on one of the lsst-devl mac
 
 Notes on the yaml file
 ----------------------
-* A good example of a complete pipeline yaml is `ap_pipe/pipelines/ApPipe.yaml <https://github.com/lsst/ap_pipe/blob/main/pipelines/ApPipe.yaml>`_.
+* A good example of a complete pipeline yaml is `ap_pipe/pipelines/_ingredients/ApPipe.yaml <https://github.com/lsst/ap_pipe/blob/main/pipelines/_ingredients/ApPipe.yaml>`_.
 
   * You can simply import that, or you may want to make other changes.
-* The `computeSite` option determines where your jobs will run; as of now (March 2022) the typical choice will be `ncsapool`.
+* The `computeSite` option determines where your jobs will run; as of now (September 2023) the typical choice will be `s3df`.
 
   * Other options may be possible in the future; see the `ctrl_bps <https://pipelines.lsst.io/modules/lsst.ctrl.bps/index.html>`_ documentation.
   * One can also ask the bps experts about that, for example on the #dm-middleware-support Slack channel.
@@ -103,6 +97,19 @@ Notes on the yaml file
 * You can request default resource requirements such as memory or run time at the top level of the yaml (see the `requestMemory` line above), but you can give other values for specific task types if you want (for example see the higher requestMemory value in the subtractImages section under `pipetask`).
 * Don't forget to set your butler, input and output collections, and any other absolute paths according to your own work area.
 
+.. _section-ap-pipe-pipeline-bps-allocate:
+
+Allocating Nodes
+================
+
+If using the default WMS service class, HTCondor, we need to allocate nodes in order for a job to run. Here is a typical example for `s3df`:
+
+.. prompt:: bash
+
+   allocateNodes.py -v --dynamic -n 20 -c 32 -m 1-00:00:00 -q roma,milano -g 900 s3df
+
+The number of nodes and cores per node are given by `-n` and `-c, respectively, where 120 is the maximum number of cores per node as of September 2023. The maximum possible time the nodes will run before automatically shutting down is given with `-m`, so adjust it according to your run size. The glide-in inactivity shutdown time in seconds is given by `-g`. Be sure to modify this if your run takes a while to generate a quantum graph. Also note that in order to run `allocateNodes.py` you will need a `condor-info.py` configuration. See the `ctrl_bps_htcondor <https://developer.lsst.io/usdf/batch.html#ctrl-bps-htcondor>`_ section of `Batch Resources <https://developer.lsst.io/usdf/batch.html>`_ for instructions.
+   
 .. _section-ap-pipe-pipeline-bps-submit:
 
 Submit and Monitor

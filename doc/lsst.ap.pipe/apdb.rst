@@ -52,6 +52,13 @@ In Gen 3, this becomes (see :ref:`ap-pipe-pipeline-tutorial` for an explanation 
    Make sure the APDB is created with a configuration consistent with the one used by the pipeline.
    Note that the pipeline file given by ``-p`` may include APDB config overrides of its own.
    You can double-check what configuration is being run by calling :command:`pipetask run` with the ``--show config="apdb*"`` argument, though this lists *all* configuration options, including those left at their defaults.
+   
+A Postgres database can be set up and used with the following:
+
+.. prompt:: bash
+    
+   make_apdb.py -c db_url='postgresql://rubin@usdf-prompt-processing-dev.slac.stanford.edu/lsst-devl' -c namespace='my_apdb_name'
+   pipetask run -p ApPipe.yaml -c diaPipe:apdb.db_url='postgresql://rubin@usdf-prompt-processing-dev.slac.stanford.edu/lsst-devl' -c diaPipe:apdb.namespace='my_apdb_name' -d "my_data_query" -b repo -i my/input/collection -o my/output/collection
 
 Databases can also be set up using :ref:`config files <command-line-config-howto-configfile>`:
 
@@ -64,7 +71,19 @@ Databases can also be set up using :ref:`config files <command-line-config-howto
 
    make_apdb.py -C myApdbConfig.py
    pipetask run -p ApPipe.yaml -C myApPipeConfig.py  -b repo -o myrun
+   
+A Postgres database can be set up and used within :ref:`bps yaml files <creating-a-yaml-file>` by adding this to a submit yaml:
 
+.. code-block:: yaml
+
+  extraQgraphOptions: "-c diaPipe:apdb.db_url='postgresql://rubin@usdf-prompt-processing-dev.slac.stanford.edu/lsst-devl' -c diaPipe:apdb.namespace='my_apdb_name'"
+
+.. prompt:: bash
+
+   make_apdb.py -c db_url='postgresql://rubin@usdf-prompt-processing-dev.slac.stanford.edu/lsst-devl' -c namespace='my_apdb_name'
+  
+Note that `make_apdb.py` must be run with the same `namespace` prior to submitting this bps yaml.
+  
 .. _section-ap-pipe-apdb-seealso:
 
 Further reading
