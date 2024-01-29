@@ -9,9 +9,6 @@ imports:
       # TODO: prompt_prototype does not yet support R/B analysis.
       - rbClassify
 
-parameters:
-  # Only have deep templates official products in /repo/embargo
-  coaddName: deep
 tasks:
   transformDiaSrcCat:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
