@@ -10,7 +10,7 @@ imports:
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithFakes.yaml
     exclude:  # These tasks come from LsstCamImSim/ApPipe.yaml instead
       - processCcd
-  - location: $AP_PIPE_DIR/pipelines/LsstCamImSim/ApPipe.yaml
+  - location: $AP_PIPE_DIR/pipelines/LSSTCam-imSim/ApPipe.yaml
     exclude:  # These tasks come from the ApPipeWithFakes.yaml
       - retrieveTemplate
       - subtractImages
