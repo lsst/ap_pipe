@@ -1,7 +1,7 @@
 description: DECam AP Pipeline with synthetic/fake sources. Templates are inputs.
 # Remember:
 # (0) Ensure median calibration products and template coadds exist for the data being processed
-# (1) Run $AP_PIPE_DIR/pipelines/DarkEnergyCamera/RunIsrForCrosstalkSources.yaml
+# (1) Run $AP_PIPE_DIR/pipelines/DECam/RunIsrForCrosstalkSources.yaml
 # (2) Execute `make_apdb.py`, e.g.,
 #     make_apdb.py -c db_url="sqlite:////project/user/association.db"
 # (3) Run this pipeline, setting appropriate diaPipe configs
@@ -12,7 +12,7 @@ imports:
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithFakes.yaml
     exclude:  # These tasks frome from DECam's ApPipe.yaml instead
       - processCcd
-  - location: $AP_PIPE_DIR/pipelines/DarkEnergyCamera/ApPipe.yaml
+  - location: $AP_PIPE_DIR/pipelines/DECam/ApPipe.yaml
     exclude:  # These tasks come from ApPipeWithFakes.yaml instead
       - retrieveTemplate
       - subtractImages
