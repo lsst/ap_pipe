@@ -12,12 +12,8 @@ imports:
     exclude:  # These tasks frome from HSC's ApPipe.yaml instead
       - processCcd
   - location: $AP_PIPE_DIR/pipelines/HSC/ApPipe.yaml
-    exclude:  # These tasks come from _ingredients/ApPipeWithFakes.yaml instead
-      - retrieveTemplate
-      - subtractImages
-      - detectAndMeasure
-      - diaPipe
-      - transformDiaSrcCat
+    include:  # All other tasks come from _ingredients/ApPipeWithFakes.yaml instead
+      - processCcd
 
 tasks:
   processVisitFakes:

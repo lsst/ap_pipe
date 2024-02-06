@@ -57,12 +57,19 @@ tasks:
       connections.coaddName: parameters.coaddName
       connections.fakesType: parameters.fakesType
       doSkySources: True
+  rbClassifyWithFakes:
+    class: lsst.meas.transiNet.RBTransiNetTask
+    config:
+      modelPackageStorageMode: butler
+      connections.coaddName: parameters.coaddName
+      connections.fakesType: parameters.fakesType
   transformDiaSrcCatWithFakes:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
     config:
       connections.coaddName: parameters.coaddName
       connections.fakesType: parameters.fakesType
       doRemoveSkySources: True
+      doIncludeReliability: True  # Output from rbClassifyWithFakes
   diaPipe:
     class: lsst.ap.association.DiaPipelineTask
     config:
@@ -90,6 +97,7 @@ subsets:
       - retrieveTemplateWithFakes
       - subtractImagesWithFakes
       - detectAndMeasureWithFakes
+      - rbClassifyWithFakes
       - transformDiaSrcCatWithFakes
       - diaPipe
       - fakesMatch
@@ -117,6 +125,10 @@ contracts:
   - subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).science.name ==
       diaPipe.connections.ConnectionsClass(config=diaPipe).exposure.name
   - detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).subtractedMeasuredExposure.name ==
+      rbClassifyWithFakes.connections.ConnectionsClass(config=rbClassifyWithFakes).difference.name
+  - detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).diaSources.name ==
+      rbClassifyWithFakes.connections.ConnectionsClass(config=rbClassifyWithFakes).diaSources.name
+  - detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).subtractedMeasuredExposure.name ==
       transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diffIm.name
   - detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).diaSources.name ==
       transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diaSourceCat.name
@@ -124,6 +136,9 @@ contracts:
       diaPipe.connections.ConnectionsClass(config=diaPipe).diffIm.name
   - detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).subtractedMeasuredExposure.name ==
       fakesMatch.connections.ConnectionsClass(config=fakesMatch).diffIm.name
+  - (not transformDiaSrcCatWithFakes.doIncludeReliability) or
+        (rbClassifyWithFakes.connections.ConnectionsClass(config=rbClassifyWithFakes).classifications.name ==
+            transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).reliability.name)
   - transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diaSourceTable.name ==
       diaPipe.connections.ConnectionsClass(config=diaPipe).diaSourceTable.name
   - processVisitFakes.connections.ConnectionsClass(config=processVisitFakes).outputExposure.name ==

@@ -21,6 +21,7 @@ subsets:
       - retrieveTemplate
       - subtractImages
       - detectAndMeasure
+      - rbClassify
       - transformDiaSrcCat
       - diaPipe
     description: >
