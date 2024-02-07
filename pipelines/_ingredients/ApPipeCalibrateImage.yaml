@@ -82,36 +82,52 @@ contracts:
   # Inputs and outputs must match. For consistency, contracts are written in execution order:
   #     first task == second task, then sorted by (first, second)
   # Use of ConnectionsClass for templated fields is a workaround for DM-30210
-  - calibrateImage.connections.ConnectionsClass(config=calibrateImage).output_exposure.name ==
-      subtractImages.connections.ConnectionsClass(config=subtractImages).science.name
-  - calibrateImage.connections.ConnectionsClass(config=calibrateImage).stars.name ==
-      subtractImages.connections.ConnectionsClass(config=subtractImages).sources.name
-  - calibrateImage.connections.ConnectionsClass(config=calibrateImage).output_exposure.name ==
-      rbClassify.connections.ConnectionsClass(config=rbClassify).science.name
-  - retrieveTemplate.connections.ConnectionsClass(config=retrieveTemplate).template.name ==
-      subtractImages.connections.ConnectionsClass(config=subtractImages).template.name
-  - subtractImages.connections.ConnectionsClass(config=subtractImages).difference.name ==
-      detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).difference.name
-  - subtractImages.connections.ConnectionsClass(config=subtractImages).science.name ==
-      detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).science.name
-  - subtractImages.connections.ConnectionsClass(config=subtractImages).template.name ==
-      diaPipe.connections.ConnectionsClass(config=diaPipe).template.name
-  - subtractImages.connections.ConnectionsClass(config=subtractImages).science.name ==
-      diaPipe.connections.ConnectionsClass(config=diaPipe).exposure.name
-  - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).diaSources.name ==
-      filterDiaSrcCat.connections.ConnectionsClass(config=filterDiaSrcCat).diaSourceCat.name
-  - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
-      rbClassify.connections.ConnectionsClass(config=rbClassify).difference.name
-  - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
-      transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diffIm.name
-  - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
-        diaPipe.connections.ConnectionsClass(config=diaPipe).diffIm.name
-  - filterDiaSrcCat.connections.ConnectionsClass(config=filterDiaSrcCat).filteredDiaSourceCat.name ==
-      rbClassify.connections.ConnectionsClass(config=rbClassify).diaSources.name
-  - filterDiaSrcCat.connections.ConnectionsClass(config=filterDiaSrcCat).filteredDiaSourceCat.name ==
-      transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diaSourceCat.name
-  - (not transformDiaSrcCat.doIncludeReliability) or
-        (rbClassify.connections.ConnectionsClass(config=rbClassify).classifications.name ==
-            transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).reliability.name)
-  - transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diaSourceTable.name ==
-        diaPipe.connections.ConnectionsClass(config=diaPipe).diaSourceTable.name
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).output_exposure.name ==
+              subtractImages.connections.ConnectionsClass(config=subtractImages).science.name
+    msg: "calibrateImage.output_exposure != subtractImages.science"
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).stars.name ==
+              subtractImages.connections.ConnectionsClass(config=subtractImages).sources.name
+    msg: "calibrateImage.stars != subtractImages.sources"
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).output_exposure.name ==
+              rbClassify.connections.ConnectionsClass(config=rbClassify).science.name
+    msg: "calibrateImage.output_exposure != rbClassify.science"
+  - contract: retrieveTemplate.connections.ConnectionsClass(config=retrieveTemplate).template.name ==
+              subtractImages.connections.ConnectionsClass(config=subtractImages).template.name
+    msg: "retrieveTemplate.template != subtractImages.template"
+  - contract: subtractImages.connections.ConnectionsClass(config=subtractImages).difference.name ==
+              detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).difference.name
+    msg: "subtractImages.difference != detectAndMeasure.difference"
+  - contract: subtractImages.connections.ConnectionsClass(config=subtractImages).science.name ==
+              detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).science.name
+    msg: "subtractImages.science != detectAndMeasure.science"
+  - contract: subtractImages.connections.ConnectionsClass(config=subtractImages).template.name ==
+              diaPipe.connections.ConnectionsClass(config=diaPipe).template.name
+    msg: "subtractImages.template != diaPipe.template"
+  - contract: subtractImages.connections.ConnectionsClass(config=subtractImages).science.name ==
+              diaPipe.connections.ConnectionsClass(config=diaPipe).exposure.name
+    msg: "subtractImages.science != diaPipe.exposure"
+  - contract: detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).diaSources.name ==
+              filterDiaSrcCat.connections.ConnectionsClass(config=filterDiaSrcCat).diaSourceCat.name
+    msg: "detectAndMeasure.diaSources != filterDiaSrcCat.diaSourceCat"
+  - contract: detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
+              rbClassify.connections.ConnectionsClass(config=rbClassify).difference.name
+    msg: "detectAndMeasure.subtractedMeasuredExposure != rbClassify.difference"
+  - contract: detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
+              transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diffIm.name
+    msg: "detectAndMeasure.subtractedMeasuredExposure != transformDiaSrcCat.diffIm"
+  - contract: detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
+              diaPipe.connections.ConnectionsClass(config=diaPipe).diffIm.name
+    msg: "detectAndMeasure.subtractedMeasuredExposure != diaPipe.diffIm"
+  - contract: filterDiaSrcCat.connections.ConnectionsClass(config=filterDiaSrcCat).filteredDiaSourceCat.name ==
+              rbClassify.connections.ConnectionsClass(config=rbClassify).diaSources.name
+    msg: "filterDiaSrcCat.filteredDiaSourceCat != rbClassify.diaSources"
+  - contract: filterDiaSrcCat.connections.ConnectionsClass(config=filterDiaSrcCat).filteredDiaSourceCat.name ==
+              transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diaSourceCat.name
+    msg: "filterDiaSrcCat.filteredDiaSourceCat != transformDiaSrcCat.diaSourceCat"
+  - contract: (not transformDiaSrcCat.doIncludeReliability) or
+              (rbClassify.connections.ConnectionsClass(config=rbClassify).classifications.name ==
+               transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).reliability.name)
+    msg: "rbClassify.classifications != transformDiaSrcCat.reliability"
+  - contract: transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diaSourceTable.name ==
+              diaPipe.connections.ConnectionsClass(config=diaPipe).diaSourceTable.name
+    msg: "transformDiaSrcCat.diaSourceTable != diaPipe.diaSourceTable"

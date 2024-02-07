@@ -70,15 +70,21 @@ contracts:
   # Inputs and outputs must match. For consistency, contracts are written in execution order:
   #     first task == second task, then sorted by (first, second)
   # Use of ConnectionsClass for templated fields is a workaround for DM-30210
-  - calibrate.connections.outputExposure ==
-      consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).calexp.name
-  - calibrate.connections.outputExposure ==
-      makeWarp.connections.ConnectionsClass(config=makeWarp).calExpList.name
-  - consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).visitSummary.name ==
-      selectGoodSeeingVisits.connections.ConnectionsClass(config=selectGoodSeeingVisits).visitSummaries.name
-  - consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).visitSummary.name ==
-      makeWarp.connections.ConnectionsClass(config=makeWarp).visitSummary.name
-  - selectGoodSeeingVisits.connections.ConnectionsClass(config=selectGoodSeeingVisits).goodVisits.name ==
-      assembleCoadd.connections.ConnectionsClass(config=assembleCoadd).selectedVisits.name
-  - makeWarp.connections.ConnectionsClass(config=makeWarp).psfMatched.name ==
-      assembleCoadd.connections.ConnectionsClass(config=assembleCoadd).psfMatchedWarps.name
+  - contract: calibrate.connections.outputExposure ==
+              consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).calexp.name
+    msg: "calibrate.outputExposure != consolidateVisitSummary.calexp"
+  - contract: calibrate.connections.outputExposure ==
+              makeWarp.connections.ConnectionsClass(config=makeWarp).calExpList.name
+    msg: "calibrate.outputExposure != makeWarp.calExpList"
+  - contract: consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).visitSummary.name ==
+              selectGoodSeeingVisits.connections.ConnectionsClass(config=selectGoodSeeingVisits).visitSummaries.name
+    msg: "consolidateVisitSummary.visitSummary != selectGoodSeeingVisits.visitSummaries"
+  - contract: consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).visitSummary.name ==
+              makeWarp.connections.ConnectionsClass(config=makeWarp).visitSummary.name
+    msg: "consolidateVisitSummary.visitSummary != makeWarp.visitSummary"
+  - contract: selectGoodSeeingVisits.connections.ConnectionsClass(config=selectGoodSeeingVisits).goodVisits.name ==
+              assembleCoadd.connections.ConnectionsClass(config=assembleCoadd).selectedVisits.name
+    msg: "selectGoodSeeingVisits.goodVisits != assembleCoadd.selectedVisits"
+  - contract: makeWarp.connections.ConnectionsClass(config=makeWarp).psfMatched.name ==
+              assembleCoadd.connections.ConnectionsClass(config=assembleCoadd).psfMatchedWarps.name
+    msg: "makeWarp.psfMatched != assembleCoadd.psfMatchedWarps"
