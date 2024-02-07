@@ -41,6 +41,11 @@ tasks:
       connections.science: initial_pvi
       connections.coaddName: parameters.coaddName
       doSkySources: True
+  filterDiaSrcCat:
+    class: lsst.ap.association.FilterDiaSourceCatalogTask
+    config:
+      doRemoveSkySources: True
+      connections.coaddName: parameters.coaddName
   rbClassify:
     class: lsst.meas.transiNet.RBTransiNetTask
     config:
@@ -66,6 +71,7 @@ subsets:
       - retrieveTemplate
       - subtractImages
       - detectAndMeasure
+      - filterDiaSrcCat
       - rbClassify
       - transformDiaSrcCat
       - diaPipe
@@ -92,16 +98,18 @@ contracts:
       diaPipe.connections.ConnectionsClass(config=diaPipe).template.name
   - subtractImages.connections.ConnectionsClass(config=subtractImages).science.name ==
       diaPipe.connections.ConnectionsClass(config=diaPipe).exposure.name
+  - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).diaSources.name ==
+      filterDiaSrcCat.connections.ConnectionsClass(config=filterDiaSrcCat).diaSourceCat.name
   - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
       rbClassify.connections.ConnectionsClass(config=rbClassify).difference.name
-  - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).diaSources.name ==
-      rbClassify.connections.ConnectionsClass(config=rbClassify).diaSources.name
   - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
       transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diffIm.name
-  - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).diaSources.name ==
-      transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diaSourceCat.name
   - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
         diaPipe.connections.ConnectionsClass(config=diaPipe).diffIm.name
+  - filterDiaSrcCat.connections.ConnectionsClass(config=filterDiaSrcCat).filteredDiaSourceCat.name ==
+      rbClassify.connections.ConnectionsClass(config=rbClassify).diaSources.name
+  - filterDiaSrcCat.connections.ConnectionsClass(config=filterDiaSrcCat).filteredDiaSourceCat.name ==
+      transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diaSourceCat.name
   - (not transformDiaSrcCat.doIncludeReliability) or
         (rbClassify.connections.ConnectionsClass(config=rbClassify).classifications.name ==
             transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).reliability.name)
