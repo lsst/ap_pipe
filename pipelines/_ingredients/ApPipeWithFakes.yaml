@@ -106,12 +106,17 @@ subsets:
 
 contracts:
   - detectAndMeasureWithFakes.doSkySources == transformDiaSrcCatWithFakes.doRemoveSkySources
-  # Inputs and outputs must match.
+  # Inputs and outputs must match. For consistency, contracts are written in execution order:
+  #     first task == second task, then sorted by (first, second)
   # Use of ConnectionsClass for templated fields is a workaround for DM-30210
   - createFakes.connections.ConnectionsClass(config=createFakes).fakeCat.name ==
       coaddFakes.connections.ConnectionsClass(config=coaddFakes).fakeCat.name
   - createFakes.connections.ConnectionsClass(config=createFakes).fakeCat.name ==
       processVisitFakes.connections.ConnectionsClass(config=processVisitFakes).fakeCats.name
+  - createFakes.connections.ConnectionsClass(config=createFakes).fakeCat.name ==
+      fakesMatch.connections.ConnectionsClass(config=fakesMatch).fakeCats.name
+  - processVisitFakes.connections.ConnectionsClass(config=processVisitFakes).outputExposure.name ==
+      subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).science.name
   - coaddFakes.connections.ConnectionsClass(config=coaddFakes).imageWithFakes.name ==
       retrieveTemplateWithFakes.connections.ConnectionsClass(config=retrieveTemplateWithFakes).coaddExposures.name
   - retrieveTemplateWithFakes.connections.ConnectionsClass(config=retrieveTemplateWithFakes).template.name ==
@@ -141,9 +146,5 @@ contracts:
             transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).reliability.name)
   - transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diaSourceTable.name ==
       diaPipe.connections.ConnectionsClass(config=diaPipe).diaSourceTable.name
-  - processVisitFakes.connections.ConnectionsClass(config=processVisitFakes).outputExposure.name ==
-      subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).science.name
-  - createFakes.connections.ConnectionsClass(config=createFakes).fakeCat.name ==
-      fakesMatch.connections.ConnectionsClass(config=fakesMatch).fakeCats.name
   - diaPipe.connections.ConnectionsClass(config=diaPipe).associatedDiaSources.name ==
       fakesMatch.connections.ConnectionsClass(config=fakesMatch).associatedDiaSources.name

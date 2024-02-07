@@ -73,7 +73,8 @@ subsets:
       An alias of ApPipe to use in higher-level pipelines.
 contracts:
   - detectAndMeasure.doSkySources == transformDiaSrcCat.doRemoveSkySources
-  # Inputs and outputs must match
+  # Inputs and outputs must match. For consistency, contracts are written in execution order:
+  #     first task == second task, then sorted by (first, second)
   # Use of ConnectionsClass for templated fields is a workaround for DM-30210
   - calibrateImage.connections.ConnectionsClass(config=calibrateImage).output_exposure.name ==
       subtractImages.connections.ConnectionsClass(config=subtractImages).science.name
@@ -94,7 +95,7 @@ contracts:
   - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
       rbClassify.connections.ConnectionsClass(config=rbClassify).difference.name
   - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).diaSources.name ==
-        rbClassify.connections.ConnectionsClass(config=rbClassify).diaSources.name
+      rbClassify.connections.ConnectionsClass(config=rbClassify).diaSources.name
   - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
       transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diffIm.name
   - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).diaSources.name ==

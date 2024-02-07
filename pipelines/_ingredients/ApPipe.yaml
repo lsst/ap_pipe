@@ -72,7 +72,8 @@ subsets:
       An alias of ApPipe to use in higher-level pipelines.
 contracts:
   - detectAndMeasure.doSkySources == transformDiaSrcCat.doRemoveSkySources
-  # Inputs and outputs must match
+  # Inputs and outputs must match. For consistency, contracts are written in execution order:
+  #     first task == second task, then sorted by (first, second)
   # Use of ConnectionsClass for templated fields is a workaround for DM-30210
   - retrieveTemplate.connections.ConnectionsClass(config=retrieveTemplate).template.name ==
       subtractImages.connections.ConnectionsClass(config=subtractImages).template.name
@@ -84,18 +85,18 @@ contracts:
       diaPipe.connections.ConnectionsClass(config=diaPipe).template.name
   - subtractImages.connections.ConnectionsClass(config=subtractImages).science.name ==
       diaPipe.connections.ConnectionsClass(config=diaPipe).exposure.name
-  - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
-      rbClassify.connections.ConnectionsClass(config=rbClassify).difference.name
-  - filterDiaSrcCat.connections.ConnectionsClass(config=filterDiaSrcCat).filteredDiaSourceCat.name ==
-      rbClassify.connections.ConnectionsClass(config=rbClassify).diaSources.name
-  - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
-      transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diffIm.name
   - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).diaSources.name ==
       filterDiaSrcCat.connections.ConnectionsClass(config=filterDiaSrcCat).diaSourceCat.name
+  - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
+      rbClassify.connections.ConnectionsClass(config=rbClassify).difference.name
+  - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
+      transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diffIm.name
+  - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
+      diaPipe.connections.ConnectionsClass(config=diaPipe).diffIm.name
+  - filterDiaSrcCat.connections.ConnectionsClass(config=filterDiaSrcCat).filteredDiaSourceCat.name ==
+      rbClassify.connections.ConnectionsClass(config=rbClassify).diaSources.name
   - filterDiaSrcCat.connections.ConnectionsClass(config=filterDiaSrcCat).filteredDiaSourceCat.name ==
       transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diaSourceCat.name
-  - detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
-        diaPipe.connections.ConnectionsClass(config=diaPipe).diffIm.name
   - (not transformDiaSrcCat.doIncludeReliability) or
         (rbClassify.connections.ConnectionsClass(config=rbClassify).classifications.name ==
             transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).reliability.name)
