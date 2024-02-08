@@ -57,6 +57,12 @@ tasks:
       connections.coaddName: parameters.coaddName
       connections.fakesType: parameters.fakesType
       doSkySources: True
+  filterDiaSrcCatWithFakes:
+    class: lsst.ap.association.FilterDiaSourceCatalogTask
+    config:
+      doRemoveSkySources: True
+      connections.coaddName: parameters.coaddName
+      connections.fakesType: parameters.fakesType
   rbClassifyWithFakes:
     class: lsst.meas.transiNet.RBTransiNetTask
     config:
@@ -97,6 +103,7 @@ subsets:
       - retrieveTemplateWithFakes
       - subtractImagesWithFakes
       - detectAndMeasureWithFakes
+      - filterDiaSrcCatWithFakes
       - rbClassifyWithFakes
       - transformDiaSrcCatWithFakes
       - diaPipe
@@ -106,44 +113,67 @@ subsets:
 
 contracts:
   - detectAndMeasureWithFakes.doSkySources == transformDiaSrcCatWithFakes.doRemoveSkySources
-  # Inputs and outputs must match.
+  # Inputs and outputs must match. For consistency, contracts are written in execution order:
+  #     first task == second task, then sorted by (first, second)
   # Use of ConnectionsClass for templated fields is a workaround for DM-30210
-  - createFakes.connections.ConnectionsClass(config=createFakes).fakeCat.name ==
-      coaddFakes.connections.ConnectionsClass(config=coaddFakes).fakeCat.name
-  - createFakes.connections.ConnectionsClass(config=createFakes).fakeCat.name ==
-      processVisitFakes.connections.ConnectionsClass(config=processVisitFakes).fakeCats.name
-  - coaddFakes.connections.ConnectionsClass(config=coaddFakes).imageWithFakes.name ==
-      retrieveTemplateWithFakes.connections.ConnectionsClass(config=retrieveTemplateWithFakes).coaddExposures.name
-  - retrieveTemplateWithFakes.connections.ConnectionsClass(config=retrieveTemplateWithFakes).template.name ==
-      subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).template.name
-  - subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).difference.name ==
-      detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).difference.name
-  - subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).science.name ==
-      detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).science.name
-  - subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).template.name ==
-      diaPipe.connections.ConnectionsClass(config=diaPipe).template.name
-  - subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).science.name ==
-      diaPipe.connections.ConnectionsClass(config=diaPipe).exposure.name
-  - detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).subtractedMeasuredExposure.name ==
-      rbClassifyWithFakes.connections.ConnectionsClass(config=rbClassifyWithFakes).difference.name
-  - detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).diaSources.name ==
-      rbClassifyWithFakes.connections.ConnectionsClass(config=rbClassifyWithFakes).diaSources.name
-  - detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).subtractedMeasuredExposure.name ==
-      transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diffIm.name
-  - detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).diaSources.name ==
-      transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diaSourceCat.name
-  - detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).subtractedMeasuredExposure.name ==
-      diaPipe.connections.ConnectionsClass(config=diaPipe).diffIm.name
-  - detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).subtractedMeasuredExposure.name ==
-      fakesMatch.connections.ConnectionsClass(config=fakesMatch).diffIm.name
-  - (not transformDiaSrcCatWithFakes.doIncludeReliability) or
-        (rbClassifyWithFakes.connections.ConnectionsClass(config=rbClassifyWithFakes).classifications.name ==
-            transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).reliability.name)
-  - transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diaSourceTable.name ==
-      diaPipe.connections.ConnectionsClass(config=diaPipe).diaSourceTable.name
-  - processVisitFakes.connections.ConnectionsClass(config=processVisitFakes).outputExposure.name ==
-      subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).science.name
-  - createFakes.connections.ConnectionsClass(config=createFakes).fakeCat.name ==
-      fakesMatch.connections.ConnectionsClass(config=fakesMatch).fakeCats.name
-  - diaPipe.connections.ConnectionsClass(config=diaPipe).associatedDiaSources.name ==
-      fakesMatch.connections.ConnectionsClass(config=fakesMatch).associatedDiaSources.name
+  - contract: createFakes.connections.ConnectionsClass(config=createFakes).fakeCat.name ==
+              coaddFakes.connections.ConnectionsClass(config=coaddFakes).fakeCat.name
+    msg: "createFakes.fakeCat != coaddFakes.fakeCat"
+  - contract: createFakes.connections.ConnectionsClass(config=createFakes).fakeCat.name ==
+              processVisitFakes.connections.ConnectionsClass(config=processVisitFakes).fakeCats.name
+    msg: "createFakes.fakeCat != processVisitFakes.fakeCats"
+  - contract: createFakes.connections.ConnectionsClass(config=createFakes).fakeCat.name ==
+              fakesMatch.connections.ConnectionsClass(config=fakesMatch).fakeCats.name
+    msg: "createFakes.fakeCat != fakesMatch.fakeCats"
+  - contract: processVisitFakes.connections.ConnectionsClass(config=processVisitFakes).outputExposure.name ==
+              subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).science.name
+    msg: "processVisitFakes.outputExposure != subtractImagesWithFakes.science"
+  - contract: coaddFakes.connections.ConnectionsClass(config=coaddFakes).imageWithFakes.name ==
+              retrieveTemplateWithFakes.connections.ConnectionsClass(config=retrieveTemplateWithFakes).coaddExposures.name
+    msg: "coaddFakes.imageWithFakes != retrieveTemplateWithFakes.coaddExposures"
+  - contract: retrieveTemplateWithFakes.connections.ConnectionsClass(config=retrieveTemplateWithFakes).template.name ==
+              subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).template.name
+    msg: "retrieveTemplateWithFakes.template != subtractImagesWithFakes.template"
+  - contract: subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).difference.name ==
+              detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).difference.name
+    msg: "subtractImagesWithFakes.difference != detectAndMeasureWithFakes.difference"
+  - contract: subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).science.name ==
+              detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).science.name
+    msg: "subtractImagesWithFakes.science != detectAndMeasureWithFakes.science"
+  - contract: subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).template.name ==
+              diaPipe.connections.ConnectionsClass(config=diaPipe).template.name
+    msg: "subtractImagesWithFakes.template != diaPipe.template"
+  - contract: subtractImagesWithFakes.connections.ConnectionsClass(config=subtractImagesWithFakes).science.name ==
+              diaPipe.connections.ConnectionsClass(config=diaPipe).exposure.name
+    msg: "subtractImagesWithFakes.science != diaPipe.exposure"
+  - contract: detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).diaSources.name ==
+              filterDiaSrcCatWithFakes.connections.ConnectionsClass(config=filterDiaSrcCatWithFakes).diaSourceCat.name
+    msg: "detectAndMeasureWithFakes.diaSources != filterDiaSrcCatWithFakes.diaSourceCat"
+  - contract: detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).subtractedMeasuredExposure.name ==
+              rbClassifyWithFakes.connections.ConnectionsClass(config=rbClassifyWithFakes).difference.name
+    msg: "detectAndMeasureWithFakes.subtractedMeasuredExposure != rbClassifyWithFakes.difference"
+  - contract: detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).subtractedMeasuredExposure.name ==
+              transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diffIm.name
+    msg: "detectAndMeasureWithFakes.subtractedMeasuredExposure != transformDiaSrcCatWithFakes.diffIm"
+  - contract: detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).subtractedMeasuredExposure.name ==
+              diaPipe.connections.ConnectionsClass(config=diaPipe).diffIm.name
+    msg: "detectAndMeasureWithFakes.subtractedMeasuredExposure != diaPipe.diffIm"
+  - contract: detectAndMeasureWithFakes.connections.ConnectionsClass(config=detectAndMeasureWithFakes).subtractedMeasuredExposure.name ==
+              fakesMatch.connections.ConnectionsClass(config=fakesMatch).diffIm.name
+    msg: "detectAndMeasureWithFakes.subtractedMeasuredExposure != fakesMatch.diffIm"
+  - contract: filterDiaSrcCatWithFakes.connections.ConnectionsClass(config=filterDiaSrcCatWithFakes).filteredDiaSourceCat.name ==
+              rbClassifyWithFakes.connections.ConnectionsClass(config=rbClassifyWithFakes).diaSources.name
+    msg: "filterDiaSrcCatWithFakes.filteredDiaSourceCat != rbClassifyWithFakes.diaSources"
+  - contract: filterDiaSrcCatWithFakes.connections.ConnectionsClass(config=filterDiaSrcCatWithFakes).filteredDiaSourceCat.name ==
+              transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diaSourceCat.name
+    msg: "filterDiaSrcCatWithFakes.filteredDiaSourceCat != transformDiaSrcCatWithFakes.diaSourceCat"
+  - contract: (not transformDiaSrcCatWithFakes.doIncludeReliability) or
+              (rbClassifyWithFakes.connections.ConnectionsClass(config=rbClassifyWithFakes).classifications.name ==
+               transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).reliability.name)
+    msg: "rbClassifyWithFakes.classifications != transformDiaSrcCatWithFakes.reliability"
+  - contract: transformDiaSrcCatWithFakes.connections.ConnectionsClass(config=transformDiaSrcCatWithFakes).diaSourceTable.name ==
+              diaPipe.connections.ConnectionsClass(config=diaPipe).diaSourceTable.name
+    msg: "transformDiaSrcCatWithFakes.diaSourceTable != diaPipe.diaSourceTable"
+  - contract: diaPipe.connections.ConnectionsClass(config=diaPipe).associatedDiaSources.name ==
+              fakesMatch.connections.ConnectionsClass(config=fakesMatch).associatedDiaSources.name
+    msg: "diaPipe.associatedDiaSources != fakesMatch.associatedDiaSources"
