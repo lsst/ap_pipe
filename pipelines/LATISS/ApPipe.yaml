@@ -6,12 +6,12 @@ instrument: lsst.obs.lsst.Latiss
 imports:
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipe.yaml
     exclude:
-      # TODO: prompt_prototype does not yet support R/B analysis.
+      # TODO: prompt_prototype does not yet support R/B analysis: DM-42220.
       - rbClassify
 
 tasks:
   transformDiaSrcCat:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
     config:
-      # TODO: prompt_prototype does not yet support R/B analysis
+      # TODO: prompt_prototype does not yet support R/B analysis: DM-42220.
       doIncludeReliability: False
