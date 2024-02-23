@@ -23,6 +23,8 @@ parameters:
 tasks:
   test_noop:
     class: lsst.ap.pipe.test.InitOnlyTask
+  test_inputonly:
+    class: lsst.ap.pipe.test.InputOnlyTask
   retrieveTemplate:  # For multi-tract difference imaging
     class: lsst.ip.diffim.getTemplate.GetTemplateTask
     config:

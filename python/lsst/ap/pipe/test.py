@@ -23,7 +23,7 @@ import lsst.pex.config as pexConfig
 from lsst.pipe.base import PipelineTask, PipelineTaskConfig, PipelineTaskConnections, Struct, \
     NoWorkFound, connectionTypes
 
-__all__ = ["InitOnlyTask"]
+__all__ = ["InitOnlyTask", "InputOnlyTask"]
 
 
 class InitOnlyConnections(PipelineTaskConnections, dimensions={}):
@@ -54,4 +54,26 @@ class InitOnlyTask(PipelineTask):
         raise AssertionError("This task does no work after init.")
 
     def run(self):
+        return Struct()
+
+
+class InputOnlyConnections(PipelineTaskConnections, dimensions={"instrument", "visit", "detector"}):
+    catalog = connectionTypes.Input(
+        doc="This is a simulation of a pure dataset consumer.",
+        name="src",
+        storageClass="SourceCatalog",
+        dimensions={"instrument", "visit", "detector"},
+    )
+
+
+class InputOnlyConfig(PipelineTaskConfig, pipelineConnections=InputOnlyConnections):
+    pass
+
+
+class InputOnlyTask(PipelineTask):
+    _DefaultName = "input_only"
+    ConfigClass = InputOnlyConfig
+
+    def run(self, catalog):
+        self.log.info("RUNNING INPUT-ONLY TASK")
         return Struct()
