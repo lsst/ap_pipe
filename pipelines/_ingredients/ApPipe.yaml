@@ -21,6 +21,8 @@ parameters:
   # Pipeline configurable to run on both goodSeeing and deep templates, depending on dataset.
   coaddName: goodSeeing
 tasks:
+  test_noop:
+    class: lsst.ap.pipe.test.InitOnlyTask
   retrieveTemplate:  # For multi-tract difference imaging
     class: lsst.ip.diffim.getTemplate.GetTemplateTask
     config:
