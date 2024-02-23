@@ -23,7 +23,7 @@ import lsst.pex.config as pexConfig
 from lsst.pipe.base import PipelineTask, PipelineTaskConfig, PipelineTaskConnections, Struct, \
     NoWorkFound, connectionTypes
 
-__all__ = ["InitOnlyTask", "InputOnlyTask"]
+__all__ = ["InitOnlyTask", "InputOnlyTask", "OutputOnlyTask"]
 
 
 class InitOnlyConnections(PipelineTaskConnections, dimensions={}):
@@ -64,6 +64,12 @@ class InputOnlyConnections(PipelineTaskConnections, dimensions={"instrument", "v
         storageClass="SourceCatalog",
         dimensions={"instrument", "visit", "detector"},
     )
+    info = connectionTypes.Input(
+        doc="This is a simulation of a metadata dataset.",
+        name="handy_info",
+        storageClass="StructuredDataDict",
+        dimensions={"instrument", "visit", "detector"},
+    )
 
 
 class InputOnlyConfig(PipelineTaskConfig, pipelineConnections=InputOnlyConnections):
@@ -74,6 +80,33 @@ class InputOnlyTask(PipelineTask):
     _DefaultName = "input_only"
     ConfigClass = InputOnlyConfig
 
-    def run(self, catalog):
+    def run(self, catalog, info):
         self.log.info("RUNNING INPUT-ONLY TASK")
         return Struct()
+
+
+class OutputOnlyConnections(PipelineTaskConnections, dimensions={"instrument", "visit", "detector"}):
+    info = connectionTypes.Output(
+        doc="This is a simulation of a metadata dataset.",
+        name="handy_info",
+        storageClass="StructuredDataDict",
+        dimensions={"instrument", "visit", "detector"},
+    )
+
+
+class OutputOnlyConfig(PipelineTaskConfig, pipelineConnections=OutputOnlyConnections):
+    pass
+
+
+class OutputOnlyTask(PipelineTask):
+    _DefaultName = "output_only"
+    ConfigClass = OutputOnlyConfig
+
+    def run(self):
+        self.log.info("RUNNING OUTPUT-ONLY TASK")
+        data = {
+            "beast": "bovine",
+            "answer": 42,
+            "form": "rotund",
+        }
+        return Struct(info=data)

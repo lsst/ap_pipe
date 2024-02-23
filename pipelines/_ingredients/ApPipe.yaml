@@ -25,6 +25,8 @@ tasks:
     class: lsst.ap.pipe.test.InitOnlyTask
   test_inputonly:
     class: lsst.ap.pipe.test.InputOnlyTask
+  test_outputonly:
+    class: lsst.ap.pipe.test.OutputOnlyTask
   retrieveTemplate:  # For multi-tract difference imaging
     class: lsst.ip.diffim.getTemplate.GetTemplateTask
     config:
