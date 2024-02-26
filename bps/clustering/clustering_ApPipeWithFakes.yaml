@@ -26,6 +26,6 @@ cluster:
     pipetasks: coaddFakes
     dimensions: tract,patch
   diffim:
-    pipetasks: processVisitFakes,retrieveTemplateWithFakes,subtractImagesWithFakes,detectAndMeasureWithFakes,transformDiaSrcCatWithFakes,diaPipe,fakesMatch
+    pipetasks: processVisitFakes,retrieveTemplate,subtractImages,detectAndMeasure,transformDiaSrcCat,diaPipe,fakesMatch
     dimensions: visit,detector
     equalDimensions: visit:exposure
