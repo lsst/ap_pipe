@@ -24,6 +24,6 @@ cluster:
     dimensions: visit,detector
     equalDimensions: visit:exposure
   diffim:
-    pipetasks: retrieveTemplate,subtractImages,detectAndMeasure,transformDiaSrcCat,diaPipe
+    pipetasks: retrieveTemplate,subtractImages,detectAndMeasure,filterDiaSrcCat,rbClassify,transformDiaSrcCat,diaPipe
     dimensions: visit,detector
     equalDimensions: visit:exposure
