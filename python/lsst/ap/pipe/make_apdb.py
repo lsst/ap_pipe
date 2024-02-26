@@ -116,8 +116,8 @@ def makeApdb(args=None):
     parser = ConfigOnlyParser()
     parsedCmd = parser.parse_args(args=args)
 
+    daxApdb.Apdb.makeSchema(parsedCmd.config)
     apdb = daxApdb.make_apdb(config=parsedCmd.config)
-    apdb.makeSchema()
     return apdb
 
 
