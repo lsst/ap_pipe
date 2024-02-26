@@ -1,0 +1,25 @@
+description: A set of tasks to run when processing raw images, specialized for HSC
+
+instrument: lsst.obs.subaru.HyperSuprimeCam
+imports:
+  - location: $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcd.yaml
+# TODO DM-40388: Remove the below tasks block once the new pipeline is vetted.
+tasks:
+  characterizeImage:
+    class: lsst.pipe.tasks.characterizeImage.CharacterizeImageTask
+    config:
+      # HACK: workaround for DM-31047, remove once we're no longer loading
+      # DRP-specific obs configs.
+      file: $AP_PIPE_DIR/config/HSC/characterizeImage.py
+      # Do not integrate file and pipeline configs until DM-31047 fixed, to
+      # make it easier to check for changes on the obs side.
+      # Config file wipes out all pre-existing configs, so copy base pipeline
+      # config on top.
+  calibrate:
+    class: lsst.pipe.tasks.calibrate.CalibrateTask
+    config:
+      # HACK: workaround for DM-31047, remove once we're no longer loading
+      # DRP-specific obs configs.
+      file: $AP_PIPE_DIR/config/HSC/calibrate.py
+      # Do not integrate file and pipeline configs until DM-31047 fixed, to
+      # make it easier to check for changes on the obs side.
