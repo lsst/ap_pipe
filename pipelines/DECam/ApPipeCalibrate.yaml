@@ -1,4 +1,3 @@
-# TODO DM-40388: This file will replace ApPipe.yaml, once the new pipeline is vetted.
 description: End to end AP pipeline specialized for DECam
 # (1) Run $AP_PIPE_DIR/pipelines/DECam/RunIsrForCrosstalkSources.yaml
 # (2) Execute `make_apdb.py`, e.g.,
@@ -8,17 +7,18 @@ description: End to end AP pipeline specialized for DECam
 
 instrument: lsst.obs.decam.DarkEnergyCamera
 imports:
-  - location: $AP_PIPE_DIR/pipelines/DECam/ProcessCcdCalibrateImage.yaml
-  - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipeCalibrateImage.yaml
-    exclude:  # These tasks come from DECam/ProcessCcdCalibrateImage.yaml instead
+  - location: $AP_PIPE_DIR/pipelines/DECam/ProcessCcdCalibrate.yaml
+  - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipeCalibrate.yaml
+    exclude:  # These tasks come from DECam/ProcessCcd.yaml instead
       - processCcd
 subsets:
-# apPipe must be redefined from $AP_PIPE_DIR/pipelines/_ingredients/ApPipeCalibrateImage.yaml
+# apPipe must be redefined from $AP_PIPE_DIR/pipelines/_ingredients/ApPipe.yaml
 # because its processCcd was excluded.
   apPipe:
     subset:
       - isr
-      - calibrateImage
+      - characterizeImage
+      - calibrate
       - retrieveTemplate
       - subtractImages
       - detectAndMeasure
