@@ -22,17 +22,22 @@
 
 import astropy.units as u
 import numpy as np
+import time
 import unittest
 
+import lsst.pex.config
 from lsst.pipe.base import testUtils
 import lsst.skymap as skyMap
+from lsst.utils.timer import timeMethod
 import lsst.utils.tests
 from lsst.verify import Name
+import lsst.verify.tasks
 from lsst.verify.tasks.testUtils import MetricTaskTestCase
 
 from lsst.ap.pipe.createApFakes import CreateRandomApFakesTask, CreateRandomApFakesConfig
 from lsst.ap.pipe.metrics import (ApFakesCompletenessMetricTask, ApFakesCompletenessMetricConfig,
-                                  ApFakesCountMetricTask, ApFakesCountMetricConfig)
+                                  ApFakesCountMetricTask, ApFakesCountMetricConfig,
+                                  PipelineTimingMetricTask)
 
 
 class TestApCompletenessTask(MetricTaskTestCase):
@@ -188,6 +193,114 @@ class TestApCountTask(MetricTaskTestCase):
         meas = result.measurement
         self.assertEqual(meas.metric_name, Name(metric="ap_pipe.apFakesCompleteness"))
         self.assertEqual(meas.quantity, 0 * u.count)
+
+
+class DummyTask(lsst.pipe.base.Task):
+    ConfigClass = lsst.pex.config.Config
+    _DefaultName = "NotARealTask"
+    taskLength = 0.1
+
+    @timeMethod
+    def run(self):
+        time.sleep(self.taskLength)
+
+
+# Can't test against MetadataMetricTestCase, because this class is not a MetadataMetricTask
+class TestPipelineTimingMetricTask(MetricTaskTestCase):
+    @staticmethod
+    def _makeConfig(nameStart=DummyTask._DefaultName, nameEnd=DummyTask._DefaultName):
+        config = PipelineTimingMetricTask.ConfigClass()
+        config.connections.labelStart = nameStart
+        config.connections.labelEnd = nameEnd
+        config.targetStart = nameStart + ".run"
+        config.targetEnd = nameEnd + ".run"
+        config.connections.package = "ap_pipe"
+        config.connections.metric = "DummyTime"
+        return config
+
+    @classmethod
+    def makeTask(cls):
+        return PipelineTimingMetricTask(config=cls._makeConfig(nameStart="first", nameEnd="last"))
+
+    def setUp(self):
+        super().setUp()
+        self.metric = Name("ap_pipe.DummyTime")
+
+        self.startTask = DummyTask(name="first")
+        self.startTask.run()
+        self.endTask = DummyTask(name="last")
+        self.endTask.run()
+
+    def testSingleTask(self):
+        task = PipelineTimingMetricTask(config=self._makeConfig(nameStart="first", nameEnd="first"))
+
+        altConfig = lsst.verify.tasks.TimingMetricConfig()
+        altConfig.connections.labelName = "first"
+        altConfig.target = "first.run"
+        altConfig.connections.package = "verify"
+        altConfig.connections.metric = "DummyTime"
+        altTask = lsst.verify.tasks.TimingMetricTask(config=altConfig)
+
+        result = task.run(self.startTask.getFullMetadata(), self.startTask.getFullMetadata())
+        oracle = altTask.run(self.startTask.getFullMetadata())
+
+        self.assertEqual(result.measurement.metric_name, self.metric)
+        self.assertAlmostEqual(result.measurement.quantity.to_value(u.s),
+                               oracle.measurement.quantity.to_value(u.s))
+
+    def testTwoTasks(self):
+        firstTask = PipelineTimingMetricTask(config=self._makeConfig(nameStart="first", nameEnd="first"))
+        secondTask = PipelineTimingMetricTask(config=self._makeConfig(nameStart="last", nameEnd="last"))
+
+        result = self.task.run(self.startTask.getFullMetadata(), self.endTask.getFullMetadata())
+        firstResult = firstTask.run(self.startTask.getFullMetadata(), self.startTask.getFullMetadata())
+        secondResult = secondTask.run(self.endTask.getFullMetadata(), self.endTask.getFullMetadata())
+
+        self.assertEqual(result.measurement.metric_name, self.metric)
+        self.assertGreater(result.measurement.quantity, 0.0 * u.s)
+        self.assertGreaterEqual(result.measurement.quantity,
+                                firstResult.measurement.quantity + secondResult.measurement.quantity)
+
+    def testRunDifferentMethodFirst(self):
+        config = self._makeConfig(nameStart="first", nameEnd="last")
+        config.targetStart = "first.doProcess"
+        task = PipelineTimingMetricTask(config=config)
+        try:
+            result = task.run(self.startTask.getFullMetadata(), self.endTask.getFullMetadata())
+        except lsst.pipe.base.NoWorkFound:
+            # Correct behavior for MetricTask
+            pass
+        else:
+            # Alternative correct behavior for MetricTask
+            testUtils.assertValidOutput(task, result)
+            meas = result.measurement
+            self.assertIsNone(meas)
+
+    def testRunDifferentMethodLast(self):
+        config = self._makeConfig(nameStart="first", nameEnd="last")
+        config.targetStart = "last.doProcess"
+        task = PipelineTimingMetricTask(config=config)
+        try:
+            result = task.run(self.startTask.getFullMetadata(), self.endTask.getFullMetadata())
+        except lsst.pipe.base.NoWorkFound:
+            # Correct behavior for MetricTask
+            pass
+        else:
+            # Alternative correct behavior for MetricTask
+            testUtils.assertValidOutput(task, result)
+            meas = result.measurement
+            self.assertIsNone(meas)
+
+    def testBadlyTypedKeys(self):
+        metadata = self.endTask.getFullMetadata()
+        endKeys = [key
+                   for key in metadata.paramNames(topLevelOnly=False)
+                   if "EndUtc" in key]
+        for key in endKeys:
+            metadata[key] = 42
+
+        with self.assertRaises(lsst.verify.tasks.MetricComputationError):
+            self.task.run(self.startTask.getFullMetadata(), metadata)
 
 
 # Hack around unittest's hacky test setup system
