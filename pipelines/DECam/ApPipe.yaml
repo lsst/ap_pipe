@@ -24,5 +24,8 @@ subsets:
       - rbClassify
       - transformDiaSrcCat
       - diaPipe
+      - analyzeAssocDiaSrcCore
+      - analyzeTrailedDiaSrcCore
+      - diffimTaskCore
     description: >
       An alias of ApPipe to use in higher-level pipelines.

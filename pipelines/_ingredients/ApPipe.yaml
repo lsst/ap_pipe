@@ -16,7 +16,8 @@ description: End to end Alert Production pipeline.
 # pipeline, e.g., $AP_PIPE_DIR/pipelines/$CAMERA/ApPipeCalibrateImage.yaml.
 
 imports:
-  - location: $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcd.yaml
+  - $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcd.yaml
+  - $ANALYSIS_TOOLS_DIR/pipelines/apDetectorVisitQualityCore.yaml
 parameters:
   # Pipeline configurable to run on both goodSeeing and deep templates, depending on dataset.
   coaddName: goodSeeing
@@ -74,6 +75,9 @@ subsets:
       - rbClassify
       - transformDiaSrcCat
       - diaPipe
+      - analyzeAssocDiaSrcCore
+      - analyzeTrailedDiaSrcCore
+      - diffimTaskCore
     description: >
       An alias of ApPipe to use in higher-level pipelines.
 contracts:

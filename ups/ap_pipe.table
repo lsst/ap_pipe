@@ -11,6 +11,7 @@ setupRequired(pipe_base)
 setupRequired(pipe_tasks)
 
 setupRequired(ap_association)
+setupRequired(analysis_tools)
 
 setupRequired(meas_transiNet)
 
