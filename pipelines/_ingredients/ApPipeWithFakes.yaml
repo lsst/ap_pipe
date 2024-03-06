@@ -13,7 +13,9 @@ description: AP Pipeline with synthetic/fake sources. Templates are inputs.
 # pipeline, e.g., $AP_PIPE_DIR/pipelines/$CAMERA/ApPipeWithFakes.yaml.
 
 imports:
-  - location: $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcd.yaml
+  # The existing Fakes insertion system is not currently compatible with the
+  # new CalibrateImageTask, so the fakes pipeline still is on the old tasks.
+  - location: $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcdCalibrate.yaml
 parameters:
   coaddName: goodSeeing
   fakesType: 'fakes_'
