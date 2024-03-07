@@ -9,10 +9,10 @@ instrument: lsst.obs.decam.DarkEnergyCamera
 imports:
   - location: $AP_PIPE_DIR/pipelines/DECam/ProcessCcd.yaml
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipe.yaml
-    exclude:  # These tasks come from DECam/ProcessCcdCalibrateImage.yaml instead
+    exclude:  # These tasks come from DECam/ProcessCcd.yaml instead
       - processCcd
 subsets:
-# apPipe must be redefined from $AP_PIPE_DIR/pipelines/_ingredients/ApPipeCalibrateImage.yaml
+# apPipe must be redefined from $AP_PIPE_DIR/pipelines/_ingredients/ApPipe.yaml
 # because its processCcd was excluded.
   apPipe:
     subset:
