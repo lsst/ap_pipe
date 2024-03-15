@@ -16,6 +16,7 @@ imports:
   # The existing Fakes insertion system is not currently compatible with the
   # new CalibrateImageTask, so the fakes pipeline still is on the old tasks.
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcdCalibrate.yaml
+  - location: $ANALYSIS_TOOLS_DIR/pipelines/apDetectorVisitQualityCore.yaml
 parameters:
   coaddName: goodSeeing
   fakesType: 'fakes_'
@@ -110,6 +111,9 @@ subsets:
       - transformDiaSrcCat
       - diaPipe
       - fakesMatch
+      - analyzeAssocDiaSrcCore
+      - analyzeTrailedDiaSrcCore
+      - diffimTaskCore
     description: >
       The AP pipeline with fakes. Requires apPipe and prepareFakes subsets.
 
