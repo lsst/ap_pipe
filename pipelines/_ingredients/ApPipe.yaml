@@ -85,15 +85,15 @@ contracts:
   # Inputs and outputs must match. For consistency, contracts are written in execution order:
   #     first task == second task, then sorted by (first, second)
   # Use of ConnectionsClass for templated fields is a workaround for DM-30210
-  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).output_exposure.name ==
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
               subtractImages.connections.ConnectionsClass(config=subtractImages).science.name
-    msg: "calibrateImage.output_exposure != subtractImages.science"
+    msg: "calibrateImage.exposure != subtractImages.science"
   - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).stars_footprints.name ==
               subtractImages.connections.ConnectionsClass(config=subtractImages).sources.name
     msg: "calibrateImage.footprints_stars != subtractImages.sources"
-  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).output_exposure.name ==
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
               rbClassify.connections.ConnectionsClass(config=rbClassify).science.name
-    msg: "calibrateImage.output_exposure != rbClassify.science"
+    msg: "calibrateImage.exposure != rbClassify.science"
   - contract: retrieveTemplate.connections.ConnectionsClass(config=retrieveTemplate).template.name ==
               subtractImages.connections.ConnectionsClass(config=subtractImages).template.name
     msg: "retrieveTemplate.template != subtractImages.template"
