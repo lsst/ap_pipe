@@ -9,7 +9,7 @@ description: The AP template building pipeline
 # pipeline, e.g., $AP_PIPE_DIR/pipelines/$CAMERA/ApTemplate.yaml.
 
 imports:
-  - location: $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcd.yaml
+  - location: $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcdCalibrate.yaml
 parameters:
   coaddName: goodSeeing
 tasks:
@@ -37,7 +37,7 @@ tasks:
       doWriteEmptyWarps: True
       makePsfMatched: True
   assembleCoadd:
-    class: lsst.pipe.tasks.assembleCoadd.CompareWarpAssembleCoaddTask
+    class: lsst.drp.tasks.assemble_coadd.CompareWarpAssembleCoaddTask
     config:
       doSelectVisits: True
       doNImage: True
