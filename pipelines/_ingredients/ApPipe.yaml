@@ -78,6 +78,7 @@ subsets:
       - analyzeAssocDiaSrcCore
       - analyzeTrailedDiaSrcCore
       - diffimTaskCore
+      - diffimTaskPlots
     description: >
       An alias of ApPipe to use in higher-level pipelines.
 contracts:
