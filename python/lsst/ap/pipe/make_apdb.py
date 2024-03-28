@@ -116,8 +116,27 @@ def makeApdb(args=None):
     parser = ConfigOnlyParser()
     parsedCmd = parser.parse_args(args=args)
 
-    daxApdb.Apdb.makeSchema(parsedCmd.config)
-    apdb = daxApdb.make_apdb(config=parsedCmd.config)
+    # `make_apdb` is be replaced by `apdb-cli` commands, for now we keep it for
+    # backward compatibility, but only support SQL implementation here.
+    init_config = parsedCmd.config
+    if not isinstance(init_config, daxApdb.ApdbSqlConfig):
+        raise TypeError(f"Unexpected type of APDB configuration instance {type(init_config)}")
+    config = daxApdb.ApdbSql.init_database(
+        db_url=init_config.db_url,
+        schema_file=init_config.schema_file,
+        schema_name=init_config.schema_name,
+        read_sources_months=init_config.read_sources_months,
+        read_forced_sources_months=init_config.read_forced_sources_months,
+        use_insert_id=init_config.use_insert_id,
+        connection_timeout=init_config.connection_timeout,
+        dia_object_index=init_config.dia_object_index,
+        htm_level=init_config.htm_level,
+        htm_index_column=init_config.htm_index_column,
+        ra_dec_columns=init_config.ra_dec_columns,
+        prefix=init_config.prefix,
+        namespace=init_config.namespace,
+    )
+    apdb = daxApdb.Apdb.from_config(config)
     return apdb
 
 
