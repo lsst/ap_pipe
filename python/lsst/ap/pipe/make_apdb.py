@@ -23,6 +23,8 @@ __all__ = ["makeApdb"]
 
 import argparse
 
+from deprecated.sphinx import deprecated
+
 import lsst.dax.apdb as daxApdb
 from lsst.pipe.base.configOverrides import ConfigOverrides
 from lsst.ap.association import DiaPipelineConfig
@@ -96,6 +98,14 @@ The config overrides must define ``db_url`` to create a valid config.
         return namespace
 
 
+@deprecated(
+    reason=(
+        "`make_apdb.py` script is deprecated, use `apdb-cli` command to create APDB instances. "
+        "Will be removed after v27"
+    ),
+    version="v27.0",
+    category=FutureWarning,
+)
 def makeApdb(args=None):
     """Create an APDB according to a config.
 
@@ -116,7 +126,7 @@ def makeApdb(args=None):
     parser = ConfigOnlyParser()
     parsedCmd = parser.parse_args(args=args)
 
-    # `make_apdb` is be replaced by `apdb-cli` commands, for now we keep it for
+    # `make_apdb` is replaced by `apdb-cli` commands, for now we keep it for
     # backward compatibility, but only support SQL implementation here.
     init_config = parsedCmd.config
     if not isinstance(init_config, daxApdb.ApdbSqlConfig):
