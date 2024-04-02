@@ -1,9 +1,9 @@
 description: End to end AP pipeline specialized for DECam
 # (1) Run $AP_PIPE_DIR/pipelines/DECam/RunIsrForCrosstalkSources.yaml
-# (2) Execute `make_apdb.py`, e.g.,
-#     make_apdb.py -c db_url="sqlite:////project/user/association.db"
+# (2) Execute `apdb-cli create-sql`, e.g.,
+#     apdb-cli create-sql "sqlite:////project/user/association.db" apdb_config.py
 # (3) Run this pipeline, setting appropriate diaPipe configs
-#     (diaPipe configs should match the make_apdb.py configs)
+#     (diaPipe configs should match the apdb-cli parameters)
 
 instrument: lsst.obs.decam.DarkEnergyCamera
 imports:

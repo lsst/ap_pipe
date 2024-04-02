@@ -3,7 +3,7 @@ description: End to end Alert Production pipeline
 # for each camera. Those pipelines import this general AP pipeline.
 #
 # NOTES
-# Remember to run make_apdb.py and use the same configs for diaPipe
+# Remember to run `apdb-cli create-sql` and use the same configs for diaPipe
 # A db_url is always required, e.g.,
 # -c diaPipe:apdb.db_url: 'sqlite:////project/user/association.db'
 # Option to specify connection_timeout for sqlite APDBs encountering lock errors, i.e.,

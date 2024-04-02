@@ -1,9 +1,8 @@
 description: AP pipeline with synthetic/fakes sources specialized for ImSim
-# (1) Execute `make_apdb.py`, e.g.,
-#     make_apdb.py -c isolation_level=READ_UNCOMMITTED
-#                  -c db_url="sqlite:////project/user/association.db"
+# (1) Execute `apdb-cli create-sql`, e.g.,
+#     apdb-cli create-sql "sqlite:////project/user/association.db" apdb_config.py
 # (2) Run this pipeline, setting appropriate diaPipe configs
-#     (diaPipe configs should match the make_apdb.py configs)
+#     (diaPipe configs should match the apdb-cli parameters)
 
 instrument: lsst.obs.lsst.LsstCamImSim
 imports:
