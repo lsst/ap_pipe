@@ -122,6 +122,9 @@ contracts:
   - contract: detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
               diaPipe.connections.ConnectionsClass(config=diaPipe).diffIm.name
     msg: "detectAndMeasure.subtractedMeasuredExposure != diaPipe.diffIm"
+  - contract: detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).spatiallySampledMetrics.name ==
+              diffimTaskPlots.connections.ConnectionsClass(config=diffimTaskPlots).data.name
+    msg: "detectAndMeasure.spatiallySampledMetrics != diffimTaskPlots.data"
   - contract: filterDiaSrcCat.connections.ConnectionsClass(config=filterDiaSrcCat).filteredDiaSourceCat.name ==
               rbClassify.connections.ConnectionsClass(config=rbClassify).diaSources.name
     msg: "filterDiaSrcCat.filteredDiaSourceCat != rbClassify.diaSources"
@@ -135,3 +138,9 @@ contracts:
   - contract: transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diaSourceTable.name ==
               diaPipe.connections.ConnectionsClass(config=diaPipe).diaSourceTable.name
     msg: "transformDiaSrcCat.diaSourceTable != diaPipe.diaSourceTable"
+  - contract: diaPipe.connections.ConnectionsClass(config=diaPipe).associatedDiaSources.name ==
+              analyzeAssocDiaSrcCore.connections.ConnectionsClass(config=analyzeAssocDiaSrcCore).data.name
+    msg: "diaPipe.associatedDiaSources != analyzeAssocDiaSrcCore.data"
+  - contract: diaPipe.connections.ConnectionsClass(config=diaPipe).longTrailedSources.name ==
+              analyzeTrailedDiaSrcCore.connections.ConnectionsClass(config=analyzeTrailedDiaSrcCore).data.name
+    msg: "diaPipe.longTrailedSources != analyzeTrailedDiaSrcCore.data"
