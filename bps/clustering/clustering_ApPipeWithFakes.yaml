@@ -1,6 +1,6 @@
 # This is a prescription for quantum clustering with BPS, suitable for any
 # concrete pipeline based on the AP pipeline. Note that there are separate
-# example files for pipelines with and without fakes. 
+# example files for pipelines with and without fakes.
 #
 # Use it by adding:
 #
@@ -19,7 +19,7 @@
 clusterAlgorithm: lsst.ctrl.bps.quantum_clustering_funcs.dimension_clustering
 cluster:
   singleFrame:
-    # TODO DM-40388: replace this with isr,calibrateImage
+    # TODO DM-43351: replace this with isr,calibrateImage
     pipetasks: isr,characterizeImage,calibrate
     dimensions: visit,detector
     equalDimensions: visit:exposure
