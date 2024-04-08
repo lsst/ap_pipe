@@ -79,6 +79,7 @@ subsets:
       - analyzeTrailedDiaSrcCore
       - diffimTaskCore
       - diffimTaskPlots
+      - initialPviCore 
     description: >
       An alias of ApPipe to use in higher-level pipelines.
 contracts:
