@@ -17,6 +17,9 @@ imports:
   # new CalibrateImageTask, so the fakes pipeline still is on the old tasks.
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcdCalibrate.yaml
   - location: $ANALYSIS_TOOLS_DIR/pipelines/apDetectorVisitQualityCore.yaml
+    exclude:
+      - initialPviCore # include once fakes pipeline uses CalibrateImageTask
+
 parameters:
   coaddName: goodSeeing
   fakesType: 'fakes_'
