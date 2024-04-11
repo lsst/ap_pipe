@@ -79,7 +79,6 @@ subsets:
       - analyzeTrailedDiaSrcCore
       - diffimTaskCore
       - diffimTaskPlots
-      - initialPviCore 
     description: >
       An alias of ApPipe to use in higher-level pipelines.
 contracts:
@@ -96,9 +95,6 @@ contracts:
   - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
               rbClassify.connections.ConnectionsClass(config=rbClassify).science.name
     msg: "calibrateImage.exposure != rbClassify.science"
-  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name + ".summaryStats" ==
-              initialPviCore.connections.ConnectionsClass(config=initialPviCore).data.name
-    msg: "calibrateImage.exposure != initialPviCore.data"
   - contract: retrieveTemplate.connections.ConnectionsClass(config=retrieveTemplate).template.name ==
               subtractImages.connections.ConnectionsClass(config=subtractImages).template.name
     msg: "retrieveTemplate.template != subtractImages.template"
