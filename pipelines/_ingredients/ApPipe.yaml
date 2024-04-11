@@ -98,7 +98,7 @@ contracts:
     msg: "calibrateImage.exposure != rbClassify.science"
   - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name + ".summaryStats" ==
               initialPviCore.connections.ConnectionsClass(config=initialPviCore).data.name
-    msg: "calibrateImage.exposure != initialPviCore.data.name"
+    msg: "calibrateImage.exposure != initialPviCore.data"
   - contract: retrieveTemplate.connections.ConnectionsClass(config=retrieveTemplate).template.name ==
               subtractImages.connections.ConnectionsClass(config=subtractImages).template.name
     msg: "retrieveTemplate.template != subtractImages.template"
