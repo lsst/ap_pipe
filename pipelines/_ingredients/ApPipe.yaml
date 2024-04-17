@@ -63,6 +63,11 @@ tasks:
     config:
       connections.exposure: initial_pvi
       connections.coaddName: parameters.coaddName
+  sampleSpatialMetrics:
+    class: lsst.ip.diffim.SpatiallySampledMetricsTask
+    config:
+      connections.science: initial_pvi
+      connections.coaddName: parameters.coaddName
 subsets:
   apPipe:
     subset:
@@ -77,9 +82,10 @@ subsets:
       - diaPipe
       - analyzeAssocDiaSrcCore
       - analyzeTrailedDiaSrcCore
+      - sampleSpatialMetrics
       - diffimTaskCore
       - diffimTaskPlots
-      - initialPviCore 
+      - initialPviCore
     description: >
       An alias of ApPipe to use in higher-level pipelines.
 contracts:
@@ -126,9 +132,6 @@ contracts:
   - contract: detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
               diaPipe.connections.ConnectionsClass(config=diaPipe).diffIm.name
     msg: "detectAndMeasure.subtractedMeasuredExposure != diaPipe.diffIm"
-  - contract: detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).spatiallySampledMetrics.name ==
-              diffimTaskPlots.connections.ConnectionsClass(config=diffimTaskPlots).data.name
-    msg: "detectAndMeasure.spatiallySampledMetrics != diffimTaskPlots.data"
   - contract: filterDiaSrcCat.connections.ConnectionsClass(config=filterDiaSrcCat).filteredDiaSourceCat.name ==
               rbClassify.connections.ConnectionsClass(config=rbClassify).diaSources.name
     msg: "filterDiaSrcCat.filteredDiaSourceCat != rbClassify.diaSources"
@@ -148,3 +151,6 @@ contracts:
   - contract: diaPipe.connections.ConnectionsClass(config=diaPipe).longTrailedSources.name ==
               analyzeTrailedDiaSrcCore.connections.ConnectionsClass(config=analyzeTrailedDiaSrcCore).data.name
     msg: "diaPipe.longTrailedSources != analyzeTrailedDiaSrcCore.data"
+  - contract: sampleSpatialMetrics.connections.ConnectionsClass(config=sampleSpatialMetrics).spatiallySampledMetrics.name ==
+              diffimTaskPlots.connections.ConnectionsClass(config=diffimTaskPlots).data.name
+    msg: "sampleSpatialMetrics.spatiallySampledMetrics != diffimTaskPlots.data"
