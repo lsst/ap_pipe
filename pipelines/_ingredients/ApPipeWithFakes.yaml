@@ -89,6 +89,12 @@ tasks:
       connections.coaddName: parameters.coaddName
       connections.fakesType: parameters.fakesType
       # apdb.db_url: YOU MUST CONFIGURE THIS BEFORE RUNNING THE PIPELINE
+  sampleSpatialMetrics:
+    class: lsst.ip.diffim.SpatiallySampledMetricsTask
+    config:
+      connections.science: initial_pvi
+      connections.coaddName: parameters.coaddName
+      connections.fakesType: parameters.fakesType
   fakesMatch:
     class: lsst.pipe.tasks.matchFakes.MatchVariableFakesTask
     config:
@@ -114,9 +120,11 @@ subsets:
       - transformDiaSrcCat
       - diaPipe
       - fakesMatch
+      - sampleSpatialMetrics
       - analyzeAssocDiaSrcCore
       - analyzeTrailedDiaSrcCore
       - diffimTaskCore
+      - diffimTaskPlots
     description: >
       The AP pipeline with fakes. Requires apPipe and prepareFakes subsets.
 
@@ -170,9 +178,6 @@ contracts:
   - contract: detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).subtractedMeasuredExposure.name ==
               fakesMatch.connections.ConnectionsClass(config=fakesMatch).diffIm.name
     msg: "detectAndMeasure.subtractedMeasuredExposure != fakesMatch.diffIm"
-  - contract: detectAndMeasure.connections.ConnectionsClass(config=detectAndMeasure).spatiallySampledMetrics.name ==
-              diffimTaskPlots.connections.ConnectionsClass(config=diffimTaskPlots).data.name
-    msg: "detectAndMeasure.spatiallySampledMetrics != diffimTaskPlots.spatiallySampledMetrics"
   - contract: filterDiaSrcCat.connections.ConnectionsClass(config=filterDiaSrcCat).filteredDiaSourceCat.name ==
               rbClassify.connections.ConnectionsClass(config=rbClassify).diaSources.name
     msg: "filterDiaSrcCat.filteredDiaSourceCat != rbClassify.diaSources"
@@ -195,3 +200,6 @@ contracts:
   - contract: diaPipe.connections.ConnectionsClass(config=diaPipe).longTrailedSources.name ==
               analyzeTrailedDiaSrcCore.connections.ConnectionsClass(config=analyzeTrailedDiaSrcCore).data.name
     msg: "diaPipe.longTrailedSources != analyzeTrailedDiaSrcCore.data"
+  - contract: sampleSpatialMetrics.connections.ConnectionsClass(config=sampleSpatialMetrics).spatiallySampledMetrics.name ==
+              diffimTaskPlots.connections.ConnectionsClass(config=diffimTaskPlots).data.name
+    msg: "sampleSpatialMetrics.spatiallySampledMetrics != diffimTaskPlots.data"
