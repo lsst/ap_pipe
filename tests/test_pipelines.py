@@ -21,12 +21,15 @@
 
 import glob
 import os.path
+import tempfile
 import unittest
 
 # need to import pyproj to prevent file handle leakage
 import pyproj  # noqa: F401
 
+import lsst.daf.butler.tests as butlerTests
 import lsst.pipe.base
+from lsst.pipe.base.tests.pipelineStepTester import PipelineStepTester  # Can't use fully-qualified name
 import lsst.utils
 import lsst.utils.tests
 
@@ -37,7 +40,7 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
     def setUp(self):
         self.path = os.path.join(lsst.utils.getPackageDir("ap_pipe"), "pipelines")
 
-    def test_pipelines(self):
+    def test_graph_build(self):
         """Test that each pipeline definition file in `_ingredients/` can be
         used to build a graph.
         """
@@ -53,6 +56,41 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                     pipeline.addConfigOverride("diaPipe", "apdb.db_url", "sqlite://")
                 # If this fails, it will produce a useful error message.
                 pipeline.to_graph()
+
+    def test_datasets(self):
+        files = glob.glob(os.path.join(self.path, "_ingredients/*.yaml"))
+        for file in files:
+            if "ApTemplate" in file:
+                # Our ApTemplate definition cannot be tested here because it
+                # depends on drp_tasks, which we cannot make a dependency here.
+                continue
+            with self.subTest(file):
+                tester = PipelineStepTester(
+                    filename=file,
+                    step_suffixes=[""],  # Test full pipeline
+                    initial_dataset_types=[("ps1_pv3_3pi_20170110", {"htm7"}, "SimpleCatalog", False),
+                                           ("gaia_dr2_20200414", {"htm7"}, "SimpleCatalog", False),
+                                           ("gaia_dr3_20230707", {"htm7"}, "SimpleCatalog", False),
+                                           ],
+                    expected_inputs={
+                        # ISR
+                        "raw", "camera", "crosstalk", "crosstalkSources", "bias", "dark", "flat", "ptc",
+                        "fringe", "straylightData", "bfKernel", "newBFKernel", "defects", "linearizer",
+                        "opticsTransmission", "filterTransmission", "atmosphereTransmission",
+                        "illumMaskedImage", "deferredChargeCalib",
+                        # Everything else
+                        "skyMap", "gaia_dr3_20230707", "gaia_dr2_20200414", "ps1_pv3_3pi_20170110",
+                        "goodSeeingCoadd", "pretrainedModelPackage",
+                    },
+                    # Pipeline outputs highly in flux, don't test
+                    expected_outputs=set(),
+                    pipeline_patches={"diaPipe:apdb.db_url": "sqlite://",
+                                      },
+                )
+                # Tester modifies Butler registry, so need a fresh repo every time
+                with tempfile.TemporaryDirectory() as tempRepo:
+                    butler = butlerTests.makeTestRepo(tempRepo)
+                    tester.run(butler, self)
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
