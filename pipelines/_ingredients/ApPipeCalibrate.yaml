@@ -53,6 +53,10 @@ tasks:
       doRemoveSkySources: True
       connections.coaddName: parameters.coaddName
       doIncludeReliability: True  # Output from rbClassify
+  getRegionTimeFromVisit:
+    class: lsst.pipe.tasks.getRegionTimeFromVisit.GetRegionTimeFromVisitTask
+    config:
+      connections.coaddName: parameters.coaddName
   diaPipe:
     class: lsst.ap.association.DiaPipelineTask
     config:
@@ -70,6 +74,7 @@ subsets:
       - detectAndMeasure
       - rbClassify
       - transformDiaSrcCat
+      - getRegionTimeFromVisit
       - diaPipe
       - filterDiaSrcCat
     description: >
@@ -119,3 +124,7 @@ contracts:
   - contract: transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diaSourceTable.name ==
               diaPipe.connections.ConnectionsClass(config=diaPipe).diaSourceTable.name
     msg: "transformDiaSrcCat.diaSourceTable != diaPipe.diaSourceTable"
+  # Run getRegionTimeFromVisit as late as possible
+  - contract: transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diaSourceTable.name ==
+              getRegionTimeFromVisit.connections.ConnectionsClass(config=getRegionTimeFromVisit).dummy_visit.name
+    msg: "transformDiaSrcCat.diaSourceTable != getRegionTimeFromVisit.dummy_visit"
