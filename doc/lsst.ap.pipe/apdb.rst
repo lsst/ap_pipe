@@ -13,7 +13,7 @@ Setting up the Alert Production Database for ap_pipe
 .. |pipetask| replace:: :command:`pipetask`
 
 
-In its default configuration, the Alert Production Pipeline, as represented by :file:`pipelines/ApPipe.yaml`, relies on a database to save and load DIASources and DIAObjects.
+In its default configuration, the Alert Production Pipeline, as represented by :file:`pipelines/_ingredients/ApPipe.yaml`, relies on a database to save and load DIASources and DIAObjects.
 When running as part of the operational system, this database will be provided externally.
 However, during testing and development, developers can run |apdb-cli| to set up their own database.
 This page provides an overview of how to use |apdb-cli|.
@@ -29,10 +29,10 @@ The database is configured using `~lsst.dax.apdb.ApdbConfig`.
 For |pipetask| users, the APDB is configured with the :option:`--config <pipetask run --config>` and :option:`--config-file <pipetask run --config-file>` options.
 APDB configuration info uses the prefix ``diaPipe:apdb.``, with a colon, but is otherwise the same.
 
-Note that the `~lsst.dax.apdb.ApdbConfig.db_url` field has no default; a value *must* be provided by the user.
+Note that the `~lsst.dax.apdb.ApdbSqlConfig.db_url` field has no default; a value *must* be provided by the user.
 
-Additionally, the default set of observed bands allowed to be used in the pipeline are set by the columns available in the Apdb schema specified by `~lsst.dax.ApdbConfig.schema_file`.
-Should the user wish to use the pipeline on data containing bands not in the ``ugrizy`` system, they must add the appropriate columns to the Apdb schema and add the bands to the ``validBands`` config in `~lsst.ap.association.DiaPipelineConig`.
+Additionally, the default set of observed bands allowed to be used in the pipeline are set by the columns available in the Apdb schema specified by `~lsst.dax.apdb.ApdbConfig.schema_file`.
+Should the user wish to use the pipeline on data containing bands not in the ``ugrizy`` system, they must add the appropriate columns to the Apdb schema and add the bands to the ``validBands`` config in `~lsst.ap.association.DiaPipelineConfig`.
 
 .. _section-ap-pipe-apdb-examples:
 
