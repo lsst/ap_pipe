@@ -4,9 +4,9 @@
 
 .. _ap-pipe-pipeline-tutorial-gen3:
 
-###############################
-Running the AP pipeline (Gen 3)
-###############################
+#######################
+Running the AP pipeline
+#######################
 
 Setup
 =====
