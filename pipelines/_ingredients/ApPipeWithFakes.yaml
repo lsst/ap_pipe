@@ -23,6 +23,8 @@ imports:
 parameters:
   coaddName: goodSeeing
   fakesType: 'fakes_'
+  # APDB config file must be user-specified
+  apdb_config:
 
 tasks:
   createFakes:
@@ -86,9 +88,10 @@ tasks:
     class: lsst.ap.association.DiaPipelineTask
     config:
       doWriteAssociatedSources: True
+      doConfigureApdb: False
+      apdb_config_url: parameters.apdb_config
       connections.coaddName: parameters.coaddName
       connections.fakesType: parameters.fakesType
-      # apdb.db_url: YOU MUST CONFIGURE THIS BEFORE RUNNING THE PIPELINE
   sampleSpatialMetrics:
     class: lsst.ip.diffim.SpatiallySampledMetricsTask
     config:

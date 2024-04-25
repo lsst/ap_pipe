@@ -52,8 +52,7 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                 continue
             with self.subTest(file):
                 pipeline = lsst.pipe.base.Pipeline.from_uri(file)
-                if "apPipe" in pipeline.subsets:
-                    pipeline.addConfigOverride("diaPipe", "apdb.db_url", "sqlite://")
+                pipeline.addConfigOverride("parameters", "apdb_config", "some/file/path.yaml")
                 # If this fails, it will produce a useful error message.
                 pipeline.to_graph()
 
@@ -84,7 +83,7 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                     },
                     # Pipeline outputs highly in flux, don't test
                     expected_outputs=set(),
-                    pipeline_patches={"diaPipe:apdb.db_url": "sqlite://",
+                    pipeline_patches={"parameters:apdb_config": "some/file/path.yaml",
                                       },
                 )
                 # Tester modifies Butler registry, so need a fresh repo every time
