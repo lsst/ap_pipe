@@ -62,7 +62,7 @@ class ApFakesCompletenessMetricConnections(
 # catalog.
 class ApFakesCompletenessMetricConfig(
         MetricTask.ConfigClass,
-        InsertFakesConfig,
+        # InsertFakesConfig,
         pipelineConnections=ApFakesCompletenessMetricConnections):
     """ApFakesCompleteness config.
     """
@@ -82,7 +82,14 @@ class ApFakesCompletenessMetricConfig(
         min=1,
         max=40,
     )
-
+    # mag_col = pexConfig.Field(
+    #     doc="Source catalog column name template for magnitudes, in the format "
+    #         "``filter name``_mag_col.  E.g., if this config variable is set to "
+    #         "``%s_mag``, then the i-band magnitude will be searched for in the "
+    #         "``i_mag`` column of the source catalog.",
+    #     dtype=str,
+    #     default="mag"
+    # )
 
 class ApFakesCompletenessMetricTask(MetricTask):
     """Metric task for summarizing the completeness of fakes inserted into the
@@ -124,10 +131,10 @@ class ApFakesCompletenessMetricTask(MetricTask):
             ``measurement``
                 the ratio (`lsst.verify.Measurement` or `None`)
         """
-        magnitudes = np.fabs(matchedFakes[f"{self.config.mag_col}" % band])
-        magCutFakes = matchedFakes[np.logical_and(magnitudes > self.config.magMin,
+        magnitudes = np.fabs(matchedFakes['mag'])
+        magCutFakes = matchedFakes[np.logical_and(magnitudes >= self.config.magMin,
                                                   magnitudes < self.config.magMax)]
-        if len(magCutFakes) <= 0.0:
+        if len(magCutFakes) <= 0:
             raise MetricComputationError(
                 "No matched fakes catalog sources found; Completeness is "
                 "ill defined.")
@@ -183,8 +190,8 @@ class ApFakesCountMetricTask(ApFakesCompletenessMetricTask):
             ``measurement``
                 the ratio (`lsst.verify.Measurement` or `None`)
         """
-        magnitudes = np.fabs(matchedFakes[f"{self.config.mag_col}" % band])
-        magCutFakes = matchedFakes[np.logical_and(magnitudes > self.config.magMin,
+        magnitudes = np.fabs(matchedFakes["mag"])
+        magCutFakes = matchedFakes[np.logical_and(magnitudes >= self.config.magMin,
                                                   magnitudes < self.config.magMax)]
         meas = Measurement(self.config.metricName,
                            len(magCutFakes) * u.count)
