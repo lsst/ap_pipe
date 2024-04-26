@@ -16,18 +16,7 @@ imports:
 
 parameters:
   apdb_config:  # YOU MUST CONFIGURE THIS BEFORE RUNNING THE PIPELINE
-tasks:
-  processVisitFakes:
-    class: lsst.pipe.tasks.processCcdWithFakes.ProcessCcdWithVariableFakesTask
-    config:
-      # HACK: workaround for DM-31047, remove once we're no longer loading
-      # DRP-specific obs configs.
-      file: $AP_PIPE_DIR/config/HSC/processCcdWithFakes.py
-      # Do not integrate file and pipeline configs until DM-31047 fixed, to
-      # make it easier to check for changes on the obs side.
-      # Config file wipes out all pre-existing configs, so copy base pipeline
-      # config on top.
-      connections.coaddName: parameters.coaddName
-      connections.fakesType: parameters.fakesType
-      insertFakes.doSubSelectSources: True
-      insertFakes.select_col: 'isVisitSource'
+  coaddName: goodSeeing
+  fakesType: 'fakes_'
+  injected_prefix: "fakes_"
+  injection_prefix: "injection_"
