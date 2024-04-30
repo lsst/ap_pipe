@@ -21,6 +21,8 @@ imports:
 parameters:
   # Pipeline configurable to run on both goodSeeing and deep templates, depending on dataset.
   coaddName: goodSeeing
+  # APDB config file must be user-specified
+  apdb_config:
 tasks:
   retrieveTemplate:
     class: lsst.ip.diffim.getTemplate.GetTemplateTask
@@ -61,6 +63,8 @@ tasks:
   diaPipe:
     class: lsst.ap.association.DiaPipelineTask
     config:
+      doConfigureApdb: False
+      apdb_config_url: parameters.apdb_config
       connections.exposure: initial_pvi
       connections.coaddName: parameters.coaddName
   sampleSpatialMetrics:

@@ -4,9 +4,9 @@
 
 .. _ap-pipe-pipeline-tutorial-gen3:
 
-###############################
-Running the AP pipeline (Gen 3)
-###############################
+#######################
+Running the AP pipeline
+#######################
 
 Setup
 =====
@@ -37,17 +37,16 @@ To process your ingested data, run
 
 .. prompt:: bash
 
-   mkdir apdb/
-   apdb-cli create-sql --db_url="sqlite:///apdb.db" apdb_config.py
+   apdb-cli create-sql "sqlite:///apdb.db" apdb_config.py
    pipetask run -p ${AP_PIPE_DIR}/pipelines/DECam/ApPipe.yaml \
        --register-dataset-types -c parameters:coaddName=deep \
        -c isr:connections.bias=cpBias -c isr:connections.flat=cpFlat \
-       -c diaPipe:apdb.db_url="sqlite:///apdb.db" -b repo/ \
+       -c parameters:apdb_config=apdb_config.py -b repo/ \
        -i "DECam/defaults,DECam/raw/all" -o processed \
        -d "visit in (411420, 419802) and detector=10"
 
 In this case, a ``processed/<timestamp>`` collection will be created within ``repo`` and the results will be written there.
-The ``apdb_config.py`` file will be created by ``apdb-cli``, it is not used yet by ``pipetask`` command options, but will be used in the future.
+The ``apdb_config.py`` file will be created by ``apdb-cli`` and passed to ``pipetask``.
 See :doc:`apdb` for more information on :command:`apdb-cli`.
 
 This example command only processes observations corresponding to visits 411420 and 419802, both with only detector 10.
@@ -60,20 +59,19 @@ If you prefer to have a standalone output collection, you may instead run
    pipetask run -p ${AP_PIPE_DIR}/pipelines/DECam/ApPipe.yaml \
        --register-dataset-types -c parameters:coaddName=deep \
        -c isr:connections.bias=cpBias -c isr:connections.flat=cpFlat \
-       -c diaPipe:apdb.db_url="sqlite:///apdb.db" -b repo/ \
+       -c parameters:apdb_config=apdb_config.py -b repo/ \
        -i "DECam/defaults,DECam/raw/all" --output-run processed \
        -d "visit in (411420, 419802) and detector=10"
 
 .. note::
 
-   You must :doc:`configure </modules/lsst.ctrl.mpexec/configuring-pipetask-tasks>` the database location, or ``ap_pipe`` will not run.
-   For the default (SQLite) association database, the location is a path to a new or existing database file to be used for source associations (including associations with previously known objects, if the database already exists).
-   In the examples above, it is configured with the ``-c`` option, but a personal config file may be more convenient if you intend to run ``ap_pipe`` many times.
+   You must :doc:`configure </modules/lsst.ctrl.mpexec/configuring-pipetask-tasks>` the pipeline to use the APDB config file, or ``ap_pipe`` will not run.
+   In the examples above, it is configured with the ``-c`` option.
 
 .. note::
 
    Both examples above are only valid when running the pipeline for the first time.
-   When rerunning with an existing chained collection using ``-o``, you must omit the ``-i`` argument.
+   When rerunning with an existing chained collection using ``-o``, you should omit the ``-i`` argument.
    When rerunning with an existing standalone collection using ``--output-run``, you must pass ``--extend-run``.
 
 .. _section-ap-pipe-expected-outputs:
