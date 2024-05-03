@@ -11,7 +11,6 @@ config.loadFromString(type(config)().saveToString())
 # Load configs shared between assembleCoadd and makeCoaddTempExp
 config.load(os.path.join(os.path.dirname(__file__), "coaddBase.py"))
 
-config.doSigmaClip = False
 # 200 rows (since patch width is typically < 10k pixels)
 config.subregionSize = (10000, 200)
 config.doMaskBrightObjects = True
