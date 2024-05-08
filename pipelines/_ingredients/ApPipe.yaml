@@ -162,6 +162,9 @@ contracts:
   - contract: filterDiaSrcCat.connections.ConnectionsClass(config=filterDiaSrcCat).filteredDiaSourceCat.name ==
               sampleSpatialMetrics.connections.ConnectionsClass(config=sampleSpatialMetrics).diaSources.name
     msg: "filterDiaSrcCat.filteredDiaSourceCat != sampleSpatialMetrics.diaSources"
+  - contract: filterDiaSrcCat.connections.ConnectionsClass(config=filterDiaSrcCat).longTrailedSources.name ==
+      analyzeTrailedDiaSrcCore.connections.ConnectionsClass(config=analyzeTrailedDiaSrcCore).data.name
+    msg: "filterDiaSrcCat.longTrailedSources != analyzeTrailedDiaSrcCore.data"
   - contract: (not transformDiaSrcCat.doIncludeReliability) or
               (rbClassify.connections.ConnectionsClass(config=rbClassify).classifications.name ==
                transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).reliability.name)
@@ -176,9 +179,6 @@ contracts:
   - contract: diaPipe.connections.ConnectionsClass(config=diaPipe).associatedDiaSources.name ==
               analyzeAssocDiaSrcCore.connections.ConnectionsClass(config=analyzeAssocDiaSrcCore).data.name
     msg: "diaPipe.associatedDiaSources != analyzeAssocDiaSrcCore.data"
-  - contract: diaPipe.connections.ConnectionsClass(config=diaPipe).longTrailedSources.name ==
-              analyzeTrailedDiaSrcCore.connections.ConnectionsClass(config=analyzeTrailedDiaSrcCore).data.name
-    msg: "diaPipe.longTrailedSources != analyzeTrailedDiaSrcCore.data"
   - contract: sampleSpatialMetrics.connections.ConnectionsClass(config=sampleSpatialMetrics).spatiallySampledMetrics.name ==
               diffimTaskPlots.connections.ConnectionsClass(config=diffimTaskPlots).data.name
     msg: "sampleSpatialMetrics.spatiallySampledMetrics != diffimTaskPlots.data"
