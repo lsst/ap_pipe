@@ -224,7 +224,7 @@ contracts:
   - contract: diaPipe.connections.ConnectionsClass(config=diaPipe).associatedDiaSources.name ==
               analyzeAssocDiaSrcCore.connections.ConnectionsClass(config=analyzeAssocDiaSrcCore).data.name
     msg: "diaPipe.associatedDiaSources != analyzeAssocDiaSrcCore.data"
-  - contract: diaPipe.connections.ConnectionsClass(config=diaPipe).longTrailedSources.name ==
+  - contract: filterDiaSrcCat.connections.ConnectionsClass(config=filterDiaSrcCat).longTrailedSources.name ==
               analyzeTrailedDiaSrcCore.connections.ConnectionsClass(config=analyzeTrailedDiaSrcCore).data.name
     msg: "diaPipe.longTrailedSources != analyzeTrailedDiaSrcCore.data"
   - contract: sampleSpatialMetrics.connections.ConnectionsClass(config=sampleSpatialMetrics).spatiallySampledMetrics.name ==
