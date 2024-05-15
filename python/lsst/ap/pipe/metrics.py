@@ -36,7 +36,6 @@ import numpy as np
 import lsst.pex.config as pexConfig
 from lsst.pipe.base import Struct, NoWorkFound
 import lsst.pipe.base.connectionTypes as connTypes
-from lsst.pipe.tasks.insertFakes import InsertFakesConfig
 from lsst.verify import Measurement, Datum
 from lsst.verify.tasks import AbstractMetadataMetricTask, MetricTask, MetricComputationError
 
@@ -62,7 +61,6 @@ class ApFakesCompletenessMetricConnections(
 # catalog.
 class ApFakesCompletenessMetricConfig(
         MetricTask.ConfigClass,
-        # InsertFakesConfig,
         pipelineConnections=ApFakesCompletenessMetricConnections):
     """ApFakesCompleteness config.
     """
@@ -82,14 +80,7 @@ class ApFakesCompletenessMetricConfig(
         min=1,
         max=40,
     )
-    # mag_col = pexConfig.Field(
-    #     doc="Source catalog column name template for magnitudes, in the format "
-    #         "``filter name``_mag_col.  E.g., if this config variable is set to "
-    #         "``%s_mag``, then the i-band magnitude will be searched for in the "
-    #         "``i_mag`` column of the source catalog.",
-    #     dtype=str,
-    #     default="mag"
-    # )
+
 
 class ApFakesCompletenessMetricTask(MetricTask):
     """Metric task for summarizing the completeness of fakes inserted into the
