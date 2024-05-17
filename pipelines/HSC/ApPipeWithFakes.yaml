@@ -9,9 +9,9 @@ description: HSC AP Pipeline with synthetic/fake sources. Templates are inputs.
 instrument: lsst.obs.subaru.HyperSuprimeCam
 imports:
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithFakes.yaml
-    exclude:  # These tasks frome from HSC's ApPipe.yaml instead
+    exclude:  # These tasks frome from HSC's ProcessCcdCalibrate.yaml instead
       - processCcd
-  - location: $AP_PIPE_DIR/pipelines/HSC/ApPipe.yaml
+  - location: $AP_PIPE_DIR/pipelines/HSC/ProcessCcdCalibrate.yaml
     include:  # All other tasks come from _ingredients/ApPipeWithFakes.yaml instead
       - processCcd
 

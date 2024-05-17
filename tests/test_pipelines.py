@@ -41,10 +41,10 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
         self.path = os.path.join(lsst.utils.getPackageDir("ap_pipe"), "pipelines")
 
     def test_graph_build(self):
-        """Test that each pipeline definition file in `_ingredients/` can be
+        """Test that each pipeline definition file can be
         used to build a graph.
         """
-        files = glob.glob(os.path.join(self.path, "_ingredients/*.yaml"))
+        files = glob.glob(os.path.join(self.path, "**", "*.yaml"))
         for file in files:
             if "ApTemplate" in file:
                 # Our ApTemplate definition cannot be tested here because it
@@ -57,7 +57,7 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                 pipeline.to_graph()
 
     def test_datasets(self):
-        files = glob.glob(os.path.join(self.path, "_ingredients/*.yaml"))
+        files = glob.glob(os.path.join(self.path, "_ingredients", "*.yaml"))
         for file in files:
             if "ApTemplate" in file:
                 # Our ApTemplate definition cannot be tested here because it
