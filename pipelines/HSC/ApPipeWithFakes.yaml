@@ -3,8 +3,7 @@ description: HSC AP Pipeline with synthetic/fake sources. Templates are inputs.
 # (0) Ensure median calibration products and template coadds exist for the data being processed
 # (1) Execute `apdb-cli create-sql`, e.g.,
 #     apdb-cli create-sql "sqlite:////project/user/association.db" apdb_config.py
-# (2) Run this pipeline, setting appropriate diaPipe configs
-#     (diaPipe configs must match the apdb-cli parameters)
+# (2) Run this pipeline, setting the apdb_config parameter to point to the new file
 
 instrument: lsst.obs.subaru.HyperSuprimeCam
 imports:
@@ -15,6 +14,8 @@ imports:
     include:  # All other tasks come from _ingredients/ApPipeWithFakes.yaml instead
       - processCcd
 
+parameters:
+  apdb_config:  # YOU MUST CONFIGURE THIS BEFORE RUNNING THE PIPELINE
 tasks:
   processVisitFakes:
     class: lsst.pipe.tasks.processCcdWithFakes.ProcessCcdWithVariableFakesTask
@@ -30,7 +31,3 @@ tasks:
       connections.fakesType: parameters.fakesType
       insertFakes.doSubSelectSources: True
       insertFakes.select_col: 'isVisitSource'
-  diaPipe:
-    class: lsst.ap.association.DiaPipelineTask
-    config:
-      # apdb.db_url: YOU MUST CONFIGURE THIS BEFORE RUNNING THE PIPELINE
