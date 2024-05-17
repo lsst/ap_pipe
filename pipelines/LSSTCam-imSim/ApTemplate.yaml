@@ -3,9 +3,9 @@ description: The AP template building pipeline specialized for ImSim
 
 instrument: lsst.obs.lsst.LsstCamImSim
 imports:
-  - location: $AP_PIPE_DIR/pipelines/LSSTCam-imSim/ProcessCcd.yaml
+  - location: $AP_PIPE_DIR/pipelines/LSSTCam-imSim/ProcessCcdCalibrate.yaml
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ApTemplate.yaml
-    exclude:  # These tasks come from LSSTCam-imSim/ProcessCcd.yaml instead
+    exclude:  # These tasks come from LSSTCam-imSim/ProcessCcdCalibrate.yaml instead
       - processCcd
 
 tasks:
