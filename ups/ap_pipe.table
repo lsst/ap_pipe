@@ -15,5 +15,10 @@ setupRequired(analysis_tools)
 
 setupRequired(meas_transiNet)
 
+# For testing instrument pipelines
+setupRequired(obs_decam)
+setupRequired(obs_subaru)
+setupRequired(obs_lsst)
+
 envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
 envPrepend(PATH, ${PRODUCT_DIR}/bin)

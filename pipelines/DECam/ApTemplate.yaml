@@ -4,9 +4,9 @@ description: The AP template building pipeline specialized for DECam
 
 instrument: lsst.obs.decam.DarkEnergyCamera
 imports:
-  - location: $AP_PIPE_DIR/pipelines/DECam/ProcessCcd.yaml
+  - location: $AP_PIPE_DIR/pipelines/DECam/ProcessCcdCalibrate.yaml
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ApTemplate.yaml
-    exclude:  # These tasks come from DECam/ProcessCcd.yaml instead
+    exclude:  # These tasks come from DECam/ProcessCcdCalibrate.yaml instead
       - processCcd
 
 subsets:
