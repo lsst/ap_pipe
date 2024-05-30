@@ -21,6 +21,7 @@ config.doAttachTransmissionCurve = True
 # Saturation trails are usually oriented east-west, so along rows
 config.interpImage.transpose = True
 config.coaddPsf.warpingKernelName = 'lanczos5'
+config.matchingKernelSize = 29
 
 from lsst.pipe.tasks.selectImages import PsfWcsSelectImagesTask
 config.select.retarget(PsfWcsSelectImagesTask)
