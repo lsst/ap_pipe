@@ -20,28 +20,16 @@
 # the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 
-# This file was copied from obs_lsst as part of DM-31063. Feel free to modify
-# this file to better reflect the needs of AP; however, when it comes time to
-# permanently remove the obs_* configs, we should check that none of the
-# changes made there since April 12, 2022 would be useful here.
-
-import os.path
+# This configs were copied from obs_lsst as part of DM-31063. Feel free to
+# modify this file to better reflect the needs of AP; however, when it comes
+# time to permanently remove the obs_* configs, we should check that none of
+# the changes made there since April 12, 2022 would be useful here.
 
 # HACK: Throw away any changes imposed by obs configs.
 config.loadFromString(type(config)().saveToString())
 
-# Load configs shared between assembleCoadd and makeCoaddTempExp
-config.load(os.path.join(os.path.dirname(__file__), "coaddBase.py"))
-
-config.subregionSize = (10000, 200) # 200 rows (since patch width is typically < 10k pixels)
-config.removeMaskPlanes.append("CROSSTALK")
-config.doNImage = True
-config.badMaskPlanes += ["SUSPECT"]
-
 config.matchingKernelSize = 29
+config.psfMatch.kernel['AL'].kernelSize = 29
+config.psfMatch.kernel['AL'].alardSigGauss = [1.0, 2.0, 4.5]
+config.modelPsf.defaultFwhm = 7.7
 
-from lsst.pipe.tasks.selectImages import PsfWcsSelectImagesTask
-config.select.retarget(PsfWcsSelectImagesTask)
-
-# FUTURE: Set to True when we get transmission curves
-config.doAttachTransmissionCurve = False
