@@ -67,6 +67,7 @@ subsets:
 contracts:
   - makeWarp.makeDirect is True
   - makeWarp.makePsfMatched is True
+  - makeWarp.matchingKernelSize == assembleCoadd.matchingKernelSize  # TODO: Remove this in DM-44688.
   # Inputs and outputs must match. For consistency, contracts are written in execution order:
   #     first task == second task, then sorted by (first, second)
   # Use of ConnectionsClass for templated fields is a workaround for DM-30210
