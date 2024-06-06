@@ -58,6 +58,7 @@ tasks:
       doRemoveSkySources: True
       connections.coaddName: parameters.coaddName
       doIncludeReliability: True  # Output from rbClassify
+      doUseApdbSchema: True  # Force the table columns to match the APDB definition in sdm_schemas
   getRegionTimeFromVisit:
     class: lsst.pipe.tasks.getRegionTimeFromVisit.GetRegionTimeFromVisitTask
     config:
