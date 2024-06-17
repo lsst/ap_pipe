@@ -1,0 +1,15 @@
+description: Ephemeris generation for ssoAssociation
+
+# NOTES
+# 
+# WARNING: camera-specific pipelines importing this pipeline may
+# blow away all the configs that are set in this file.
+# To update a pipeline config prior to DM-35504, you MUST put it in either,
+# e.g., $AP_PIPE_DIR/config/$CAMERA/someTask.py, or in a camera-specific,
+# pipeline, e.g., $AP_PIPE_DIR/pipelines/$CAMERA/ApPipeCalibrateImage.yaml.
+
+tasks:
+  MPSkyEphemerisQueryTask:
+    class: lsst.ap.association.MPSkyEphemerisQueryTask
+    config:
+      MPSkyURL: 'http://sdfrome001.sdf.slac.stanford.edu:3666/'
