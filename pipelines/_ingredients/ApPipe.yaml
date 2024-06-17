@@ -15,6 +15,7 @@ description: End to end Alert Production pipeline.
 
 imports:
   - $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcd.yaml
+  - $AP_PIPE_DIR/pipelines/_ingredients/Ephemerides.yaml  
   - $ANALYSIS_TOOLS_DIR/pipelines/apDetectorVisitQualityCore.yaml
 parameters:
   # Pipeline configurable to run on both goodSeeing and deep templates, depending on dataset.
@@ -94,6 +95,7 @@ subsets:
       - diffimTaskCore
       - diffimTaskPlots
       - initialPviCore
+      - mpSkyEphemerisQuery
     description: >
       An alias of ApPipe to use in higher-level pipelines.
 contracts:
