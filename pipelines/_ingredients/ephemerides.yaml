@@ -13,3 +13,7 @@ tasks:
     class: lsst.ap.association.MPSkyEphemerisQueryTask
     config:
       MPSkyURL: 'http://sdfrome001.sdf.slac.stanford.edu:3666/'
+      queryRadiusDegrees: 1.75
+      observerCode: 'X05'
+      connections.predictedRegionTime: RegionTimeInfo
+
