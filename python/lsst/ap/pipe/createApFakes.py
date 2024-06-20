@@ -147,7 +147,7 @@ class CreateRandomApFakesTask(PipelineTask):
         # Use the tractId as the ranomd seed.
         rng = np.random.default_rng(tractId)
         tractBoundingCircle = \
-            skyMap.generateTract(tractId).getInnerSkyPolygon().getBoundingCircle()
+            skyMap.generateTract(tractId).getOuterSkyPolygon().getBoundingCircle()
         tractArea = tractBoundingCircle.getArea() * (180 / np.pi) ** 2
         nFakes = int(self.config.fakeDensity * tractArea)
 
