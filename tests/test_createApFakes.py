@@ -47,7 +47,7 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
 
         self.simpleMap = skyMap.DiscreteSkyMap(simpleMapConfig)
         self.tractId = 0
-        bCircle = self.simpleMap.generateTract(self.tractId).getInnerSkyPolygon().getBoundingCircle()
+        bCircle = self.simpleMap.generateTract(self.tractId).getOuterSkyPolygon().getBoundingCircle()
         self.nSources = 10
         self.sourceDensity = (self.nSources
                               / (bCircle.getArea() * (180 / np.pi) ** 2))
@@ -100,7 +100,7 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
         fakesConfig.fraction = 0.5
         fakesConfig.fakeDensity = self.sourceDensity
         fakesTask = CreateRandomApFakesTask(config=fakesConfig)
-        bCircle = self.simpleMap.generateTract(self.tractId).getInnerSkyPolygon().getBoundingCircle()
+        bCircle = self.simpleMap.generateTract(self.tractId).getOuterSkyPolygon().getBoundingCircle()
         result = fakesTask.run(self.tractId, self.simpleMap)
         fakeCat = result.fakeCat
         self.assertEqual(len(fakeCat), self.nSources)
@@ -127,7 +127,7 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
         contained in the cap bound.
         """
         fakesTask = CreateRandomApFakesTask()
-        bCircle = self.simpleMap.generateTract(self.tractId).getInnerSkyPolygon().getBoundingCircle()
+        bCircle = self.simpleMap.generateTract(self.tractId).getOuterSkyPolygon().getBoundingCircle()
 
         randData = fakesTask.createRandomPositions(
             nFakes=self.nSources,
@@ -147,7 +147,7 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
         a test vector to the expected location.
         """
         createFakes = CreateRandomApFakesTask()
-        bCircle = self.simpleMap.generateTract(self.tractId).getInnerSkyPolygon().getBoundingCircle()
+        bCircle = self.simpleMap.generateTract(self.tractId).getOuterSkyPolygon().getBoundingCircle()
         rotMatrix = createFakes._createRotMatrix(bCircle)
         rotatedVector = np.dot(rotMatrix, np.array([0, 0, 1]))
         expectedVect = bCircle.getCenter()
