@@ -40,23 +40,24 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
     def setUp(self):
         """
         """
+        self.tractId = 0
+        self.rng = np.random.default_rng(self.tractId)
         simpleMapConfig = skyMap.discreteSkyMap.DiscreteSkyMapConfig()
         simpleMapConfig.raList = [10]
         simpleMapConfig.decList = [-1]
         simpleMapConfig.radiusList = [0.1]
-
         self.simpleMap = skyMap.DiscreteSkyMap(simpleMapConfig)
-        self.tractId = 0
-        bCircle = self.simpleMap.generateTract(self.tractId).getOuterSkyPolygon().getBoundingCircle()
-        self.nSources = 10
+        self.tract = self.simpleMap.generateTract(self.tractId)
+
+        bBox = self.tract.getOuterSkyPolygon().getBoundingBox()
+        self.nSources = 50
         self.sourceDensity = (self.nSources
-                              / (bCircle.getArea() * (180 / np.pi) ** 2))
+                              / (bBox.getArea() * (180 / np.pi) ** 2))
         self.fraction = 0.5
         self.nInVisit = (int(self.nSources * self.fraction)
                          + int((1 - self.fraction) / 2 * self.nSources))
         self.nInTemplate = (self.nSources - self.nInVisit
                             + int(self.nSources * self.fraction))
-        self.rng = np.random.default_rng(1234)
 
     def testRunQuantum(self):
         """Test the run quantum method with a gen3 butler.
@@ -99,17 +100,19 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
         fakesConfig = CreateRandomApFakesConfig()
         fakesConfig.fraction = 0.5
         fakesConfig.fakeDensity = self.sourceDensity
+
         fakesTask = CreateRandomApFakesTask(config=fakesConfig)
-        bCircle = self.simpleMap.generateTract(self.tractId).getOuterSkyPolygon().getBoundingCircle()
+        bBox = self.tract.getOuterSkyPolygon().getBoundingBox()
         result = fakesTask.run(self.tractId, self.simpleMap)
         fakeCat = result.fakeCat
         self.assertEqual(len(fakeCat), self.nSources)
+
         for idx, row in fakeCat.iterrows():
             self.assertTrue(
-                bCircle.contains(
+                bBox.contains(
                     geom.SpherePoint(row[fakesTask.config.ra_col],
                                      row[fakesTask.config.dec_col],
-                                     geom.radians).getVector()))
+                                     geom.degrees).getVector()))
         self.assertEqual(fakeCat[fakesConfig.visitSourceFlagCol].sum(),
                          self.nInVisit)
         self.assertEqual(fakeCat[fakesConfig.templateSourceFlagCol].sum(),
@@ -121,39 +124,6 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
                 np.all(fakesConfig.magMin <= filterMags))
             self.assertTrue(
                 np.all(fakesConfig.magMax > filterMags))
-
-    def testCreateRandomPositions(self):
-        """Test that the correct number of sources are produced and are
-        contained in the cap bound.
-        """
-        fakesTask = CreateRandomApFakesTask()
-        bCircle = self.simpleMap.generateTract(self.tractId).getOuterSkyPolygon().getBoundingCircle()
-
-        randData = fakesTask.createRandomPositions(
-            nFakes=self.nSources,
-            boundingCircle=bCircle,
-            rng=self.rng)
-        self.assertEqual(self.nSources, len(randData[fakesTask.config.ra_col]))
-        self.assertEqual(self.nSources, len(randData[fakesTask.config.dec_col]))
-        for idx in range(self.nSources):
-            self.assertTrue(
-                bCircle.contains(
-                    geom.SpherePoint(randData[fakesTask.config.ra_col][idx],
-                                     randData[fakesTask.config.dec_col][idx],
-                                     geom.radians).getVector()))
-
-    def testCreateRotMatrix(self):
-        """Test that the rotation matrix is computed correctly and rotates
-        a test vector to the expected location.
-        """
-        createFakes = CreateRandomApFakesTask()
-        bCircle = self.simpleMap.generateTract(self.tractId).getOuterSkyPolygon().getBoundingCircle()
-        rotMatrix = createFakes._createRotMatrix(bCircle)
-        rotatedVector = np.dot(rotMatrix, np.array([0, 0, 1]))
-        expectedVect = bCircle.getCenter()
-        self.assertAlmostEqual(expectedVect.x(), rotatedVector[0])
-        self.assertAlmostEqual(expectedVect.y(), rotatedVector[1])
-        self.assertAlmostEqual(expectedVect.z(), rotatedVector[2])
 
     def testVisitCoaddSubdivision(self):
         """Test that the number of assigned visit to template objects is
@@ -173,6 +143,8 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
     def testRandomMagnitudes(self):
         """Test that the correct number of filters and magnitudes have been
         produced.
+        This is using currently the filter mags and an additional non-filter mag
+        column. In any case the magnitudes are all random and equal.
         """
         fakesConfig = CreateRandomApFakesConfig()
         fakesConfig.filterSet = ["u", "g"]
@@ -181,7 +153,9 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
         fakesConfig.magMax = 21
         fakesTask = CreateRandomApFakesTask(config=fakesConfig)
         mags = fakesTask.createRandomMagnitudes(self.nSources, self.rng)
-        self.assertEqual(len(fakesConfig.filterSet), len(mags))
+        # this is because we have a column for mag without filter
+        self.assertEqual(len(fakesConfig.filterSet) + 1, len(mags))
+
         for f in fakesConfig.filterSet:
             filterMags = mags[fakesConfig.mag_col % f]
             self.assertEqual(self.nSources, len(filterMags))

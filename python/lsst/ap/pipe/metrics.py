@@ -36,7 +36,6 @@ import numpy as np
 import lsst.pex.config as pexConfig
 from lsst.pipe.base import Struct, NoWorkFound
 import lsst.pipe.base.connectionTypes as connTypes
-from lsst.pipe.tasks.insertFakes import InsertFakesConfig
 from lsst.verify import Measurement, Datum
 from lsst.verify.tasks import AbstractMetadataMetricTask, MetricTask, MetricComputationError
 
@@ -62,7 +61,6 @@ class ApFakesCompletenessMetricConnections(
 # catalog.
 class ApFakesCompletenessMetricConfig(
         MetricTask.ConfigClass,
-        InsertFakesConfig,
         pipelineConnections=ApFakesCompletenessMetricConnections):
     """ApFakesCompleteness config.
     """
@@ -124,10 +122,10 @@ class ApFakesCompletenessMetricTask(MetricTask):
             ``measurement``
                 the ratio (`lsst.verify.Measurement` or `None`)
         """
-        magnitudes = np.fabs(matchedFakes[f"{self.config.mag_col}" % band])
-        magCutFakes = matchedFakes[np.logical_and(magnitudes > self.config.magMin,
+        magnitudes = np.fabs(matchedFakes['mag'])
+        magCutFakes = matchedFakes[np.logical_and(magnitudes >= self.config.magMin,
                                                   magnitudes < self.config.magMax)]
-        if len(magCutFakes) <= 0.0:
+        if len(magCutFakes) <= 0:
             raise MetricComputationError(
                 "No matched fakes catalog sources found; Completeness is "
                 "ill defined.")
@@ -183,8 +181,8 @@ class ApFakesCountMetricTask(ApFakesCompletenessMetricTask):
             ``measurement``
                 the ratio (`lsst.verify.Measurement` or `None`)
         """
-        magnitudes = np.fabs(matchedFakes[f"{self.config.mag_col}" % band])
-        magCutFakes = matchedFakes[np.logical_and(magnitudes > self.config.magMin,
+        magnitudes = np.fabs(matchedFakes["mag"])
+        magCutFakes = matchedFakes[np.logical_and(magnitudes >= self.config.magMin,
                                                   magnitudes < self.config.magMax)]
         meas = Measurement(self.config.metricName,
                            len(magCutFakes) * u.count)

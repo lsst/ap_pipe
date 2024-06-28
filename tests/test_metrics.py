@@ -69,11 +69,10 @@ class TestApCompletenessTask(MetricTaskTestCase):
 
         self.simpleMap = skyMap.DiscreteSkyMap(simpleMapConfig)
         self.tractId = 0
-        bCircle = self.simpleMap.generateTract(self.tractId).getOuterSkyPolygon().getBoundingCircle()
+        bBox = self.simpleMap.generateTract(self.tractId).getOuterSkyPolygon().getBoundingBox()
         self.targetSources = 1000
         self.sourceDensity = (self.targetSources
-                              / (bCircle.getArea() * (180 / np.pi) ** 2))
-
+                              / (bBox.getArea() * (180 / np.pi) ** 2))
         fakesConfig = CreateRandomApFakesConfig()
         fakesConfig.fraction = 0.0
         fakesConfig.fakeDensity = self.sourceDensity

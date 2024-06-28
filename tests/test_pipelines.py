@@ -64,6 +64,18 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                 # depends on drp_tasks, which we cannot make a dependency here.
                 continue
             with self.subTest(file):
+                expected_inputs = {
+                    # ISR
+                    "raw", "camera", "crosstalk", "crosstalkSources", "bias", "dark", "flat", "ptc",
+                    "fringe", "straylightData", "bfKernel", "newBFKernel", "defects", "linearizer",
+                    "opticsTransmission", "filterTransmission", "atmosphereTransmission",
+                    "illumMaskedImage", "deferredChargeCalib",
+                    # Everything else
+                    "skyMap", "gaia_dr3_20230707", "gaia_dr2_20200414", "ps1_pv3_3pi_20170110",
+                    "goodSeeingCoadd", "pretrainedModelPackage",
+                }
+                if "WithFakes" in file:
+                    expected_inputs.add("injection_catalog")
                 tester = PipelineStepTester(
                     filename=file,
                     step_suffixes=[""],  # Test full pipeline
@@ -71,16 +83,7 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                                            ("gaia_dr2_20200414", {"htm7"}, "SimpleCatalog", False),
                                            ("gaia_dr3_20230707", {"htm7"}, "SimpleCatalog", False),
                                            ],
-                    expected_inputs={
-                        # ISR
-                        "raw", "camera", "crosstalk", "crosstalkSources", "bias", "dark", "flat", "ptc",
-                        "fringe", "straylightData", "bfKernel", "newBFKernel", "defects", "linearizer",
-                        "opticsTransmission", "filterTransmission", "atmosphereTransmission",
-                        "illumMaskedImage", "deferredChargeCalib",
-                        # Everything else
-                        "skyMap", "gaia_dr3_20230707", "gaia_dr2_20200414", "ps1_pv3_3pi_20170110",
-                        "goodSeeingCoadd", "pretrainedModelPackage",
-                    },
+                    expected_inputs=expected_inputs,
                     # Pipeline outputs highly in flux, don't test
                     expected_outputs=set(),
                     pipeline_patches={"parameters:apdb_config": "some/file/path.yaml",
