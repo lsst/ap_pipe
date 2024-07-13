@@ -79,7 +79,7 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                         "illumMaskedImage", "deferredChargeCalib",
                         # Everything else
                         "skyMap", "gaia_dr3_20230707", "gaia_dr2_20200414", "ps1_pv3_3pi_20170110",
-                        "goodSeeingCoadd", "pretrainedModelPackage",
+                        "goodSeeingCoadd", "pretrainedModelPackage", "RegionTimeInfo"
                     },
                     # Pipeline outputs highly in flux, don't test
                     expected_outputs=set(),

@@ -9,7 +9,7 @@ description: Ephemeris generation for ssoAssociation
 # pipeline, e.g., $AP_PIPE_DIR/pipelines/$CAMERA/ApPipeCalibrateImage.yaml.
 
 tasks:
-  MPSkyEphemerisQueryTask:
+  mpSkyEphemerisQuery:
     class: lsst.ap.association.MPSkyEphemerisQueryTask
     config:
       MPSkyURL: 'http://sdfrome001.sdf.slac.stanford.edu:3666/'
