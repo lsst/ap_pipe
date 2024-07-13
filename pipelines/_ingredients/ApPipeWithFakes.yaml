@@ -33,6 +33,10 @@ tasks:
       connections.output_catalog: fakes_initial_pvi_catalog
       connections.injection_prefix: parameters.injection_prefix
       connections.injected_prefix: parameters.injected_prefix
+  loadDiaCatalogs:
+    class: lsst.ap.association.LoadDiaCatalogsTask
+    config:
+      apdb_config_url: parameters.apdb_config
   retrieveTemplate:
     class: lsst.ip.diffim.getTemplate.GetTemplateTask
     config:
@@ -114,6 +118,7 @@ subsets:
   apPipe:
     subset:
       - inject_visit
+      - loadDiaCatalogs
       - retrieveTemplate
       - subtractImages
       - detectAndMeasure

@@ -22,6 +22,10 @@ parameters:
   # APDB config file must be user-specified
   apdb_config:
 tasks:
+  loadDiaCatalogs:
+    class: lsst.ap.association.LoadDiaCatalogsTask
+    config:
+      apdb_config_url: parameters.apdb_config
   retrieveTemplate:
     class: lsst.ip.diffim.getTemplate.GetTemplateTask
     config:
@@ -78,6 +82,7 @@ tasks:
 subsets:
   apPipe:
     subset:
+      - loadDiaCatalogs
       - isr
       - calibrateImage
       - retrieveTemplate
@@ -101,6 +106,15 @@ contracts:
   # Inputs and outputs must match. For consistency, contracts are written in execution order:
   #     first task == second task, then sorted by (first, second)
   # Use of ConnectionsClass for templated fields is a workaround for DM-30210
+  - contract: loadDiaCatalogs.connections.ConnectionsClass(config=loadDiaCatalogs).diaObjects.name ==
+              diaPipe.connections.ConnectionsClass(config=diaPipe).preloadedDiaObjects.name
+    msg: "loadDiaCatalogs.diaObjects != diaPipe.preloadedDiaObjects"
+  - contract: loadDiaCatalogs.connections.ConnectionsClass(config=loadDiaCatalogs).diaSources.name ==
+              diaPipe.connections.ConnectionsClass(config=diaPipe).preloadedDiaSources.name
+    msg: "loadDiaCatalogs.diaSources != diaPipe.preloadedDiaSources"
+  - contract: loadDiaCatalogs.connections.ConnectionsClass(config=loadDiaCatalogs).diaForcedSources.name ==
+              diaPipe.connections.ConnectionsClass(config=diaPipe).preloadedDiaForcedSources.name
+    msg: "loadDiaCatalogs.diaForcedSources != diaPipe.preloadedDiaForcedSources"
   - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
               subtractImages.connections.ConnectionsClass(config=subtractImages).science.name
     msg: "calibrateImage.exposure != subtractImages.science"
