@@ -22,6 +22,10 @@ parameters:
   # APDB config file must be user-specified
   apdb_config:
 tasks:
+  loadDiaCatalogs:
+    class: lsst.ap.association.LoadDiaCatalogsTask
+    config:
+      apdb_config_url: parameters.apdb_config
   retrieveTemplate:
     class: lsst.ip.diffim.getTemplate.GetTemplateTask
     config:
@@ -78,6 +82,7 @@ tasks:
 subsets:
   apPipe:
     subset:
+      - loadDiaCatalogs
       - isr
       - calibrateImage
       - retrieveTemplate
