@@ -151,6 +151,8 @@ class CreateRandomApFakesTask(PipelineTask):
         rng = np.random.default_rng(tractId)
 
         tract = skyMap.generateTract(tractId)
+        tractArea = tract.getOuterSkyPolygon().getBoundingBox().getArea()
+        tractArea *= (180 / np.pi) ** 2
         tractWcs = tract.getWcs()
         vertexList = tract.getVertexList()
         vertexRas = [vertex.getRa().asDegrees() for vertex in vertexList]
@@ -169,6 +171,9 @@ class CreateRandomApFakesTask(PipelineTask):
 
         self.log.info(
             f"Creating {nFakes} star fakes over tractId={tractId} with "
+            f" RA  in ({sorted([np.min(vertexRas), np.max(vertexRas)])} "
+            f" Dec in ({sorted([np.min(vertexDecs), np.max(vertexDecs)])}), "
+            f"area={tractArea:.4f} deg^2 and "
             f"magnitude range: [{self.config.magMin, self.config.magMax}]")
 
         onesColumn = np.ones(nFakes, dtype="float")
