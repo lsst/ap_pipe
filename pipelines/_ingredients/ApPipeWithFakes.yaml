@@ -17,9 +17,9 @@ parameters:
   coaddName: goodSeeing
   # APDB config file must be user-specified
   apdb_config:
-  fakesType: "fakes_"
-  injected_prefix: "fakes_"
-  injection_prefix: "injection_"
+  fakesType: 'fakes_'
+  injected_prefix: 'fakes_'
+  injection_prefix: 'injection_'
 
 tasks:
   inject_visit:
@@ -91,7 +91,7 @@ tasks:
       connections.coaddName: parameters.coaddName
       connections.fakesType: parameters.fakesType
       connections.exposure: fakes_initial_pvi
-  injectedMatch: 
+  injectedMatch:
     class: lsst.ap.pipe.matchSourceInjected.MatchInitialPVIInjectedTask
     config:
       connections.coaddName: parameters.coaddName
