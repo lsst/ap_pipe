@@ -48,8 +48,6 @@ class MatchInitialPVIInjectedConnections(
         name="{fakesType}initial_pvi_catalog",
         storageClass="ArrowAstropy",
         dimensions=("instrument", "visit", "detector"),
-        deferLoad=False,
-        multiple=False
     )
     diffIm = connTypes.Input(
         doc="Difference image on which the DiaSources were detected.",
