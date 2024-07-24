@@ -9,11 +9,10 @@ description: DECam AP Pipeline with synthetic/fake sources. Templates are inputs
 instrument: lsst.obs.decam.DarkEnergyCamera
 imports:
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithFakes.yaml
-    exclude:  # These tasks come from DECam's ProcessCcdCalibrate.yaml instead
-      - processCcd
-  - location: $AP_PIPE_DIR/pipelines/DECam/ProcessCcdCalibrate.yaml
-    include:  # All other tasks come from ApPipeWithFakes.yaml instead
-      - processCcd
 
 parameters:
   apdb_config:  # YOU MUST CONFIGURE THIS BEFORE RUNNING THE PIPELINE
+  coaddName: goodSeeing
+  fakesType: 'fakes_'
+  injected_prefix: "fakes_"
+  injection_prefix: "injection_"

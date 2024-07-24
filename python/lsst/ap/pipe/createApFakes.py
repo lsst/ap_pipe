@@ -29,6 +29,9 @@ import lsst.pipe.base.connectionTypes as connTypes
 from lsst.pipe.tasks.insertFakes import InsertFakesConfig
 from lsst.skymap import BaseSkyMap
 
+from lsst.source.injection import generate_injection_catalog
+
+
 __all__ = ["CreateRandomApFakesTask",
            "CreateRandomApFakesConfig",
            "CreateRandomApFakesConnections"]
@@ -144,128 +147,59 @@ class CreateRandomApFakesTask(PipelineTask):
             Catalog of random points covering the given tract. Follows the
             columns and format expected in `lsst.pipe.tasks.InsertFakes`.
         """
-        # Use the tractId as the ranomd seed.
+        # Use the tractId as the random seed.
         rng = np.random.default_rng(tractId)
-        tractBoundingCircle = \
-            skyMap.generateTract(tractId).getOuterSkyPolygon().getBoundingCircle()
-        tractArea = tractBoundingCircle.getArea() * (180 / np.pi) ** 2
-        nFakes = int(self.config.fakeDensity * tractArea)
+
+        tract = skyMap.generateTract(tractId)
+        tractArea = tract.getOuterSkyPolygon().getBoundingBox().getArea()
+        tractArea *= (180 / np.pi) ** 2
+        tractWcs = tract.getWcs()
+        vertexList = tract.getVertexList()
+        vertexRas = [vertex.getRa().asDegrees() for vertex in vertexList]
+        vertexDecs = [vertex.getDec().asDegrees() for vertex in vertexList]
+
+        catalog = generate_injection_catalog(
+            ra_lim=sorted([np.min(vertexRas), np.max(vertexRas)]),
+            dec_lim=sorted([np.min(vertexDecs), np.max(vertexDecs)]),
+            density=self.config.fakeDensity,
+            source_type="Star",
+            seed=str(tractId),
+            wcs=tractWcs
+        )
+
+        nFakes = len(catalog)
 
         self.log.info(
             f"Creating {nFakes} star fakes over tractId={tractId} with "
-            f"bounding circle area: {tractArea:.4f} deg^2 and "
+            f" RA  in ({sorted([np.min(vertexRas), np.max(vertexRas)])} "
+            f" Dec in ({sorted([np.min(vertexDecs), np.max(vertexDecs)])}), "
+            f"area={tractArea:.4f} deg^2 and "
             f"magnitude range: [{self.config.magMin, self.config.magMax}]")
 
+        onesColumn = np.ones(nFakes, dtype="float")
+        zerosColumn = np.zeros(nFakes, dtype="float")
         # Concatenate the data and add dummy values for the unused variables.
         # Set all data to PSF like objects.
         randData = {
             "fakeId": [uuid.uuid4().int & (1 << 64) - 1 for n in range(nFakes)],
-            **self.createRandomPositions(nFakes, tractBoundingCircle, rng),
+            self.config.ra_col: catalog['ra'].value,
+            self.config.dec_col: catalog['dec'].value,
             **self.createVisitCoaddSubdivision(nFakes),
             **self.createRandomMagnitudes(nFakes, rng),
-            self.config.disk_semimajor_col: np.ones(nFakes, dtype="float"),
-            self.config.bulge_semimajor_col: np.ones(nFakes, dtype="float"),
-            self.config.disk_n_col: np.ones(nFakes, dtype="float"),
-            self.config.bulge_n_col: np.ones(nFakes, dtype="float"),
-            self.config.disk_axis_ratio_col: np.ones(nFakes, dtype="float"),
-            self.config.bulge_axis_ratio_col: np.ones(nFakes, dtype="float"),
-            self.config.disk_pa_col: np.zeros(nFakes, dtype="float"),
-            self.config.bulge_pa_col: np.ones(nFakes, dtype="float"),
-            self.config.sourceType: nFakes * ["star"]}
+            self.config.disk_semimajor_col: onesColumn,
+            self.config.bulge_semimajor_col: onesColumn,
+            self.config.disk_n_col: onesColumn,
+            self.config.bulge_n_col: onesColumn,
+            self.config.disk_axis_ratio_col: onesColumn,
+            self.config.bulge_axis_ratio_col: onesColumn,
+            self.config.disk_pa_col: zerosColumn,
+            self.config.bulge_pa_col: onesColumn,
+            self.config.sourceType: catalog['source_type'].value,
+            "source_type": catalog['source_type'].value,
+            "injection_id": catalog['injection_id'].value
+        }
 
         return Struct(fakeCat=pd.DataFrame(data=randData))
-
-    def createRandomPositions(self, nFakes, boundingCircle, rng):
-        """Create a set of spatially uniform randoms over the tract bounding
-        circle on the sphere.
-
-        Parameters
-        ----------
-        nFakes : `int`
-            Number of fakes to create.
-        boundingCicle : `lsst.sphgeom.BoundingCircle`
-            Circle bound covering the tract.
-        rng : `numpy.random.Generator`
-            Initialized random number generator.
-
-        Returns
-        -------
-        data : `dict`[`str`, `numpy.ndarray`]
-            Dictionary of RA and Dec locations over the tract.
-        """
-        # Create uniform random vectors on the sky around the north pole.
-        randVect = np.empty((nFakes, 3))
-        randVect[:, 2] = rng.uniform(
-            np.cos(boundingCircle.getOpeningAngle().asRadians()),
-            1,
-            nFakes)
-        sinRawTheta = np.sin(np.arccos(randVect[:, 2]))
-        rawPhi = rng.uniform(0, 2 * np.pi, nFakes)
-        randVect[:, 0] = sinRawTheta * np.cos(rawPhi)
-        randVect[:, 1] = sinRawTheta * np.sin(rawPhi)
-
-        # Compute the rotation matrix to move our random points to the
-        # correct location.
-        rotMatrix = self._createRotMatrix(boundingCircle)
-        randVect = np.dot(rotMatrix, randVect.transpose()).transpose()
-        decs = np.arcsin(randVect[:, 2])
-        ras = np.arctan2(randVect[:, 1], randVect[:, 0])
-
-        return {self.config.dec_col: decs,
-                self.config.ra_col: ras}
-
-    def _createRotMatrix(self, boundingCircle):
-        """Compute the 3d rotation matrix to rotate the dec=90 pole to the
-        center of the circle bound.
-
-        Parameters
-        ----------
-        boundingCircle : `lsst.sphgeom.BoundingCircle`
-             Circle bound covering the tract.
-
-        Returns
-        -------
-        rotMatrix : `numpy.ndarray`, (3, 3)
-            3x3 rotation matrix to rotate the dec=90 pole to the location of
-            the circle bound.
-
-        Notes
-        -----
-        Rotation matrix follows
-        https://mathworld.wolfram.com/RodriguesRotationFormula.html
-        """
-        # Get the center point of our tract
-        center = boundingCircle.getCenter()
-
-        # Compute the axis to rotate around. This is done by taking the cross
-        # product of dec=90 pole into the tract center.
-        cross = np.array([-center.y(),
-                          center.x(),
-                          0])
-        cross /= np.sqrt(cross[0] ** 2 + cross[1] ** 2 + cross[2] ** 2)
-
-        # Get the cosine and sine of the dec angle of the tract center. This
-        # is the amount of rotation needed to move the points we created from
-        # around the pole to the tract location.
-        cosTheta = center.z()
-        sinTheta = np.sin(np.arccos(center.z()))
-
-        # Compose the rotation matrix for rotation around the axis created from
-        # the cross product.
-        rotMatrix = cosTheta * np.array([[1, 0, 0],
-                                         [0, 1, 0],
-                                         [0, 0, 1]])
-        rotMatrix += sinTheta * np.array([[0, -cross[2], cross[1]],
-                                          [cross[2], 0, -cross[0]],
-                                          [-cross[1], cross[0], 0]])
-        rotMatrix += (
-            (1 - cosTheta)
-            * np.array(
-                [[cross[0] ** 2, cross[0] * cross[1], cross[0] * cross[2]],
-                 [cross[0] * cross[1], cross[1] ** 2, cross[1] * cross[2]],
-                 [cross[0] * cross[2], cross[1] * cross[2], cross[2] ** 2]])
-        )
-        return rotMatrix
 
     def createVisitCoaddSubdivision(self, nFakes):
         """Assign a given fake either a visit image or coadd or both based on
@@ -318,5 +252,6 @@ class CreateRandomApFakesTask(PipelineTask):
         randMags = {}
         for fil in self.config.filterSet:
             randMags[self.config.mag_col % fil] = mags
-
+        # adding a non-filter column for magnitudes
+        randMags["mag"] = mags
         return randMags
