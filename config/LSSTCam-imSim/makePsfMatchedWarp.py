@@ -28,8 +28,6 @@
 # HACK: Throw away any changes imposed by obs configs.
 config.loadFromString(type(config)().saveToString())
 
-config.matchingKernelSize = 29
 config.psfMatch.kernel['AL'].kernelSize = 29
 config.psfMatch.kernel['AL'].alardSigGauss = [1.0, 2.0, 4.5]
 config.modelPsf.defaultFwhm = 7.7
-
