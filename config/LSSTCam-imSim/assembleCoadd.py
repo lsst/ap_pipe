@@ -25,20 +25,13 @@
 # permanently remove the obs_* configs, we should check that none of the
 # changes made there since April 12, 2022 would be useful here.
 
-import os.path
-
 # HACK: Throw away any changes imposed by obs configs.
 config.loadFromString(type(config)().saveToString())
-
-# Load configs shared between assembleCoadd and makeCoaddTempExp
-config.load(os.path.join(os.path.dirname(__file__), "coaddBase.py"))
 
 config.subregionSize = (10000, 200) # 200 rows (since patch width is typically < 10k pixels)
 config.removeMaskPlanes.append("CROSSTALK")
 config.doNImage = True
 config.badMaskPlanes += ["SUSPECT"]
-
-config.matchingKernelSize = 29
 
 from lsst.pipe.tasks.selectImages import PsfWcsSelectImagesTask
 config.select.retarget(PsfWcsSelectImagesTask)
