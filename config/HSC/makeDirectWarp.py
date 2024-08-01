@@ -3,5 +3,12 @@
 # permanently remove the obs_* configs, we should check that none of the
 # changes made there since April 12, 2022 would be useful here.
 
-# Configs shared between makeWarp and assemble
-config.matchingKernelSize = 29
+import os.path
+
+# HACK: Throw away any changes imposed by obs configs.
+config.loadFromString(type(config)().saveToString())
+
+config.doApplyNewBackground = True
+
+config.warper.warpingKernelName = 'lanczos5'
+config.coaddPsf.warpingKernelName = 'lanczos5'
