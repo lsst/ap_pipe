@@ -15,6 +15,7 @@ subsets:
 # because its processCcd was excluded.
   apPipe:
     subset:
+      - loadDiaCatalogs
       - isr
       - calibrateImage
       - retrieveTemplate
