@@ -33,6 +33,10 @@ tasks:
       connections.output_catalog: fakes_initial_pvi_catalog
       connections.injection_prefix: parameters.injection_prefix
       connections.injected_prefix: parameters.injected_prefix
+  loadDiaCatalogs:
+    class: lsst.ap.association.LoadDiaCatalogsTask
+    config:
+      apdb_config_url: parameters.apdb_config
   retrieveTemplate:
     class: lsst.ip.diffim.getTemplate.GetTemplateTask
     config:
@@ -114,6 +118,7 @@ subsets:
   apPipe:
     subset:
       - inject_visit
+      - loadDiaCatalogs
       - retrieveTemplate
       - subtractImages
       - detectAndMeasure
@@ -147,6 +152,8 @@ subsets:
       All tasks from the 'apPipe' subset impacted by source injection.
 contracts:
   - contract: detectAndMeasure.doSkySources == transformDiaSrcCat.doRemoveSkySources
+  # Both loadDiaCatalogs and diaPipe connect to the APDB, so make sure they use the same configuration
+  - loadDiaCatalogs.apdb_config_url == diaPipe.apdb_config_url
   # Inputs and outputs must match. For consistency, contracts are written in execution order:
   #     first task == second task, then sorted by (first, second)
   # Use of ConnectionsClass for templated fields is a workaround for DM-30210
