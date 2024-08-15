@@ -1,5 +1,3 @@
-# Configs shared between makeCoaddTempExp and assemble
-
 # This file is part of ap_pipe.
 #
 # Developed for the LSST Data Management System.
@@ -22,9 +20,14 @@
 # the GNU General Public License along with this program.  If not,
 # see <http://www.lsstcorp.org/LegalNotices/>.
 
-# This file was copied from obs_lsst as part of DM-31063. Feel free to modify
-# this file to better reflect the needs of AP; however, when it comes time to
-# permanently remove the obs_* configs, we should check that none of the
-# changes made there since April 12, 2022 would be useful here.
+# This configs were copied from obs_lsst as part of DM-31063. Feel free to
+# modify this file to better reflect the needs of AP; however, when it comes
+# time to permanently remove the obs_* configs, we should check that none of
+# the changes made there since April 12, 2022 would be useful here.
 
-config.matchingKernelSize = 29
+# HACK: Throw away any changes imposed by obs configs.
+config.loadFromString(type(config)().saveToString())
+
+config.psfMatch.kernel['AL'].kernelSize = 29
+config.psfMatch.kernel['AL'].alardSigGauss = [1.0, 2.0, 4.5]
+config.modelPsf.defaultFwhm = 7.7
