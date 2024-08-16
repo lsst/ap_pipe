@@ -20,7 +20,7 @@ parameters:
   injected_prefix: "fakes_"
   injection_prefix: "injection_"
 subsets:
-# apPipe must be redefined from $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithFakes.yaml
+# apPipe, preload, and prompt must be redefined from $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithFakes.yaml
 # because its processCcd was excluded.
   apPipe:
     subset:
@@ -36,6 +36,7 @@ subsets:
       - transformDiaSrcCat
       - getRegionTimeFromVisit
       - diaPipe
+      - injectedMatch
       - sampleSpatialMetrics
       - analyzeAssocDiaSrcCore
       - analyzeTrailedDiaSrcCore
@@ -44,3 +45,26 @@ subsets:
       - initialPviCore
     description: >
       An alias of ApPipe to use in higher-level pipelines.
+  preload:
+    subset:
+      - loadDiaCatalogs
+    description: Tasks that can be run before receiving raw images.
+  prompt:
+    subset:
+      - isr
+      - calibrateImage
+      - retrieveTemplate
+      - subtractImages
+      - detectAndMeasure
+      - filterDiaSrcCat
+      - rbClassify
+      - transformDiaSrcCat
+      - diaPipe
+      - injectedMatch
+      - analyzeAssocDiaSrcCore
+      - analyzeTrailedDiaSrcCore
+      - diffimTaskCore
+      - initialPviCore
+    description: >
+      Tasks necessary to turn raw images into APDB rows and alerts.
+      Requires preload subset to be run first.

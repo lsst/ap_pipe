@@ -138,6 +138,37 @@ subsets:
       - initialPviCore
     description: >
       An alias of ApPipe to use in higher-level pipelines.
+  preload:
+    subset:
+      - loadDiaCatalogs
+    description: Tasks that can be run before receiving raw images.
+  prompt:
+    subset:
+      - isr
+      - calibrateImage
+      - inject_visit
+      - retrieveTemplate
+      - subtractImages
+      - detectAndMeasure
+      - filterDiaSrcCat
+      - rbClassify
+      - transformDiaSrcCat
+      - diaPipe
+      - injectedMatch
+      - analyzeAssocDiaSrcCore
+      - analyzeTrailedDiaSrcCore
+      - diffimTaskCore
+      - initialPviCore
+    description: >
+      Tasks necessary to turn raw images into APDB rows and alerts.
+      Requires preload subset to be run first.
+  afterburner:
+    subset:
+      - sampleSpatialMetrics
+      - diffimTaskPlots
+    description: >
+      Tasks for QA and other non-real-time processing.
+      Requires prompt subset to be run first.
   injected_processCcd:
     subset:
     - inject_visit

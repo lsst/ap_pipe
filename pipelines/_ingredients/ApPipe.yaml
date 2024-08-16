@@ -101,6 +101,35 @@ subsets:
       - initialPviCore
     description: >
       An alias of ApPipe to use in higher-level pipelines.
+  preload:
+    subset:
+      - loadDiaCatalogs
+    description: Tasks that can be run before receiving raw images.
+  prompt:
+    subset:
+      - isr
+      - calibrateImage
+      - retrieveTemplate
+      - subtractImages
+      - detectAndMeasure
+      - filterDiaSrcCat
+      - rbClassify
+      - transformDiaSrcCat
+      - diaPipe
+      - analyzeAssocDiaSrcCore
+      - analyzeTrailedDiaSrcCore
+      - diffimTaskCore
+      - initialPviCore
+    description: >
+      Tasks necessary to turn raw images into APDB rows and alerts.
+      Requires preload subset to be run first.
+  afterburner:
+    subset:
+      - sampleSpatialMetrics
+      - diffimTaskPlots
+    description: >
+      Tasks for QA and other non-real-time processing.
+      Requires prompt subset to be run first.
 contracts:
   - detectAndMeasure.doSkySources == transformDiaSrcCat.doRemoveSkySources
   # Both loadDiaCatalogs and diaPipe connect to the APDB, so make sure they use the same configuration
