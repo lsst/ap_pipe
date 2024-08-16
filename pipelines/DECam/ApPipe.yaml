@@ -21,11 +21,16 @@ subsets:
       - retrieveTemplate
       - subtractImages
       - detectAndMeasure
+      - filterDiaSrcCat
       - rbClassify
       - transformDiaSrcCat
+      - getRegionTimeFromVisit
       - diaPipe
       - analyzeAssocDiaSrcCore
       - analyzeTrailedDiaSrcCore
+      - sampleSpatialMetrics
       - diffimTaskCore
+      - diffimTaskPlots
+      - initialPviCore
     description: >
       An alias of ApPipe to use in higher-level pipelines.

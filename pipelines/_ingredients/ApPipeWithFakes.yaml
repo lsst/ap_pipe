@@ -112,11 +112,13 @@ tasks:
 subsets:
   processCcd:
     subset:
-    - isr
-    - calibrateImage
+      - isr
+      - calibrateImage
     description: 'An alias of ProcessCcd to use in higher-level pipelines.'
   apPipe:
     subset:
+      - isr
+      - calibrateImage
       - inject_visit
       - loadDiaCatalogs
       - retrieveTemplate
@@ -127,11 +129,13 @@ subsets:
       - transformDiaSrcCat
       - getRegionTimeFromVisit
       - diaPipe
+      - injectedMatch
       - sampleSpatialMetrics
       - analyzeAssocDiaSrcCore
       - analyzeTrailedDiaSrcCore
       - diffimTaskCore
       - diffimTaskPlots
+      - initialPviCore
     description: >
       An alias of ApPipe to use in higher-level pipelines.
   injected_processCcd:
