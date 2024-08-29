@@ -27,11 +27,11 @@ import numpy as np
 from scipy.spatial import cKDTree
 
 from lsst.afw import table as afwTable
-from lsst.geom import Box2D, SpherePoint, degrees
+from lsst import geom as lsstGeom
 import lsst.pex.config as pexConfig
 from lsst.pipe.base import PipelineTask, PipelineTaskConnections, Struct
 import lsst.pipe.base.connectionTypes as connTypes
-from lsst.meas.base import ForcedMeasurementTask
+from lsst.meas.base import ForcedMeasurementTask, ForcedMeasurementConfig
 from lsst.source.injection import VisitInjectConfig
 
 
@@ -148,10 +148,6 @@ class MatchInitialPVIInjectedTask(PipelineTask):
             will be modified in place**.
         diffIm : `lsst.afw.image.Exposure`
             Difference image where the sources were detected.
-
-        Returns
-        -------
-        None
         """
         # Create a schema for the forced measurement task
         schema = afwTable.SourceTable.makeMinimalSchema()
@@ -159,13 +155,21 @@ class MatchInitialPVIInjectedTask(PipelineTask):
         schema.addField("y", "D", "y position in image.", units="pixel")
         schema.addField("deblend_nChild", "I", "Need for minimal forced phot schema")
 
+
+        pluginList = [
+            "base_PixelFlags",
+            "base_SdssCentroid",
+            "base_CircularApertureFlux",
+            "base_PsfFlux",
+            "base_LocalBackground"
+        ]
+        forcedMeasConfig = ForcedMeasurementConfig(plugins=pluginList)
+        forcedMeasConfig.slots.centroid = 'base_SdssCentroid'
+        forcedMeasConfig.slots.shape = None
+
         # Create the forced measurement task
-        forcedMeas = ForcedMeasurementTask(schema)
-        # Remove plugins that are not required for this task
-        forcedMeas.plugins.pop('base_SdssShape')
-        forcedMeas.plugins.pop('base_GaussianFlux')
-        forcedMeas.plugins.pop('base_TransformedCentroid')
-        forcedMeas.plugins.pop('base_TransformedShape')
+        forcedMeas = ForcedMeasurementTask(schema, config=forcedMeasConfig)
+
         # Specify the columns to copy from the input catalog to the output catalog
         forcedMeas.copyColumns = {"coord_ra": "ra", "coord_dec": "dec"}
 
@@ -175,7 +179,7 @@ class MatchInitialPVIInjectedTask(PipelineTask):
         for row in injectedCat:
             outputRecord = outputCatalog.addNew()
             outputRecord.setId(row['injection_id'])
-            outputRecord.setCoord(SpherePoint(row["ra"], row["dec"], degrees))
+            outputRecord.setCoord(lsstGeom.SpherePoint(row["ra"], row["dec"], lsstGeom.degrees))
             outputRecord.set("x", row["x"])
             outputRecord.set("y", row["y"])
 
@@ -186,7 +190,7 @@ class MatchInitialPVIInjectedTask(PipelineTask):
 
         # Copy the x and y positions from the forced measurement catalog back
         # to the input catalog
-        for tgt, src in zip(outputCatalog, forcedSources):
+        for src, tgt in zip(forcedSources, outputCatalog):
             src.set('base_SdssCentroid_x', tgt['x'])
             src.set('base_SdssCentroid_y', tgt['y'])
 
@@ -205,7 +209,12 @@ class MatchInitialPVIInjectedTask(PipelineTask):
         # Add the SNR columns to the input catalog
         for column in injectedCat.colnames:
             if column.endswith("instFlux"):
-                injectedCat[column+"_SNR"] = injectedCat[column] / injectedCat[column+"Err"]
+                flux = injectedCat[column]
+                fluxErr = injectedCat[column+"Err"].copy()
+                fluxErr = np.where(
+                    (fluxErr <= 0) | (np.isnan(fluxErr)), np.nanmax(fluxErr), fluxErr)
+
+                injectedCat[column+"_SNR"] = flux / fluxErr
 
     def _processFakes(self, injectedCat, associatedDiaSources):
         """Match fakes to detected diaSources within a difference image bound.
@@ -333,7 +342,7 @@ class MatchInitialPVIInjectedTask(PipelineTask):
         xs = fakeCat["x"]
         ys = fakeCat["y"]
 
-        bbox = Box2D(image.getBBox())
+        bbox = lsstGeom.Box2D(image.getBBox())
         isContainedXy = xs - self.config.trimBuffer >= bbox.minX
         isContainedXy &= xs + self.config.trimBuffer <= bbox.maxX
         isContainedXy &= ys - self.config.trimBuffer >= bbox.minY

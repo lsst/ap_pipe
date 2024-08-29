@@ -12,6 +12,7 @@ description: AP Pipeline with synthetic/fake sources. Templates are inputs.
 imports:
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcd.yaml
   - location: $ANALYSIS_TOOLS_DIR/pipelines/apDetectorVisitQualityCore.yaml
+  - location: $ANALYSIS_TOOLS_DIR/pipelines/apFakesMetrics.yaml
 
 parameters:
   coaddName: goodSeeing
@@ -103,6 +104,13 @@ tasks:
       connections.injectedInitialPVICat: fakes_initial_pvi_catalog
       matchDistanceArcseconds: 0.5
       trimBuffer: 50
+  consolidateMatchDiaSrc:
+    class: lsst.pipe.tasks.postprocess.ConsolidateSourceTableTask
+    config:
+      # Task doesn't support coaddName, so coopt catalogType instead.
+      connections.catalogType: parameters.coaddName
+      connections.inputCatalogs: "fakes_{catalogType}Diff_matchDiaSrc"
+      connections.outputCatalog: "fakes_{catalogType}Diff_matchDiaSourceTable"
   sampleSpatialMetrics:
     class: lsst.ip.diffim.SpatiallySampledMetricsTask
     config:
