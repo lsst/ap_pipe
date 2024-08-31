@@ -75,6 +75,7 @@ tasks:
       doConfigureApdb: False
       apdb_config_url: parameters.apdb_config
       connections.exposure: initial_pvi
+      alertPackager.useAveragePsf: True  # Speed up production processing; don't want as default or in ApPipeWithFakes
       connections.coaddName: parameters.coaddName
   sampleSpatialMetrics:
     class: lsst.ip.diffim.SpatiallySampledMetricsTask
