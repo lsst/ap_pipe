@@ -26,10 +26,13 @@
 __all__ = [
     "ApFakesCompletenessMetricTask", "ApFakesCompletenessMetricConfig",
     "ApFakesCountMetricTask", "ApFakesCountMetricConfig",
+    "ApFakesCompletenessSNRMetricTask", "ApFakesCompletenessSNRMetricConfig",
+    "ApFakesCountSNRMetricTask", "ApFakesCountSNRMetricConfig",
     "PipelineTimingMetricTask", "PipelineTimingMetricConfig",
 ]
 
 import astropy.units as u
+import dataclasses
 from datetime import datetime
 import numpy as np
 
@@ -42,7 +45,7 @@ from lsst.verify.tasks import AbstractMetadataMetricTask, MetricTask, MetricComp
 
 class ApFakesCompletenessMetricConnections(
         MetricTask.ConfigClass.ConnectionsClass,
-        dimensions={"instrument", "visit", "detector", "band"},
+        dimensions={"instrument", "visit", "detector"},
         defaultTemplates={"coaddName": "deep",
                           "fakesType": "fakes_",
                           "package": "ap_pipe",
@@ -56,9 +59,20 @@ class ApFakesCompletenessMetricConnections(
         dimensions=("instrument", "visit", "detector"),
     )
 
+    def __init__(self, **kwargs):
+        if self.config.useConsolidatedVisitTable:
+            self.dimensions = ("instrument", "visit")
+            self.matchedFakes = dataclasses.replace(
+                self.matchedFakes,
+                dimensions=("instrument", "visit"),
+            )
+            self.measurement = dataclasses.replace(
+                self.measurement,
+                dimensions=("instrument", "visit"),
+            )
+        super().__init__(**kwargs)
 
-# Inherits from InsertFakesConfig to preserve column names in the fakes
-# catalog.
+
 class ApFakesCompletenessMetricConfig(
         MetricTask.ConfigClass,
         pipelineConnections=ApFakesCompletenessMetricConnections):
@@ -80,6 +94,12 @@ class ApFakesCompletenessMetricConfig(
         min=1,
         max=40,
     )
+    useConsolidatedVisitTable = pexConfig.Field(
+        dtype=bool,
+        default=False,
+        doc="Use the consolidated visit diaSrcTable instead of the detector "
+            "diaSrc table."
+    )
 
 
 class ApFakesCompletenessMetricTask(MetricTask):
@@ -95,7 +115,6 @@ class ApFakesCompletenessMetricTask(MetricTask):
         This specialization of runQuantum passes the band ID to `run`.
         """
         inputs = butlerQC.get(inputRefs)
-        inputs["band"] = butlerQC.quantum.dataId["band"]
         outputs = self.run(**inputs)
         if outputs.measurement is not None:
             butlerQC.put(outputs, outputRefs)
@@ -103,7 +122,7 @@ class ApFakesCompletenessMetricTask(MetricTask):
             self.log.debug("Skipping measurement of %r on %s "
                            "as not applicable.", self, inputRefs)
 
-    def run(self, matchedFakes, band):
+    def run(self, matchedFakes):
         """Compute the completeness of recovered fakes within a magnitude
         range.
 
@@ -137,9 +156,111 @@ class ApFakesCompletenessMetricTask(MetricTask):
         return Struct(measurement=meas)
 
 
+class ApFakesCompletenessSNRMetricConnections(
+        MetricTask.ConfigClass.ConnectionsClass,
+        dimensions={"instrument", "visit", "detector"},
+        defaultTemplates={"coaddName": "deep",
+                          "fakesType": "fakes_",
+                          "package": "ap_pipe",
+                          "metric": "apFakesSNRCompleteness"}):
+    """ApFakesCompletenessSNR connections.
+    """
+    matchedFakes = connTypes.Input(
+        doc="Fakes matched to their detections in the difference image.",
+        name="{fakesType}{coaddName}Diff_matchDiaSrc",
+        storageClass="DataFrame",
+        dimensions=("instrument", "visit", "detector"),
+    )
+
+    def __init__(self, **kwargs):
+        if self.config.useConsolidatedVisitTable:
+            self.dimensions = ("instrument", "visit")
+            self.matchedFakes = dataclasses.replace(
+                self.matchedFakes,
+                dimensions=("instrument", "visit"),
+            )
+            self.measurement = dataclasses.replace(
+                self.measurement,
+                dimensions=("instrument", "visit"),
+            )
+        super().__init__(**kwargs)
+
+
+class ApFakesCompletenessSNRMetricConfig(
+        MetricTask.ConfigClass,
+        pipelineConnections=ApFakesCompletenessSNRMetricConnections):
+    """ApFakesCompletenessSNR config.
+    """
+    fluxType = pexConfig.Field(
+        dtype=str,
+        default="base_PsfFlux_instFlux",
+        doc="Which flux to use for SNR calculation."
+            " Options are 'base_PsfFlux_instFlux', 'base_SdssShape_instFlux'"
+    )
+    snrMin = pexConfig.Field(
+        doc="Minimum of cut on signal-to-noise ratio range used to compute completeness "
+            "in.",
+        dtype=float,
+        default=10.0,
+    )
+    snrMax = pexConfig.Field(
+        doc="Maximum of cut on signal-to-noise ratio range used to compute completeness "
+            "in.",
+        dtype=float,
+        default=50.0,
+    )
+    useConsolidatedVisitTable = pexConfig.Field(
+        dtype=bool,
+        default=False,
+        doc="Use the consolidated visit diaSrcTable instead of the detector diaSrc table."
+    )
+
+
+class ApFakesCompletenessSNRMetricTask(MetricTask):
+    """Metric task for summarizing the completeness of fakes inserted into the
+    AP pipeline.
+    """
+    _DefaultName = "apFakesSNRCompleteness"
+    ConfigClass = ApFakesCompletenessSNRMetricConfig
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def run(self, matchedFakes):
+        """Compute the completeness of recovered fakes within a signal-to-noise ratio
+        range.
+
+        Parameters
+        ----------
+        matchedFakes : `lsst.afw.table.SourceCatalog`
+            Catalog of fakes that were inserted into the ccdExposure matched
+            to their detected counterparts.
+
+        Returns
+        -------
+        result : `lsst.pipe.base.Struct`
+            A `~lsst.pipe.base.Struct` containing the following component:
+            ``measurement``
+                the ratio (`lsst.verify.Measurement` or `None`)
+        """
+        signalToNoise = matchedFakes["forced_"+self.config.fluxType+"_SNR"]
+        snrCutFakes = matchedFakes[np.logical_and(signalToNoise >= self.config.snrMin,
+                                                  signalToNoise < self.config.snrMax)]
+        if len(snrCutFakes) <= 0:
+            raise MetricComputationError(
+                "No matched fakes catalog sources found; Completeness is "
+                "ill defined.")
+        else:
+            meas = Measurement(
+                self.config.metricName,
+                ((snrCutFakes["diaSourceId"] > 0).sum() / len(snrCutFakes))
+                * u.dimensionless_unscaled)
+        return Struct(measurement=meas)
+
+
 class ApFakesCountMetricConnections(
         ApFakesCompletenessMetricConnections,
-        dimensions={"instrument", "visit", "detector", "band"},
+        dimensions={"instrument", "visit", "detector"},
         defaultTemplates={"coaddName": "deep",
                           "fakesType": "fakes_",
                           "package": "ap_pipe",
@@ -186,6 +307,58 @@ class ApFakesCountMetricTask(ApFakesCompletenessMetricTask):
                                                   magnitudes < self.config.magMax)]
         meas = Measurement(self.config.metricName,
                            len(magCutFakes) * u.count)
+        return Struct(measurement=meas)
+
+
+class ApFakesCountSNRMetricConnections(
+        ApFakesCompletenessSNRMetricConnections,
+        dimensions=("instrument", "visit", "detector"),
+        defaultTemplates={"coaddName": "deep",
+                          "fakesType": "fakes_",
+                          "package": "ap_pipe",
+                          "metric": "apFakesCompleteness"}):
+    """Connections for the ApFakesCountSNRMetricTask.
+    """
+    pass
+
+
+class ApFakesCountSNRMetricConfig(
+        ApFakesCompletenessSNRMetricConfig,
+        pipelineConnections=ApFakesCountSNRMetricConnections):
+    """Configuration for the ApFakesCountSNRMetricTask.
+    """
+    pass
+
+
+class ApFakesCountSNRMetricTask(MetricTask):
+    """Metric task for summarizing the completeness of fakes inserted into the
+    AP pipeline as a function of signal-to-noise ratio.
+    """
+    _DefaultName = "apFakesCountSNR"
+    ConfigClass = ApFakesCountSNRMetricConfig
+
+    def run(self, matchedFakes):
+        """Compute the number of fakes inserted within a signal-to-noise ratio
+        range.
+
+        Parameters
+        ----------
+        matchedFakes : `lsst.afw.table.SourceCatalog`
+            Catalog of fakes that were inserted into the ccdExposure matched
+            to their detected counterparts.
+
+        Returns
+        -------
+        result : `lsst.pipe.base.Struct`
+            A `~lsst.pipe.base.Struct` containing the following component:
+            ``measurement``
+                the ratio (`lsst.verify.Measurement` or `None`)
+        """
+        signalToNoise = matchedFakes["forced_"+self.config.fluxType+"_SNR"]
+        snrCutFakes = matchedFakes[np.logical_and(signalToNoise >= self.config.snrMin,
+                                                  signalToNoise < self.config.snrMax)]
+        meas = Measurement(self.config.metricName,
+                           len(snrCutFakes) * u.count)
         return Struct(measurement=meas)
 
 
