@@ -12,7 +12,7 @@ description: AP Pipeline with synthetic/fake sources. Templates are inputs.
 imports:
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcd.yaml
   - location: $ANALYSIS_TOOLS_DIR/pipelines/apDetectorVisitQualityCore.yaml
-  - location: $ANALYSIS_TOOLS_DIR/pipelines/apFakesMetrics.yaml
+  - location: $ANALYSIS_TOOLS_DIR/pipelines/apDetectorVisitFakesCore.yaml
 
 parameters:
   coaddName: goodSeeing
@@ -138,9 +138,12 @@ subsets:
       - getRegionTimeFromVisit
       - diaPipe
       - injectedMatch
+      - consolidateMatchDiaSrc
       - sampleSpatialMetrics
       - analyzeAssocDiaSrcCore
       - analyzeTrailedDiaSrcCore
+      - analyzeDiaFakesDetectorVisitCore
+      - analyzeDiaFakesVisitCore
       - diffimTaskCore
       - diffimTaskPlots
       - initialPviCore
@@ -163,6 +166,7 @@ subsets:
       - transformDiaSrcCat
       - diaPipe
       - injectedMatch
+      - consolidateMatchDiaSrc
       - analyzeAssocDiaSrcCore
       - analyzeTrailedDiaSrcCore
       - diffimTaskCore
@@ -174,6 +178,8 @@ subsets:
     subset:
       - sampleSpatialMetrics
       - diffimTaskPlots
+      - analyzeDiaFakesDetectorVisitCore
+      - analyzeDiaFakesVisitCore
     description: >
       Tasks for QA and other non-real-time processing.
       Requires prompt subset to be run first.
@@ -191,6 +197,9 @@ subsets:
     - rbClassify
     - diaPipe
     - injectedMatch
+    - consolidateMatchDiaSrc
+    - analyzeDiaFakesDetectorVisitCore
+    - analyzeDiaFakesVisitCore
     description: >
       All tasks from the 'apPipe' subset impacted by source injection.
 contracts:

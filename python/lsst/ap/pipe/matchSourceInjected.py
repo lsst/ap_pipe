@@ -155,7 +155,6 @@ class MatchInitialPVIInjectedTask(PipelineTask):
         schema.addField("y", "D", "y position in image.", units="pixel")
         schema.addField("deblend_nChild", "I", "Need for minimal forced phot schema")
 
-
         pluginList = [
             "base_PixelFlags",
             "base_SdssCentroid",
