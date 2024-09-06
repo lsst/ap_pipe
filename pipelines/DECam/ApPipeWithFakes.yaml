@@ -24,10 +24,10 @@ subsets:
 # because its processCcd was excluded.
   apPipe:
     subset:
-      - inject_visit
-      - loadDiaCatalogs
       - isr
       - calibrateImage
+      - inject_visit
+      - loadDiaCatalogs
       - retrieveTemplate
       - subtractImages
       - detectAndMeasure
@@ -38,9 +38,12 @@ subsets:
       - mpSkyEphemerisQuery
       - diaPipe
       - injectedMatch
+      - consolidateMatchDiaSrc
       - sampleSpatialMetrics
       - analyzeAssocDiaSrcCore
       - analyzeTrailedDiaSrcCore
+      - analyzeDiaFakesDetectorVisitCore
+      - analyzeDiaFakesVisitCore
       - diffimTaskCore
       - diffimTaskPlots
       - initialPviCore
@@ -55,6 +58,7 @@ subsets:
     subset:
       - isr
       - calibrateImage
+      - inject_visit
       - retrieveTemplate
       - subtractImages
       - detectAndMeasure
@@ -63,6 +67,7 @@ subsets:
       - transformDiaSrcCat
       - diaPipe
       - injectedMatch
+      - consolidateMatchDiaSrc
       - analyzeAssocDiaSrcCore
       - analyzeTrailedDiaSrcCore
       - diffimTaskCore
