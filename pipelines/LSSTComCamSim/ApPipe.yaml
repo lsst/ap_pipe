@@ -29,6 +29,7 @@ subsets:
       - filterDiaSrcCat
       - transformDiaSrcCat
       - getRegionTimeFromVisit
+      - mpSkyEphemerisQuery
       - diaPipe
       - analyzeAssocDiaSrcCore
       - analyzeTrailedDiaSrcCore

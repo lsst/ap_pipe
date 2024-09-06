@@ -25,6 +25,7 @@ subsets:
       - rbClassify
       - transformDiaSrcCat
       - getRegionTimeFromVisit
+      - mpSkyEphemerisQuery
       - diaPipe
       - analyzeAssocDiaSrcCore
       - analyzeTrailedDiaSrcCore
@@ -37,6 +38,7 @@ subsets:
   preload:
     subset:
       - loadDiaCatalogs
+      - mpSkyEphemerisQuery
     description: Tasks that can be run before receiving raw images.
   prompt:
     subset:
