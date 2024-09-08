@@ -10,6 +10,11 @@ tasks:
   isr: lsst.ip.isr.IsrTask
   calibrateImage:
     class: lsst.pipe.tasks.calibrateImage.CalibrateImageTask
+    config:
+      # Don't update slow-to-compute grid-based summary stats
+      compute_summary_stats.doUpdatePsfModelStats: False
+      compute_summary_stats.doUpdateApCorrModelStats: False
+      compute_summary_stats.doUpdateMaxDistToNearestPsfStats: False
 subsets:
   processCcd:
     subset:
