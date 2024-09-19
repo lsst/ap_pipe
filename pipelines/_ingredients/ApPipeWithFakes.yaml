@@ -87,7 +87,7 @@ tasks:
       connections.coaddName: parameters.coaddName
       connections.fakesType: parameters.fakesType
   mpSkyEphemerisQuery:
-    class: lsst.ap.association.MPSkyEphemerisQueryTask      
+    class: lsst.ap.association.MPSkyEphemerisQueryTask
   diaPipe:
     class: lsst.ap.association.DiaPipelineTask
     config:
@@ -138,7 +138,7 @@ subsets:
       - rbClassify
       - transformDiaSrcCat
       - getRegionTimeFromVisit
-      - mpSkyEphemerisQuery      
+      - mpSkyEphemerisQuery
       - diaPipe
       - injectedMatch
       - consolidateMatchDiaSrc
@@ -271,11 +271,11 @@ contracts:
     msg: "transformDiaSrcCat.diaSourceTable != getRegionTimeFromVisit.dummy_visit"
   - contract: getRegionTimeFromVisit.connections.ConnectionsClass(config=getRegionTimeFromVisit).output.name ==
               mpSkyEphemerisQuery.connections.ConnectionsClass(config=mpSkyEphemerisQuery).predictedRegionTime.name
-    msg: "mpSkyEphemerisQuery.predictedRegionTime != getRegionTimeFromVisit.output"    
+    msg: "mpSkyEphemerisQuery.predictedRegionTime != getRegionTimeFromVisit.output"
   - contract: (not diaPipe.doSolarSystemAssociation) or
               (mpSkyEphemerisQuery.connections.ConnectionsClass(config=mpSkyEphemerisQuery).ssObjects.name ==
               diaPipe.connections.ConnectionsClass(config=diaPipe).solarSystemObjectTable.name)
-    msg: "mpSkyEphemerisQuery.ssObjects != diaPipe.solarSystemObjectTable"            
+    msg: "mpSkyEphemerisQuery.ssObjects != diaPipe.solarSystemObjectTable"
   - contract: diaPipe.connections.ConnectionsClass(config=diaPipe).associatedDiaSources.name ==
               analyzeAssocDiaSrcCore.connections.ConnectionsClass(config=analyzeAssocDiaSrcCore).data.name
     msg: "diaPipe.associatedDiaSources != analyzeAssocDiaSrcCore.data"

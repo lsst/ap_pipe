@@ -24,169 +24,17 @@
 """
 
 __all__ = [
-    "ApFakesCompletenessMetricTask", "ApFakesCompletenessMetricConfig",
-    "ApFakesCountMetricTask", "ApFakesCountMetricConfig",
     "PipelineTimingMetricTask", "PipelineTimingMetricConfig",
 ]
 
 import astropy.units as u
 from datetime import datetime
-import numpy as np
 
 import lsst.pex.config as pexConfig
 from lsst.pipe.base import Struct, NoWorkFound
 import lsst.pipe.base.connectionTypes as connTypes
 from lsst.verify import Measurement, Datum
 from lsst.verify.tasks import AbstractMetadataMetricTask, MetricTask, MetricComputationError
-
-
-class ApFakesCompletenessMetricConnections(
-        MetricTask.ConfigClass.ConnectionsClass,
-        dimensions={"instrument", "visit", "detector", "band"},
-        defaultTemplates={"coaddName": "deep",
-                          "fakesType": "fakes_",
-                          "package": "ap_pipe",
-                          "metric": "apFakesCompleteness"}):
-    """ApFakesCompleteness connections.
-    """
-    matchedFakes = connTypes.Input(
-        doc="Fakes matched to their detections in the difference image.",
-        name="{fakesType}{coaddName}Diff_matchDiaSrc",
-        storageClass="DataFrame",
-        dimensions=("instrument", "visit", "detector"),
-    )
-
-
-# Inherits from InsertFakesConfig to preserve column names in the fakes
-# catalog.
-class ApFakesCompletenessMetricConfig(
-        MetricTask.ConfigClass,
-        pipelineConnections=ApFakesCompletenessMetricConnections):
-    """ApFakesCompleteness config.
-    """
-    magMin = pexConfig.RangeField(
-        doc="Minimum of cut on magnitude range used to compute completeness "
-            "in.",
-        dtype=float,
-        default=20,
-        min=1,
-        max=40,
-    )
-    magMax = pexConfig.RangeField(
-        doc="Maximum of cut on magnitude range used to compute completeness "
-            "in.",
-        dtype=int,
-        default=30,
-        min=1,
-        max=40,
-    )
-
-
-class ApFakesCompletenessMetricTask(MetricTask):
-    """Metric task for summarizing the completeness of fakes inserted into the
-    AP pipeline.
-    """
-    _DefaultName = "apFakesCompleteness"
-    ConfigClass = ApFakesCompletenessMetricConfig
-
-    def runQuantum(self, butlerQC, inputRefs, outputRefs):
-        """Do Butler I/O to provide in-memory objects for run.
-
-        This specialization of runQuantum passes the band ID to `run`.
-        """
-        inputs = butlerQC.get(inputRefs)
-        inputs["band"] = butlerQC.quantum.dataId["band"]
-        outputs = self.run(**inputs)
-        if outputs.measurement is not None:
-            butlerQC.put(outputs, outputRefs)
-        else:
-            self.log.debug("Skipping measurement of %r on %s "
-                           "as not applicable.", self, inputRefs)
-
-    def run(self, matchedFakes, band):
-        """Compute the completeness of recovered fakes within a magnitude
-        range.
-
-        Parameters
-        ----------
-        matchedFakes : `lsst.afw.table.SourceCatalog`
-            Catalog of fakes that were inserted into the ccdExposure matched
-            to their detected counterparts.
-        band : `str`
-            Name of the band whose magnitudes are to be analyzed.
-
-        Returns
-        -------
-        result : `lsst.pipe.base.Struct`
-            A `~lsst.pipe.base.Struct` containing the following component:
-            ``measurement``
-                the ratio (`lsst.verify.Measurement` or `None`)
-        """
-        magnitudes = np.fabs(matchedFakes['mag'])
-        magCutFakes = matchedFakes[np.logical_and(magnitudes >= self.config.magMin,
-                                                  magnitudes < self.config.magMax)]
-        if len(magCutFakes) <= 0:
-            raise MetricComputationError(
-                "No matched fakes catalog sources found; Completeness is "
-                "ill defined.")
-        else:
-            meas = Measurement(
-                self.config.metricName,
-                ((magCutFakes["diaSourceId"] > 0).sum() / len(magCutFakes))
-                * u.dimensionless_unscaled)
-        return Struct(measurement=meas)
-
-
-class ApFakesCountMetricConnections(
-        ApFakesCompletenessMetricConnections,
-        dimensions={"instrument", "visit", "detector", "band"},
-        defaultTemplates={"coaddName": "deep",
-                          "fakesType": "fakes_",
-                          "package": "ap_pipe",
-                          "metric": "apFakesCompleteness"}):
-    pass
-
-
-class ApFakesCountMetricConfig(
-        ApFakesCompletenessMetricConfig,
-        pipelineConnections=ApFakesCountMetricConnections):
-    """ApFakesCompleteness config.
-    """
-    pass
-
-
-class ApFakesCountMetricTask(ApFakesCompletenessMetricTask):
-    """Metric task for summarizing the completeness of fakes inserted into the
-    AP pipeline.
-    """
-    _DefaultName = "apFakesCount"
-    ConfigClass = ApFakesCountMetricConfig
-
-    def run(self, matchedFakes, band):
-        """Compute the number of fakes inserted within a magnitude
-        range.
-
-        Parameters
-        ----------
-        matchedFakes : `lsst.afw.table.SourceCatalog`
-            Catalog of fakes that were inserted into the ccdExposure matched
-            to their detected counterparts.
-        band : `str`
-            Single character name of the observed band for this quanta.
-
-        Returns
-        -------
-        result : `lsst.pipe.base.Struct`
-            A `~lsst.pipe.base.Struct` containing the following component:
-            ``measurement``
-                the ratio (`lsst.verify.Measurement` or `None`)
-        """
-        magnitudes = np.fabs(matchedFakes["mag"])
-        magCutFakes = matchedFakes[np.logical_and(magnitudes >= self.config.magMin,
-                                                  magnitudes < self.config.magMax)]
-        meas = Measurement(self.config.metricName,
-                           len(magCutFakes) * u.count)
-        return Struct(measurement=meas)
 
 
 class PipelineTimingMetricConnections(
