@@ -19,14 +19,19 @@
 clusterAlgorithm: lsst.ctrl.bps.quantum_clustering_funcs.dimension_clustering
 cluster:
   singleFrame:
-    # TODO DM-43351: replace this with isr,calibrateImage
-    pipetasks: isr,characterizeImage,calibrate
+    pipetasks: isr,calibrateImage,initialPviCore
     dimensions: visit,detector
     equalDimensions: visit:exposure
-  coaddFakes:
-    pipetasks: coaddFakes
-    dimensions: tract,patch
   diffim:
-    pipetasks: processVisitFakes,retrieveTemplate,subtractImages,detectAndMeasure,filterDiaSrcCat,rbClassify,transformDiaSrcCat,diaPipe,fakesMatch
+    pipetasks: retrieveTemplate,inject_visit,subtractImages,detectAndMeasure,diffimTaskCore,filterDiaSrcCat,sampleSpatialMetrics,diffimTaskPlots,rbClassify,transformDiaSrcCat
     dimensions: visit,detector
-    equalDimensions: visit:exposure
+  association:
+    pipetasks: getRegionTimeFromVisit,mpSkyEphemerisQuery,loadDiaCatalogs,diaPipe
+    dimensions: visit,detector
+    equalDimensions: visit:group
+  diaSrcDetectorAnalysis:
+    pipetasks: analyzeAssocDiaSrcCore,injectedMatch,analyzeDiaFakesDetectorVisitCore,analyzeTrailedDiaSrcCore
+    dimensions: visit,detector
+  diaSrcVisitAnalysis:
+    pipetasks: consolidateMatchDiaSrc,analyzeDiaFakesVisitCore
+    dimensions: visit
