@@ -31,6 +31,7 @@ from lsst.skymap import BaseSkyMap
 
 from lsst.source.injection import generate_injection_catalog
 
+from deprecated.sphinx import deprecated
 
 __all__ = ["CreateRandomApFakesTask",
            "CreateRandomApFakesConfig",
@@ -55,6 +56,11 @@ class CreateRandomApFakesConnections(PipelineTaskConnections,
     )
 
 
+@deprecated(
+    reason="This task will be removed in v28.0 as it is replaced by `source_injection` tasks.",
+    version="v28.0",
+    category=FutureWarning,
+)
 class CreateRandomApFakesConfig(
         InsertFakesConfig,
         pipelineConnections=CreateRandomApFakesConnections):
@@ -114,6 +120,11 @@ class CreateRandomApFakesConfig(
     )
 
 
+@deprecated(
+    reason="This task will be removed in v28.0 as it is replaced by `source_injection` tasks.",
+    version="v28.0",
+    category=FutureWarning,
+)
 class CreateRandomApFakesTask(PipelineTask):
     """Create and store a set of spatially uniform star fakes over the sphere
     for use in AP processing. Additionally assign random magnitudes to said
