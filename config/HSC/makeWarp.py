@@ -8,14 +8,11 @@ import os.path
 # HACK: Throw away any changes imposed by obs configs.
 config.loadFromString(type(config)().saveToString())
 
-# Load configs shared between assembleCoadd and makeWarp
-config.load(os.path.join(os.path.dirname(__file__), "coaddBase.py"))
-
 config.makePsfMatched = True
 config.doApplySkyCorr = True
 
 config.modelPsf.defaultFwhm = 7.7
-config.warpAndPsfMatch.psfMatch.kernel['AL'].kernelSize = config.matchingKernelSize
-config.warpAndPsfMatch.psfMatch.kernel['AL'].alardSigGauss = [1.0, 2.0, 4.5]
-config.warpAndPsfMatch.warp.warpingKernelName = 'lanczos5'
-config.coaddPsf.warpingKernelName = 'lanczos5'
+config.warpAndPsfMatch.psfMatch.kernel["AL"].kernelSize = 29
+config.warpAndPsfMatch.psfMatch.kernel["AL"].alardSigGauss = [1.0, 2.0, 4.5]
+config.warpAndPsfMatch.warp.warpingKernelName = "lanczos5"
+config.coaddPsf.warpingKernelName = "lanczos5"
