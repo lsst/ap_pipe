@@ -10,6 +10,7 @@ imports:
       - rbClassify
 
 tasks:
+  isr: lsst.ip.isr.IsrTaskLSST
   transformDiaSrcCat:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
     config:
