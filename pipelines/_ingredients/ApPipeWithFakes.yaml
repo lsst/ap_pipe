@@ -95,6 +95,7 @@ tasks:
       doSolarSystemAssociation: False
       doConfigureApdb: False
       apdb_config_url: parameters.apdb_config
+      doPackageAlerts: True  # Test alert generation, but don't output
       connections.coaddName: parameters.coaddName
       connections.fakesType: parameters.fakesType
       connections.exposure: fakes_initial_pvi

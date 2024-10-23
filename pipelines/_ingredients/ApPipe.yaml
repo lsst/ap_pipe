@@ -74,6 +74,7 @@ tasks:
     config:
       doConfigureApdb: False
       apdb_config_url: parameters.apdb_config
+      doPackageAlerts: True  # Test alert generation, but don't output
       alertPackager.useAveragePsf: True  # Speed up production processing; don't want as default or in ApPipeWithFakes
       connections.exposure: initial_pvi
       connections.coaddName: parameters.coaddName
