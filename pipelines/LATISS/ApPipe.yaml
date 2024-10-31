@@ -5,3 +5,6 @@ description: |
 instrument: lsst.obs.lsst.Latiss
 imports:
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipe.yaml
+
+tasks:
+  isr: lsst.ip.isr.IsrTaskLSST
