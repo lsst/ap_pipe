@@ -266,10 +266,9 @@ contracts:
   - contract: transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diaSourceTable.name ==
               diaPipe.connections.ConnectionsClass(config=diaPipe).diaSourceTable.name
     msg: "transformDiaSrcCat.diaSourceTable != diaPipe.diaSourceTable"
-  # Run getRegionTimeFromVisit as late as possible
-  - contract: transformDiaSrcCat.connections.ConnectionsClass(config=transformDiaSrcCat).diaSourceTable.name ==
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).stars_footprints.name ==
               getRegionTimeFromVisit.connections.ConnectionsClass(config=getRegionTimeFromVisit).dummy_visit.name
-    msg: "transformDiaSrcCat.diaSourceTable != getRegionTimeFromVisit.dummy_visit"
+    msg: "calibrateImage.stars_footprints != getRegionTimeFromVisit.dummy_visit"
   - contract: getRegionTimeFromVisit.connections.ConnectionsClass(config=getRegionTimeFromVisit).output.name ==
               mpSkyEphemerisQuery.connections.ConnectionsClass(config=mpSkyEphemerisQuery).predictedRegionTime.name
     msg: "mpSkyEphemerisQuery.predictedRegionTime != getRegionTimeFromVisit.output"
