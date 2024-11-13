@@ -60,16 +60,11 @@ If a pre-existing database is registered in the ``dax_apdb`` index, this becomes
 
    pipetask run -p ApPipe.yaml -c parameters:apdb_config=label:db_name -d "my_data_query" -b repo -i my/input/collection -o my/output/collection
 
-
 A Postgres database can be set up and used within :ref:`bps yaml files <creating-a-yaml-file>` by adding this to a submit yaml:
 
 .. code-block:: yaml
 
   extraQgraphOptions: "-c parameters:apdb_config=/path/to/apdb_config.py"
-
-.. prompt:: bash
-
-   apdb-cli create-sql --namespace='my_apdb_name' 'postgresql://rubin@usdf-prompt-processing-dev.slac.stanford.edu/lsst-devl' apdb_config.py
   
 Note that |apdb-cli| must be run prior to submitting this bps yaml, and the path to the resulting config file (``apdb_config.py`` in this example) passed in ``extraQgraphOptions``.
   
