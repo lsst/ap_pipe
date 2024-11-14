@@ -1,0 +1,24 @@
+description: The AP template building pipeline specialized for DECam
+# This pipeline assumes the working repo has raws, calibs, refcats, and a skymap,
+# and that you have already run the RunIsrForCrosstalkSources.yaml pipeline.
+
+instrument: lsst.obs.decam.DarkEnergyCamera
+imports:
+  - location: $AP_PIPE_DIR/pipelines/DECam/ProcessCcd.yaml
+  - location: $AP_PIPE_DIR/pipelines/_ingredients/ApTemplate.yaml
+    exclude:  # These tasks come from DECam/ProcessCcdCalibrate.yaml instead
+      - processCcd
+
+subsets:
+# The singleFrameAp subset is identical to the one in
+# $AP_PIPE_DIR/pipelines/_ingredients/ApTemplate.yaml, but needs to be defined
+# here because isr, characterizeImage, and calibrate are coming from the
+# DECam-specific ProcessCcd pipeline.
+  singleFrameAp:
+    subset:
+      - isr
+      - calibrateImage
+      - consolidateVisitSummary
+    description: >
+      Tasks to run for single frame processing that are necessary to use the good
+      seeing selector to build coadds for use as difference imaging templates.
