@@ -1,0 +1,42 @@
+description: The AP template building pipeline specialized for ComCam
+# This pipeline assumes the working repo has raws, calibs, refcats, and a skymap,
+# and that you have already run the RunIsrForCrosstalkSources.yaml pipeline.
+
+instrument: lsst.obs.lsst.LsstComCam
+
+imports:
+  - location: $AP_PIPE_DIR/pipelines/LSSTComCam/ApPipe.yaml
+    include:
+      - isr
+      - calibrateImage
+parameters:
+  coaddName: goodSeeing
+tasks:
+  consolidateVisitSummary:
+    class: lsst.pipe.tasks.postprocess.ConsolidateVisitSummaryTask
+    config:
+      connections.calexp: "initial_pvi"
+  selectGoodSeeingVisits:
+    class: lsst.pipe.tasks.selectImages.BestSeeingQuantileSelectVisitsTask
+    config:
+      connections.goodVisits: goodSeeingVisits
+      connections.visitSummaries: "visitSummary"
+  makeWarp:
+    class: lsst.pipe.tasks.makeWarp.MakeWarpTask
+    config:
+      connections.calExpList: "initial_pvi"
+      connections.coaddName: parameters.coaddName
+      useVisitSummaryPsf: False
+      connections.visitSummary: "visitSummary"
+  templateGen:
+    class: lsst.drp.tasks.assemble_coadd.CompareWarpAssembleCoaddTask
+    config:
+      doSelectVisits: true
+      assembleStaticSkyModel.doSelectVisits: true
+      doNImage: true
+      connections.inputCoaddName: parameters.coaddName
+      connections.outputCoaddName: parameters.coaddName
+
+contracts:
+  - makeWarp.makeDirect is True
+  - makeWarp.makePsfMatched is True
