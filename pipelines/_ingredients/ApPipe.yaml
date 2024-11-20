@@ -27,7 +27,7 @@ tasks:
     config:
       apdb_config_url: parameters.apdb_config
   retrieveTemplate:
-    class: lsst.ip.diffim.getTemplate.GetTemplateTask
+    class: lsst.ip.diffim.getTemplate.GetDCRTemplateTask
     config:
       connections.bbox: initial_pvi.bbox
       connections.wcs: initial_pvi.wcs
