@@ -1,0 +1,19 @@
+description: Single-frame pipeline for the case in which no templates exist
+imports:
+  - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipe.yaml
+    include:
+      - processCcd
+      - initialPviCore
+      - getRegionTimeFromVisit
+      - mpSkyEphemerisQuery
+tasks:
+  ssSingleFrameAssociation:
+    class: lsst.ap.association.SsSingleFrameAssociationTask 
+subsets:
+  processCcd:
+    subset:
+      - isr
+      - calibrateImage
+      - ssSingleFrameAssociation
+    description: >
+      This adds ssSingleFrameAssociation to processCcd
