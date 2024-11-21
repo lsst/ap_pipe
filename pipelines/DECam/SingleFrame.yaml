@@ -1,0 +1,22 @@
+description: >-
+  Single-frame pipeline for the case in which
+  no templates exist, specialized for DECam
+instrument: lsst.obs.decam.DarkEnergyCamera
+imports:
+  - location: $AP_PIPE_DIR/pipelines/DECam/ProcessCcd.yaml
+    include: 
+      - processCcd
+  - location: $AP_PIPE_DIR/pipelines/_ingredients/SingleFrame.yaml
+    include:
+      - getRegionTimeFromVisit
+      - mpSkyEphemerisQuery
+      - ssSingleFrameAssociation
+      - initialPviCore
+subsets:
+  processCcd:
+    subset:
+      - isr
+      - calibrateImage
+      - ssSingleFrameAssociation
+    description: >
+      Includes processCcd plus ssSingleFrameAssociation
