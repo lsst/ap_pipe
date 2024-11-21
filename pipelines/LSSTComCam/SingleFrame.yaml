@@ -5,4 +5,7 @@ instrument: lsst.obs.lsst.LsstComCam
 imports:
   - location: $AP_PIPE_DIR/pipelines/_ingredients/SingleFrame.yaml
 tasks:
-  isr: lsst.ip.isr.IsrTaskLSST
+  isr:
+    class: lsst.ip.isr.IsrTaskLSST
+    config:
+      doBrighterFatter: False

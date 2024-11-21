@@ -10,7 +10,10 @@ imports:
       - rbClassify
 
 tasks:
-  isr: lsst.ip.isr.IsrTaskLSST
+  isr:
+    class: lsst.ip.isr.IsrTaskLSST
+    config:
+      doBrighterFatter: False
   transformDiaSrcCat:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
     config:
