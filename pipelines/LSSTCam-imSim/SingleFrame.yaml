@@ -1,0 +1,6 @@
+description: >-
+  Single-frame pipeline for the case in which
+  no templates exist, specialized for LSSTCam-imSim
+instrument: lsst.obs.lsst.LsstCamImSim
+imports:
+  - location: $AP_PIPE_DIR/pipelines/_ingredients/SingleFrame.yaml
