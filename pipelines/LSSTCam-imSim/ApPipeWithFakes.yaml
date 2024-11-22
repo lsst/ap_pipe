@@ -9,7 +9,3 @@ imports:
 
 parameters:
   apdb_config:  # YOU MUST CONFIGURE THIS BEFORE RUNNING THE PIPELINE
-  coaddName: goodSeeing
-  fakesType: 'fakes_'
-  injected_prefix: 'fakes_'
-  injection_prefix: 'injection_'
