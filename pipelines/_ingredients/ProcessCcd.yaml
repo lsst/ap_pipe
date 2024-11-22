@@ -7,7 +7,10 @@ description: ProcessCcd - A set of tasks to run when processing raw images.
 # pipeline, e.g., $AP_PIPE_DIR/pipelines/$CAMERA/ProcessCcd.yaml.
 
 tasks:
-  isr: lsst.ip.isr.IsrTask
+  isr:
+    class: lsst.ip.isr.IsrTask
+    config:
+      doBrighterFatter: False
   calibrateImage:
     class: lsst.pipe.tasks.calibrateImage.CalibrateImageTask
 subsets:

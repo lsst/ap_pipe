@@ -4,7 +4,4 @@ description: |
   which is used in realtime Prompt Processing production.
 instrument: lsst.obs.lsst.Latiss
 imports:
-  - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipe.yaml
-
-tasks:
-  isr: lsst.ip.isr.IsrTaskLSST
+  - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithIsrTaskLSST.yaml
