@@ -3,9 +3,4 @@ description: >-
   no templates exist, specialized for LSSTComCamSim
 instrument: lsst.obs.lsst.LsstComCamSim
 imports:
-  - location: $AP_PIPE_DIR/pipelines/_ingredients/SingleFrame.yaml
-tasks:
-  isr:
-    class: lsst.ip.isr.IsrTaskLSST
-    config:
-      doBrighterFatter: False
+  - location: $AP_PIPE_DIR/pipelines/_ingredients/SingleFrameWithIsrTaskLSST.yaml

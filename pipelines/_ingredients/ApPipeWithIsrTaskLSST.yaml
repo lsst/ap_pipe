@@ -1,0 +1,12 @@
+description: End to end Alert Production pipeline with IsrTaskLSST.
+
+imports:
+  - $AP_PIPE_DIR/pipelines/_ingredients/ApPipe.yaml
+
+tasks:
+  isr:
+    class: lsst.ip.isr.IsrTaskLSST
+    config:
+      # Some instruments have this already in obs_lsst.
+      # Here we turn if off for AP generally.
+      doBrighterFatter: False

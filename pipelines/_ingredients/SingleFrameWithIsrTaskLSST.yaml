@@ -1,0 +1,12 @@
+description: Single-frame pipeline with IsrTaskLSST
+
+imports:
+  - location: $AP_PIPE_DIR/pipelines/_ingredients/SingleFrame.yaml
+
+tasks:
+  isr:
+    class: lsst.ip.isr.IsrTaskLSST
+    config:
+      # Some instruments have this already in obs_lsst.
+      # Here we turn if off for AP generally.
+      doBrighterFatter: False
