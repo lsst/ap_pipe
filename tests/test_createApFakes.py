@@ -68,7 +68,8 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
                       "tract": [0, 42],
                       }
         testRepo = butlerTests.makeTestRepo(root, dimensions)
-        fakesTask = CreateRandomApFakesTask()
+        with self.assertWarns(FutureWarning):
+            fakesTask = CreateRandomApFakesTask()
         connections = fakesTask.config.ConnectionsClass(
             config=fakesTask.config)
         butlerTests.addDatasetType(
@@ -97,11 +98,13 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
     def testRun(self):
         """Test the run method.
         """
-        fakesConfig = CreateRandomApFakesConfig()
+        with self.assertWarns(FutureWarning):
+            fakesConfig = CreateRandomApFakesConfig()
         fakesConfig.fraction = 0.5
         fakesConfig.fakeDensity = self.sourceDensity
 
-        fakesTask = CreateRandomApFakesTask(config=fakesConfig)
+        with self.assertWarns(FutureWarning):
+            fakesTask = CreateRandomApFakesTask(config=fakesConfig)
         bBox = self.tract.getOuterSkyPolygon().getBoundingBox()
         result = fakesTask.run(self.tractId, self.simpleMap)
         fakeCat = result.fakeCat
@@ -129,9 +132,11 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
         """Test that the number of assigned visit to template objects is
         correct.
         """
-        fakesConfig = CreateRandomApFakesConfig()
+        with self.assertWarns(FutureWarning):
+            fakesConfig = CreateRandomApFakesConfig()
         fakesConfig.fraction = 0.5
-        fakesTask = CreateRandomApFakesTask(config=fakesConfig)
+        with self.assertWarns(FutureWarning):
+            fakesTask = CreateRandomApFakesTask(config=fakesConfig)
         subdivision = fakesTask.createVisitCoaddSubdivision(self.nSources)
         self.assertEqual(
             subdivision[fakesConfig.visitSourceFlagCol].sum(),
@@ -146,12 +151,14 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
         This is using currently the filter mags and an additional non-filter mag
         column. In any case the magnitudes are all random and equal.
         """
-        fakesConfig = CreateRandomApFakesConfig()
+        with self.assertWarns(FutureWarning):
+            fakesConfig = CreateRandomApFakesConfig()
         fakesConfig.filterSet = ["u", "g"]
         fakesConfig.mag_col = "%s_mag"
         fakesConfig.magMin = 20
         fakesConfig.magMax = 21
-        fakesTask = CreateRandomApFakesTask(config=fakesConfig)
+        with self.assertWarns(FutureWarning):
+            fakesTask = CreateRandomApFakesTask(config=fakesConfig)
         mags = fakesTask.createRandomMagnitudes(self.nSources, self.rng)
         # this is because we have a column for mag without filter
         self.assertEqual(len(fakesConfig.filterSet) + 1, len(mags))
