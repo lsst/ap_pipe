@@ -1,13 +1,6 @@
 description: AP Pipeline with synthetic/fake sources. Templates are inputs.
 # This pipeline is imported by camera-specific pipelines.
 # You almost certainly want to run one of those, and not this one.
-#
-# All tasks that take fake sources as input have the word "fakes" in the label.
-# This is for disambiguation and forward-compatibility with parallel tasks that
-# use unmodified inputs, either here or in ap_verify.
-
-# WARNING: some camera-specific pipelines importing this pipeline presently
-# blow away all the configs that are set in this file.
 
 imports:
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcd.yaml
