@@ -62,6 +62,8 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                     "fringe", "straylightData", "bfKernel", "newBFKernel", "defects", "linearizer",
                     "opticsTransmission", "filterTransmission", "atmosphereTransmission",
                     "illumMaskedImage", "deferredChargeCalib",
+                    # ISR-LSST
+                    "bfk", "cpCtiCalib", "dnlLUT",
                     # Everything else
                     "skyMap", "gaia_dr3_20230707", "gaia_dr2_20200414", "ps1_pv3_3pi_20170110",
                     "goodSeeingCoadd", "pretrainedModelPackage",
