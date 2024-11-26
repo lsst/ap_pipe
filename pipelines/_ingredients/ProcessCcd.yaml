@@ -6,6 +6,8 @@ tasks:
       doBrighterFatter: False
   calibrateImage:
     class: lsst.pipe.tasks.calibrateImage.CalibrateImageTask
+    config: 
+      astrometry.matcher.maxRefObjects: 8192
 subsets:
   processCcd:
     subset:
