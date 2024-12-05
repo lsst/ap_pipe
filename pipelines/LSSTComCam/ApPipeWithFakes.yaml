@@ -1,0 +1,35 @@
+description: |
+  AP pipeline specialized for LSST ComCam Prompt Processing. This file is specific
+  to tests that involve fake catalog injection and for metric estimation purposes,
+  and it is not part of Prompt Processing production.
+# Remember:
+# (0) Ensure a fake catalog is available for the data being processed ingested
+#    already into butler and that the collection is listed as input.
+# (1) Execute `apdb-cli create-sql`.
+# (2) Run this pipeline, setting the apdb_config parameter to point to the new file
+
+instrument: lsst.obs.lsst.LsstComCam
+imports:
+  - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithFakes.yaml
+    exclude:
+      # turn off R/B analysis to save processing time
+      - rbClassify
+
+parameters:
+  apdb_config:  # YOU MUST CONFIGURE THIS BEFORE RUNNING THE PIPELINE
+
+tasks:
+  isr:
+    class: lsst.ip.isr.IsrTaskLSST
+    config:
+      # Some instruments have this already in obs_lsst.
+      # Here we turn if off for AP generally.
+      doBrighterFatter: False
+      python: |
+        from astropy.utils.iers import conf
+        conf.auto_max_age = None
+  transformDiaSrcCat:
+    class: lsst.ap.association.TransformDiaSourceCatalogTask
+    config:
+      # turn off R/B analysis to save processing time
+      doIncludeReliability: False
