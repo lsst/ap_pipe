@@ -31,6 +31,7 @@ subsets:
       - analyzeTrailedDiaSrcCore
       - sampleSpatialMetrics
       - diffimTaskCore
+      - associationCore
       - diffimTaskPlots
       - initialPviCore
     description: >
@@ -54,6 +55,7 @@ subsets:
       - analyzeAssocDiaSrcCore
       - analyzeTrailedDiaSrcCore
       - diffimTaskCore
+      - associationCore
       - initialPviCore
     description: >
       Tasks necessary to turn raw images into APDB rows and alerts.
