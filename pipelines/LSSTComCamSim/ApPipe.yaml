@@ -5,6 +5,3 @@ description: |
 instrument: lsst.obs.lsst.LsstComCamSim
 imports:
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithIsrTaskLSST.yaml
-    exclude:
-      # turn off R/B analysis to save processing time
-      - rbClassify
