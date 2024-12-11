@@ -11,10 +11,15 @@ imports:
       - isr
       - calibrateImage
 subsets:
+# processCcd must be redefined from $AP_PIPE_DIR/pipelines/_ingredients/SingleFrame.yaml
+# because some tasks were excluded.
   processCcd:
     subset:
       - isr
       - calibrateImage
+      - getRegionTimeFromVisit
+      - mpSkyEphemerisQuery
       - ssSingleFrameAssociation
+      - initialPviCore
     description: >
-      Includes processCcd plus ssSingleFrameAssociation
+      An alias of SingleFrame to use in higher-level pipelines.
