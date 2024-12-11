@@ -11,9 +11,9 @@ imports:
       - isr
       - calibrateImage
 subsets:
-# processCcd must be redefined from $AP_PIPE_DIR/pipelines/_ingredients/SingleFrame.yaml
+# singleFrame must be redefined from $AP_PIPE_DIR/pipelines/_ingredients/SingleFrame.yaml
 # because some tasks were excluded.
-  processCcd:
+  singleFrame:
     subset:
       - isr
       - calibrateImage

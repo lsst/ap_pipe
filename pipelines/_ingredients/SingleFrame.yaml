@@ -10,7 +10,7 @@ tasks:
   ssSingleFrameAssociation:
     class: lsst.ap.association.SsSingleFrameAssociationTask 
 subsets:
-  processCcd:
+  singleFrame:
     subset:
       - isr
       - calibrateImage
