@@ -19,3 +19,8 @@ tasks:
       doFlat: False
       doApplyGains: False
       doFringe: False
+subsets:
+  runOverscan:
+    subset:
+      - overscan
+    description: An alias of RunIsrForCrosstalkSources to use in higher-level pipelines.

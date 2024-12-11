@@ -7,3 +7,8 @@ tasks:
       connections.crosstalkSources: 'overscanRaw'
       doOverscan: True
       doCrosstalk: True
+subsets:
+  runIsr:
+    subset:
+      - isr
+    description: An alias of RunIsr* to use in higher-level pipelines.
