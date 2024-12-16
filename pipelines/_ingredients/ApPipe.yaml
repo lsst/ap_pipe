@@ -97,6 +97,7 @@ subsets:
       - analyzeTrailedDiaSrcCore
       - sampleSpatialMetrics
       - diffimTaskCore
+      - detectionTaskCore
       - associationCore
       - diffimTaskPlots
       - initialPviCore
@@ -121,6 +122,7 @@ subsets:
       - analyzeAssocDiaSrcCore
       - analyzeTrailedDiaSrcCore
       - diffimTaskCore
+      - detectionTaskCore
       - associationCore
       - initialPviCore
     description: >

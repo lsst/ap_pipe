@@ -142,6 +142,7 @@ subsets:
       - analyzeDiaFakesDetectorVisitCore
       - analyzeDiaFakesVisitCore
       - diffimTaskCore
+      - detectionTaskCore
       - diffimTaskPlots
       - initialPviCore
     description: >
@@ -168,6 +169,7 @@ subsets:
       - analyzeAssocDiaSrcCore
       - analyzeTrailedDiaSrcCore
       - diffimTaskCore
+      - detectionTaskCore
       - initialPviCore
     description: >
       Tasks necessary to turn raw images into APDB rows and alerts.
