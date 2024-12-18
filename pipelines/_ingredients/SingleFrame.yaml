@@ -10,10 +10,13 @@ tasks:
   ssSingleFrameAssociation:
     class: lsst.ap.association.SsSingleFrameAssociationTask 
 subsets:
-  processCcd:
+  singleFrame:
     subset:
       - isr
       - calibrateImage
+      - getRegionTimeFromVisit
+      - mpSkyEphemerisQuery
       - ssSingleFrameAssociation
+      - initialPviCore
     description: >
-      This adds ssSingleFrameAssociation to processCcd
+      An alias of SingleFrame to use in higher-level pipelines.

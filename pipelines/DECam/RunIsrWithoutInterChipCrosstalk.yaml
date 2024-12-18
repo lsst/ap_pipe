@@ -6,3 +6,8 @@ tasks:
     config:
       doLinearize: False
       doCrosstalk: True
+subsets:
+  runIsr:
+    subset:
+      - isr
+    description: An alias of RunIsr* to use in higher-level pipelines.

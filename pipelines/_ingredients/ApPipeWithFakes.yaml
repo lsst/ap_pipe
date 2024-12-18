@@ -2,6 +2,11 @@ description: AP Pipeline with synthetic/fake sources. Templates are inputs.
 # This pipeline is imported by camera-specific pipelines.
 # You almost certainly want to run one of those, and not this one.
 
+# Per RFC-997, all variants of ApPipe must define three mutually exclusive subsets:
+# - preload is tasks that can be run before raw images arrive
+# - prompt is everything done by Prompt Processing starting from raws
+# - afterburner is metrics and other non-essential tasks that are skipped by Prompt Processing
+
 imports:
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcd.yaml
   - location: $ANALYSIS_TOOLS_DIR/pipelines/apDetectorVisitQualityCore.yaml
@@ -143,6 +148,7 @@ subsets:
       - analyzeDiaFakesVisitCore
       - diffimTaskCore
       - detectionTaskCore
+      - associationCore
       - diffimTaskPlots
       - initialPviCore
     description: >
@@ -170,6 +176,7 @@ subsets:
       - analyzeTrailedDiaSrcCore
       - diffimTaskCore
       - detectionTaskCore
+      - associationCore
       - initialPviCore
     description: >
       Tasks necessary to turn raw images into APDB rows and alerts.

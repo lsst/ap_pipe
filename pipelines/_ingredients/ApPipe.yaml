@@ -2,6 +2,11 @@ description: End to end Alert Production pipeline.
 # Look in subdirectories of $AP_PIPE_DIR/pipelines to find customized pipelines
 # for each camera. Those pipelines import this general AP pipeline.
 #
+# Per RFC-997, all variants of ApPipe must define three mutually exclusive subsets:
+# - preload is tasks that can be run before raw images arrive
+# - prompt is everything done by Prompt Processing starting from raws
+# - afterburner is metrics and other non-essential tasks that are skipped by Prompt Processing
+#
 # NOTES
 # Remember to run `apdb-cli create-sql`
 # Option to specify connection_timeout for sqlite APDBs encountering lock errors, i.e.,
@@ -91,7 +96,7 @@ subsets:
       - rbClassify
       - transformDiaSrcCat
       - getRegionTimeFromVisit
-      - mpSkyEphemerisQuery      
+      - mpSkyEphemerisQuery
       - diaPipe
       - analyzeAssocDiaSrcCore
       - analyzeTrailedDiaSrcCore
