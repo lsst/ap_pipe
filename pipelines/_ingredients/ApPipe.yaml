@@ -92,6 +92,7 @@ subsets:
     subset:
       - isr
       - calibrateImage
+      - initialPviCore
     description: The tasks that make up single-frame processing.
   apPipe:
     subset:
