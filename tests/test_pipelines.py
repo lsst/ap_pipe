@@ -45,7 +45,6 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
         self.synonyms = {"ApPipe.yaml": "apPipe",
                          "ApPipeWithIsrTaskLSST.yaml": "apPipe",
                          "ApPipeWithFakes.yaml": "apPipe",
-                         "ProcessCcd.yaml": "processCcd",
                          "SingleFrame.yaml": "singleFrame",
                          "SingleFrameWithIsrTaskLSST.yaml": "singleFrame",
                          "RunIsrWithCrosstalk.yaml": "runIsr",
