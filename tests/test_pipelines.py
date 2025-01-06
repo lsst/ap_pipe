@@ -47,7 +47,6 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                          "ApPipeWithFakes.yaml": "apPipe",
                          "SingleFrame.yaml": "singleFrame",
                          "SingleFrameWithIsrTaskLSST.yaml": "singleFrame",
-                         "RunIsrWithCrosstalk.yaml": "runIsr",
                          "RunIsrWithoutInterChipCrosstalk.yaml": "runIsr",
                          "RunIsrForCrosstalkSources.yaml": "runOverscan",
                          }
