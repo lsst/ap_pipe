@@ -8,7 +8,6 @@ description: AP Pipeline with synthetic/fake sources. Templates are inputs.
 # - afterburner is metrics and other non-essential tasks that are skipped by Prompt Processing
 
 imports:
-  - location: $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcd.yaml
   - location: $ANALYSIS_TOOLS_DIR/pipelines/apDetectorVisitQualityCore.yaml
   - location: $ANALYSIS_TOOLS_DIR/pipelines/apDetectorVisitFakesCore.yaml
 
@@ -21,6 +20,12 @@ parameters:
   injection_prefix: 'injection_'
 
 tasks:
+  isr:
+    class: lsst.ip.isr.IsrTask
+    config:
+      doBrighterFatter: False
+  calibrateImage:
+    class: lsst.pipe.tasks.calibrateImage.CalibrateImageTask
   inject_visit:
     class: lsst.source.injection.inject_visit.VisitInjectTask
     config:
@@ -122,7 +127,7 @@ subsets:
     subset:
       - isr
       - calibrateImage
-    description: 'An alias of ProcessCcd to use in higher-level pipelines.'
+    description: 'The tasks that make up single-frame processing.'
   apPipe:
     subset:
       - isr

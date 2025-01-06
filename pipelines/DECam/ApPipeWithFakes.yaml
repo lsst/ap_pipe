@@ -8,16 +8,21 @@ description: DECam AP Pipeline with synthetic/fake sources. Templates are inputs
 
 instrument: lsst.obs.decam.DarkEnergyCamera
 imports:
-  - location: $AP_PIPE_DIR/pipelines/DECam/ProcessCcd.yaml
+  - location: $AP_PIPE_DIR/pipelines/DECam/RunIsrWithCrosstalk.yaml
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithFakes.yaml
-    exclude:  # These tasks come from DECam/ProcessCcd.yaml instead
-      - processCcd
+    exclude:  # These tasks come from DECam/RunIsrWithCrosstalk.yaml instead
+      - isr
 
 parameters:
   apdb_config:  # YOU MUST CONFIGURE THIS BEFORE RUNNING THE PIPELINE
 subsets:
-# apPipe, preload, and prompt must be redefined from $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithFakes.yaml
-# because its processCcd was excluded.
+# processCcd, apPipe, preload, and prompt must be redefined from
+# $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithFakes.yaml because its isr was excluded.
+  processCcd:
+    subset:
+      - isr
+      - calibrateImage
+    description: An alias of ProcessCcd to use in higher-level pipelines.
   apPipe:
     subset:
       - isr

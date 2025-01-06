@@ -6,13 +6,18 @@ description: End to end AP pipeline specialized for DECam
 
 instrument: lsst.obs.decam.DarkEnergyCamera
 imports:
-  - location: $AP_PIPE_DIR/pipelines/DECam/ProcessCcd.yaml
+  - location: $AP_PIPE_DIR/pipelines/DECam/RunIsrWithCrosstalk.yaml
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipe.yaml
-    exclude:  # These tasks come from DECam/ProcessCcd.yaml instead
-      - processCcd
+    exclude:  # These tasks come from DECam/RunIsrWithCrosstalk.yaml instead
+      - isr
 subsets:
-# apPipe, preload, and prompt must be redefined from $AP_PIPE_DIR/pipelines/_ingredients/ApPipe.yaml
-# because its processCcd was excluded.
+# processCcd, apPipe, preload, and prompt must be redefined from
+# $AP_PIPE_DIR/pipelines/_ingredients/ApPipe.yaml because its isr was excluded.
+  processCcd:
+    subset:
+      - isr
+      - calibrateImage
+    description: An alias of ProcessCcd to use in higher-level pipelines.
   apPipe:
     subset:
       - loadDiaCatalogs

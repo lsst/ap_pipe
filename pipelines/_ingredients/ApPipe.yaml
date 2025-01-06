@@ -13,7 +13,6 @@ description: End to end Alert Production pipeline.
 # --connection_timeout 240
 
 imports:
-  - $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcd.yaml
   - $ANALYSIS_TOOLS_DIR/pipelines/apDetectorVisitQualityCore.yaml
 parameters:
   # Pipeline configurable to run on both goodSeeing and deep templates, depending on dataset.
@@ -25,6 +24,12 @@ tasks:
     class: lsst.ap.association.LoadDiaCatalogsTask
     config:
       apdb_config_url: parameters.apdb_config
+  isr:
+    class: lsst.ip.isr.IsrTask
+    config:
+      doBrighterFatter: False
+  calibrateImage:
+    class: lsst.pipe.tasks.calibrateImage.CalibrateImageTask
   retrieveTemplate:
     class: lsst.ip.diffim.getTemplate.GetTemplateTask
     config:
@@ -83,6 +88,11 @@ tasks:
       connections.coaddName: parameters.coaddName
 
 subsets:
+  processCcd:
+    subset:
+      - isr
+      - calibrateImage
+    description: The tasks that make up single-frame processing.
   apPipe:
     subset:
       - loadDiaCatalogs
@@ -241,5 +251,3 @@ contracts:
   - contract: sampleSpatialMetrics.connections.ConnectionsClass(config=sampleSpatialMetrics).spatiallySampledMetrics.name ==
               diffimTaskPlots.connections.ConnectionsClass(config=diffimTaskPlots).data.name
     msg: "sampleSpatialMetrics.spatiallySampledMetrics != diffimTaskPlots.data"
-
-

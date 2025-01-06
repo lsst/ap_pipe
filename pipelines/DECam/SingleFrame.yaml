@@ -3,16 +3,18 @@ description: >-
   no templates exist, specialized for DECam
 instrument: lsst.obs.decam.DarkEnergyCamera
 imports:
-  - location: $AP_PIPE_DIR/pipelines/DECam/ProcessCcd.yaml
-    include: 
-      - processCcd
+  - location: $AP_PIPE_DIR/pipelines/DECam/RunIsrWithCrosstalk.yaml
   - location: $AP_PIPE_DIR/pipelines/_ingredients/SingleFrame.yaml
     exclude:
       - isr
-      - calibrateImage
 subsets:
-# singleFrame must be redefined from $AP_PIPE_DIR/pipelines/_ingredients/SingleFrame.yaml
+# processCcd and singleFrame must be redefined from $AP_PIPE_DIR/pipelines/_ingredients/SingleFrame.yaml
 # because some tasks were excluded.
+  processCcd:
+    subset:
+      - isr
+      - calibrateImage
+    description: An alias of ProcessCcd to use in higher-level pipelines.
   singleFrame:
     subset:
       - isr
