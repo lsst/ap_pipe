@@ -25,3 +25,4 @@ tests/.cache
 tests/.tests
 ups/*.cfgc
 version.py
+python/*.dist-info/
