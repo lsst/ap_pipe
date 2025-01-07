@@ -88,12 +88,21 @@ tasks:
       connections.coaddName: parameters.coaddName
 
 subsets:
-  processCcd:
+  apPipeSingleFrame:
     subset:
       - isr
       - calibrateImage
       - initialPviCore
-    description: The tasks that make up single-frame processing.
+    description: >-
+      The prompt ApPipe tasks that make up single-frame processing. Not to be confused with the
+      SingleFrame.yaml pipeline, which does more than just ApPipe single frame processing, and
+      is designed as a standalone alternative to ApPipe.yaml.
+  processCcd:  # TODO: remove on DM-48428
+    subset:
+      - isr
+      - calibrateImage
+      - initialPviCore
+    description: Deprecated alias for apPipeSingleFrame, will be removed after v29.
   apPipe:
     subset:
       - loadDiaCatalogs

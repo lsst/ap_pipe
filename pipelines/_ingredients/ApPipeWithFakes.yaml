@@ -123,12 +123,21 @@ tasks:
       connections.fakesType: parameters.fakesType
       connections.science: fakes_initial_pvi
 subsets:
-  processCcd:
+  apPipeSingleFrame:
     subset:
       - isr
       - calibrateImage
       - initialPviCore
-    description: 'The tasks that make up single-frame processing.'
+    description: >-
+      The prompt ApPipe tasks that make up single-frame processing. Not to be confused with the
+      SingleFrame.yaml pipeline, which does more than just ApPipe single frame processing, and
+      is designed as a standalone alternative to ApPipeWithFakes.yaml.
+  processCcd:  # TODO: remove on DM-48428
+    subset:
+      - isr
+      - calibrateImage
+      - initialPviCore
+    description: Deprecated alias for apPipeSingleFrame, will be removed after v29.
   apPipe:
     subset:
       - isr
@@ -195,11 +204,16 @@ subsets:
     description: >
       Tasks for QA and other non-real-time processing.
       Requires prompt subset to be run first.
+  injected_apPipeSingleFrame:
+    subset:
+    - inject_visit
+    description: >-
+      All tasks from the 'apPipeSingleFrame' subset impacted by source injection.
   injected_processCcd:
     subset:
     - inject_visit
     description: >
-      All tasks from the 'processCcd' subset impacted by source injection.
+      Deprecated alias for injected_apPipeSingleFrame, will be removed after v29.
   injected_apPipe:
     subset:
     - inject_visit
