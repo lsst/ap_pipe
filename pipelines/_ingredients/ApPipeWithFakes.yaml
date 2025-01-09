@@ -91,7 +91,6 @@ tasks:
     config:
       doWriteAssociatedSources: True
       doSolarSystemAssociation: False
-      doConfigureApdb: False
       apdb_config_url: parameters.apdb_config
       doPackageAlerts: True  # Test alert generation, but don't output
       connections.coaddName: parameters.coaddName
