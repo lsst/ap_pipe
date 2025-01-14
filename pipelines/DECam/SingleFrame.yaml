@@ -3,23 +3,9 @@ description: >-
   no templates exist, specialized for DECam
 instrument: lsst.obs.decam.DarkEnergyCamera
 imports:
-  - location: $AP_PIPE_DIR/pipelines/DECam/ProcessCcd.yaml
-    include: 
-      - processCcd
   - location: $AP_PIPE_DIR/pipelines/_ingredients/SingleFrame.yaml
-    exclude:
-      - isr
-      - calibrateImage
-subsets:
-# singleFrame must be redefined from $AP_PIPE_DIR/pipelines/_ingredients/SingleFrame.yaml
-# because some tasks were excluded.
-  singleFrame:
-    subset:
-      - isr
-      - calibrateImage
-      - getRegionTimeFromVisit
-      - mpSkyEphemerisQuery
-      - ssSingleFrameAssociation
-      - initialPviCore
-    description: >
-      An alias of SingleFrame to use in higher-level pipelines.
+tasks:
+  isr:
+    class: lsst.ip.isr.IsrTask
+    config:
+      file: $AP_PIPE_DIR/config/DECam/runIsrWithCrosstalk.py
