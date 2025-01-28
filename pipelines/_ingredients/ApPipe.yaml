@@ -123,6 +123,7 @@ subsets:
       - diffimTaskCore
       - detectionTaskCore
       - associationCore
+      - associationTiming
       - diffimTaskPlots
       - initialPviCore
     description: >
@@ -148,6 +149,7 @@ subsets:
       - diffimTaskCore
       - detectionTaskCore
       - associationCore
+      - associationTiming
       - initialPviCore
     description: >
       Tasks necessary to turn raw images into APDB rows and alerts.
