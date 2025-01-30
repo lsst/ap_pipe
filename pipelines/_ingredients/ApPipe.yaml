@@ -122,6 +122,7 @@ subsets:
       - sampleSpatialMetrics
       - diffimTaskCore
       - detectionTaskCore
+      - loadDiaCatalogsCore
       - associationCore
       - associationTiming
       - diffimTaskPlots
@@ -131,6 +132,7 @@ subsets:
   preload:
     subset:
       - loadDiaCatalogs
+      - loadDiaCatalogsCore
       - mpSkyEphemerisQuery
     description: Tasks that can be run before receiving raw images.
   prompt:
