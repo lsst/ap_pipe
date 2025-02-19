@@ -125,7 +125,8 @@ class MatchInitialPVIInjectedTask(PipelineTask):
             Difference image where ``diaSources`` were detected.
         diaSources : `afw.table.SourceCatalog`
             Catalog of difference image sources detected in ``diffIm``.
-
+        assocDiaSources : `pandas.DataFrame`
+            Catalog of associated difference image sources detected in ``diffIm``.
         Returns
         -------
         result : `lsst.pipe.base.Struct`
