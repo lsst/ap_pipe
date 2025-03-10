@@ -46,10 +46,9 @@ To create an SQLite database from scratch, run the following (see the :ref:`dax_
    apdb-cli metadata set apdb_config.py instrument MY_INSTRUMENT
    pipetask run -p ApPipe.yaml -c parameters:apdb_config=apdb_config.py differencer:coaddName=dcr -b repo -o myrun
 
-The ``apdb_config.py`` argument to |apdb-cli| specifies the name of the created configuration file that will contain a serialized `~lsst.dax.apdb.ApdbConfig` for the new database.
+The ``apdb_config.py`` argument to |apdb-cli| specifies the name of the created configuration file that will contain a serialized `~lsst.dax.apdb.ApdbConfig` for the new database. Note that ``MY_INSTRUMENT`` should be the short name of the instrument whose data will populate this APDB instance (e.g. ``DECam`` or ``HSC``).
 
 A Postgres database can be set up and used with the following.
-Note that ``MY_INSTRUMENT`` should be the fully-qualified name of the instrument whose data will populate this APDB instance (e.g. ``lsst.obs.lsst.LsstCam`` or ``lsst.obs.subaru.HyperSuprimeCam``).
 
 .. prompt:: bash
     

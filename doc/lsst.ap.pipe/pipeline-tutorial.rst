@@ -38,6 +38,7 @@ To process your ingested data, run
 .. prompt:: bash
 
    apdb-cli create-sql "sqlite:///apdb.db" apdb_config.yaml
+   apdb-cli metadata set apdb_config.yaml instrument DECam
    pipetask run -p ${AP_PIPE_DIR}/pipelines/DECam/ApPipe.yaml \
        --register-dataset-types -c parameters:coaddName=deep \
        -c isr:connections.bias=cpBias -c isr:connections.flat=cpFlat \
