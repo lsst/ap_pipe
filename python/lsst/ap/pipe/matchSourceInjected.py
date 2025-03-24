@@ -40,9 +40,7 @@ from lsst.source.injection import VisitInjectConfig
 class MatchInjectedToDiaSourceConnections(
         PipelineTaskConnections,
         defaultTemplates={"coaddName": "deep",
-                          "fakesType": "fakes_",
-                          "injection_prefix": "injection_",
-                          "injected_prefix": "injected_"},
+                          "fakesType": "fakes_"},
         dimensions=("instrument",
                     "visit",
                     "detector")):
@@ -359,9 +357,7 @@ class MatchInjectedToDiaSourceTask(PipelineTask):
 class MatchInjectedToAssocDiaSourceConnections(
     PipelineTaskConnections,
     defaultTemplates={"coaddName": "deep",
-                      "fakesType": "fakes_",
-                      "injection_prefix": "injection_",
-                      "injected_prefix": "injected_"},
+                      "fakesType": "fakes_"},
     dimensions=("instrument",
                 "visit",
                 "detector")):
