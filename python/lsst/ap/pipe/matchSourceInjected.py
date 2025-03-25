@@ -19,8 +19,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-__all__ = ["MatchInitialPVIInjectedTask",
-           "MatchInitialPVIInjectedConfig"]
+__all__ = ["MatchInjectedToDiaSourceTask",
+           "MatchInjectedToDiaSourceConfig",
+           "MatchInjectedToAssocDiaSourceTask",
+           "MatchInjectedToAssocDiaSourceConfig"]
 
 import astropy.units as u
 import numpy as np
@@ -35,18 +37,16 @@ from lsst.meas.base import ForcedMeasurementTask, ForcedMeasurementConfig
 from lsst.source.injection import VisitInjectConfig
 
 
-class MatchInitialPVIInjectedConnections(
+class MatchInjectedToDiaSourceConnections(
         PipelineTaskConnections,
         defaultTemplates={"coaddName": "deep",
-                          "fakesType": "fakes_",
-                          "injection_prefix": "injection_",
-                          "injected_prefix": "injected_"},
+                          "fakesType": "fakes_"},
         dimensions=("instrument",
                     "visit",
                     "detector")):
-    injectedInitialPVICat = connTypes.Input(
+    injectedCat = connTypes.Input(
         doc="Catalog of sources injected in the images.",
-        name="{fakesType}initial_pvi_catalog",
+        name="{fakesType}_pvi_catalog",
         storageClass="ArrowAstropy",
         dimensions=("instrument", "visit", "detector"),
     )
@@ -62,26 +62,19 @@ class MatchInitialPVIInjectedConnections(
         storageClass="SourceCatalog",
         dimensions=("instrument", "visit", "detector"),
     )
-    assocDiaSources = connTypes.Input(
-        doc="An assocDiaSource catalog to match against fakeCat from the"
-            "diaPipe run. Assumed to be SDMified.",
-        name="{fakesType}{coaddName}Diff_assocDiaSrc",
-        storageClass="DataFrame",
-        dimensions=("instrument", "visit", "detector"),
-    )
-    matchedDiaSources = connTypes.Output(
+    matchDiaSources = connTypes.Output(
         doc="A catalog of those fakeCat sources that have a match in "
-            "associatedDiaSources. The schema is the union of the schemas for "
-            "``fakeCat`` and ``associatedDiaSources``.",
+            "diaSrc. The schema is the union of the schemas for "
+            "``fakeCat`` and ``diaSrc``.",
         name="{fakesType}{coaddName}Diff_matchDiaSrc",
         storageClass="DataFrame",
         dimensions=("instrument", "visit", "detector"),
     )
 
 
-class MatchInitialPVIInjectedConfig(
+class MatchInjectedToDiaSourceConfig(
         VisitInjectConfig,
-        pipelineConnections=MatchInitialPVIInjectedConnections):
+        pipelineConnections=MatchInjectedToDiaSourceConnections):
     """Config for MatchFakesTask.
     """
     matchDistanceArcseconds = pexConfig.RangeField(
@@ -103,29 +96,35 @@ class MatchInitialPVIInjectedConfig(
         dtype=int,
         default=50,
     )
+    doForcedMeasurement = pexConfig.Field(
+        dtype=bool,
+        default=True,
+        doc="Force measurement of the fakes at the injection locations."
+    )
     forcedMeasurement = pexConfig.ConfigurableField(
         target=ForcedMeasurementTask,
         doc="Task to force photometer difference image at injection locations.",
     )
 
 
-class MatchInitialPVIInjectedTask(PipelineTask):
+class MatchInjectedToDiaSourceTask(PipelineTask):
 
-    _DefaultName = "matchInitialPVIInjected"
-    ConfigClass = MatchInitialPVIInjectedConfig
+    _DefaultName = "matchInjectedToDiaSource"
+    ConfigClass = MatchInjectedToDiaSourceConfig
 
-    def run(self, injectedInitialPVICat, diffIm, diaSources, assocDiaSources):
+    def run(self, injectedCat, diffIm, diaSources):
         """Match injected sources to detected diaSources within a difference image bound.
 
         Parameters
         ----------
-        injectedInitialPVICat : `astropy.table.table.Table`
+        injectedCat : `astropy.table.table.Table`
             Table of catalog of synthetic sources to match to detected diaSources.
         diffIm : `lsst.afw.image.Exposure`
             Difference image where ``diaSources`` were detected.
         diaSources : `afw.table.SourceCatalog`
             Catalog of difference image sources detected in ``diffIm``.
-
+        assocDiaSources : `pandas.DataFrame`
+            Catalog of associated difference image sources detected in ``diffIm``.
         Returns
         -------
         result : `lsst.pipe.base.Struct`
@@ -136,13 +135,13 @@ class MatchInitialPVIInjectedTask(PipelineTask):
         """
 
         if self.config.doMatchVisit:
-            fakeCat = self._trimFakeCat(injectedInitialPVICat, diffIm)
+            fakeCat = self._trimFakeCat(injectedCat, diffIm)
         else:
-            fakeCat = injectedInitialPVICat
+            fakeCat = injectedCat
+        if self.config.doForcedMeasurement:
+            self._estimateFakesSNR(fakeCat, diffIm)
 
-        self._estimateFakesSNR(fakeCat, diffIm)
-
-        return self._processFakes(fakeCat, diaSources, assocDiaSources)
+        return self._processFakes(fakeCat, diaSources)
 
     def _estimateFakesSNR(self, injectedCat, diffIm):
         """Estimate the signal-to-noise ratio of the fakes in the given catalog.
@@ -221,7 +220,7 @@ class MatchInitialPVIInjectedTask(PipelineTask):
 
                 injectedCat[column+"_SNR"] = flux / fluxErr
 
-    def _processFakes(self, injectedCat, diaSources, assocDiaSources):
+    def _processFakes(self, injectedCat, diaSources):
         """Match fakes to detected diaSources within a difference image bound.
 
         Parameters
@@ -265,20 +264,7 @@ class MatchInitialPVIInjectedTask(PipelineTask):
         matchedFakes = injectedCat.assign(diaSourceId=np.where(np.isfinite(dist), diaSrcIds, 0))
         matchedFakes['dist_diaSrc'] = np.where(np.isfinite(dist), 3600*np.rad2deg(dist), -1)
 
-        # Then match the fakes to the associated fakes. For this we don't use the coordinates
-        # but instead check for the diaSources. Since they were present in the table already
-        matchedFakes['isAssocDiaSource'] = matchedFakes.diaSourceId.isin(assocDiaSources.diaSourceId)
-        assocNFakesFound = matchedFakes.isAssocDiaSource.sum()
-        self.log.info("Found %d out of %d possible in assocDiaSources."%(assocNFakesFound, nPossibleFakes))
-
-        return Struct(
-            matchedDiaSources=matchedFakes.merge(
-                assocDiaSources.reset_index(drop=True),
-                on="diaSourceId",
-                how="left",
-                suffixes=('_ssi', '_diaSrc')
-            )
-        )
+        return Struct(matchDiaSources=matchedFakes)
 
     def _getVectors(self, ras, decs):
         """Convert ra dec to unit vectors on the sphere.
@@ -366,3 +352,82 @@ class MatchInitialPVIInjectedTask(PipelineTask):
         isContainedXy &= ys + self.config.trimBuffer <= bbox.maxY
 
         return fakeCat[isContainedRaDec & isContainedXy]
+
+
+class MatchInjectedToAssocDiaSourceConnections(
+    PipelineTaskConnections,
+    defaultTemplates={"coaddName": "deep",
+                      "fakesType": "fakes_"},
+    dimensions=("instrument",
+                "visit",
+                "detector")):
+
+    assocDiaSources = connTypes.Input(
+        doc="An assocDiaSource catalog to match against fakeCat from the"
+            "diaPipe run. Assumed to be SDMified.",
+        name="{fakesType}{coaddName}Diff_assocDiaSrc",
+        storageClass="DataFrame",
+        dimensions=("instrument", "visit", "detector"),
+    )
+    matchDiaSources = connTypes.Input(
+        doc="A catalog of those fakeCat sources that have a match in "
+            "diaSrc. The schema is the union of the schemas for "
+            "``fakeCat`` and ``diaSrc``.",
+        name="{fakesType}{coaddName}Diff_matchDiaSrc",
+        storageClass="DataFrame",
+        dimensions=("instrument", "visit", "detector"),
+    )
+    matchAssocDiaSources = connTypes.Output(
+        doc="A catalog of those fakeCat sources that have a match in "
+            "associatedDiaSources. The schema is the union of the schemas for "
+            "``fakeCat`` and ``associatedDiaSources``.",
+        name="{fakesType}{coaddName}Diff_matchAssocDiaSrc",
+        storageClass="DataFrame",
+        dimensions=("instrument", "visit", "detector"),
+    )
+
+
+class MatchInjectedToAssocDiaSourceConfig(
+        VisitInjectConfig,
+        pipelineConnections=MatchInjectedToAssocDiaSourceConnections):
+    """Config for MatchFakesTask.
+    """
+
+
+class MatchInjectedToAssocDiaSourceTask(PipelineTask):
+
+    _DefaultName = "matchInjectedToAssocDiaSource"
+    ConfigClass = MatchInjectedToAssocDiaSourceConfig
+
+    def run(self, assocDiaSources, matchDiaSources):
+        """Tag matched injected sources to associated diaSources.
+
+        Parameters
+        ----------
+        matchDiaSources : `pandas.DataFrame`
+            Catalog of matched diaSrc to injected sources
+        assocDiaSources : `pandas.DataFrame`
+            Catalog of associated difference image sources detected in ``diffIm``.
+        Returns
+        -------
+        result : `lsst.pipe.base.Struct`
+            Results struct with components.
+
+            - ``matchAssocDiaSources`` : Fakes matched to associated diaSources. Has
+              length of ``matchDiaSources``. (`pandas.DataFrame`)
+        """
+        # Match the fakes to the associated sources. For this we don't use the coordinates
+        # but instead check for the diaSources. Since they were present in the table already
+        nPossibleFakes = len(matchDiaSources)
+        matchDiaSources['isAssocDiaSource'] = matchDiaSources.diaSourceId.isin(assocDiaSources.diaSourceId)
+        assocNFakesFound = matchDiaSources.isAssocDiaSource.sum()
+        self.log.info("Found %d out of %d possible in assocDiaSources."%(assocNFakesFound, nPossibleFakes))
+
+        return Struct(
+            matchAssocDiaSources=matchDiaSources.merge(
+                assocDiaSources.reset_index(drop=True),
+                on="diaSourceId",
+                how="left",
+                suffixes=('_ssi', '_diaSrc')
+            )
+        )

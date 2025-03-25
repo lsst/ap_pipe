@@ -101,14 +101,19 @@ tasks:
       connections.coaddName: parameters.coaddName
       connections.fakesType: parameters.fakesType
       connections.exposure: fakes_initial_pvi
-  injectedMatch:
-    class: lsst.ap.pipe.matchSourceInjected.MatchInitialPVIInjectedTask
+  injectedMatchDiaSrc:
+    class: lsst.ap.pipe.matchSourceInjected.MatchInjectedToDiaSourceTask
     config:
       connections.coaddName: parameters.coaddName
       connections.fakesType: parameters.fakesType
-      connections.injectedInitialPVICat: fakes_initial_pvi_catalog
+      connections.injectedCat: fakes_initial_pvi_catalog
       matchDistanceArcseconds: 0.5
       trimBuffer: 50
+  injectedMatchAssocDiaSrc:
+    class: lsst.ap.pipe.matchSourceInjected.MatchInjectedToAssocDiaSourceTask
+    config:
+      connections.coaddName: parameters.coaddName
+      connections.fakesType: parameters.fakesType
   consolidateMatchDiaSrc:
     class: lsst.pipe.tasks.postprocess.ConsolidateSourceTableTask
     config:
@@ -116,6 +121,13 @@ tasks:
       connections.catalogType: parameters.coaddName
       connections.inputCatalogs: "fakes_{catalogType}Diff_matchDiaSrc"
       connections.outputCatalog: "fakes_{catalogType}Diff_matchDiaSourceTable"
+  consolidateMatchAssocDiaSrc:
+    class: lsst.pipe.tasks.postprocess.ConsolidateSourceTableTask
+    config:
+      # Task doesn't support coaddName, so coopt catalogType instead.
+      connections.catalogType: parameters.coaddName
+      connections.inputCatalogs: "fakes_{catalogType}Diff_matchAssocDiaSrc"
+      connections.outputCatalog: "fakes_{catalogType}Diff_matchAssocDiaSourceTable"
   sampleSpatialMetrics:
     class: lsst.ip.diffim.SpatiallySampledMetricsTask
     config:
@@ -153,13 +165,17 @@ subsets:
       - getRegionTimeFromVisit
       - mpSkyEphemerisQuery
       - diaPipe
-      - injectedMatch
+      - injectedMatchDiaSrc
+      - injectedMatchAssocDiaSrc
       - consolidateMatchDiaSrc
+      - consolidateMatchAssocDiaSrc
       - sampleSpatialMetrics
       - analyzeAssocDiaSrcCore
       - analyzeTrailedDiaSrcCore
       - analyzeDiaFakesDetectorVisitCore
+      - analyzeAssocDiaFakesDetectorVisitCore
       - analyzeDiaFakesVisitCore
+      - analyzeAssocDiaFakesVisitCore
       - diffimTaskCore
       - detectionTaskCore
       - loadDiaCatalogsCore
@@ -187,8 +203,10 @@ subsets:
       - rbClassify
       - transformDiaSrcCat
       - diaPipe
-      - injectedMatch
+      - injectedMatchDiaSrc
+      - injectedMatchAssocDiaSrc
       - consolidateMatchDiaSrc
+      - consolidateMatchAssocDiaSrc
       - analyzeAssocDiaSrcCore
       - analyzeTrailedDiaSrcCore
       - diffimTaskCore
@@ -204,7 +222,9 @@ subsets:
       - sampleSpatialMetrics
       - diffimTaskPlots
       - analyzeDiaFakesDetectorVisitCore
+      - analyzeAssocDiaFakesDetectorVisitCore
       - analyzeDiaFakesVisitCore
+      - analyzeAssocDiaFakesVisitCore
     description: >
       Tasks for QA and other non-real-time processing.
       Requires prompt subset to be run first.
@@ -226,10 +246,14 @@ subsets:
     - transformDiaSrcCat
     - rbClassify
     - diaPipe
-    - injectedMatch
+    - injectedMatchDiaSrc
+    - injectedMatchAssocDiaSrc
     - consolidateMatchDiaSrc
+    - consolidateMatchAssocDiaSrc
     - analyzeDiaFakesDetectorVisitCore
+    - analyzeAssocDiaFakesDetectorVisitCore
     - analyzeDiaFakesVisitCore
+    - analyzeAssocDiaFakesVisitCore
     description: >
       All tasks from the 'apPipe' subset impacted by source injection.
 contracts:
