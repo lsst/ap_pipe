@@ -1,6 +1,5 @@
 description: >-
-  Single-frame pipeline for the case in which
-  no templates exist, specialized for LATISS
+  Standalone single-frame pipeline, specialized for LATISS.
 instrument: lsst.obs.lsst.Latiss
 imports:
   - location: $AP_PIPE_DIR/pipelines/_ingredients/SingleFrameWithIsrTaskLSST.yaml

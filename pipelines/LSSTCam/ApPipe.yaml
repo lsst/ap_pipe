@@ -1,7 +1,5 @@
 description: >-
-  AP pipeline specialized for LSSTCam Prompt Processing. This
-  file is imported in prompt_processing/pipelines/LSSTCam/ApPipe.yaml
-  which is used in realtime Prompt Processing production.
+  AP pipeline specialized for LSSTCam.
 instrument: lsst.obs.lsst.LsstCam
 imports:
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithIsrTaskLSST.yaml
