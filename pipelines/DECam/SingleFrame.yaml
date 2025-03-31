@@ -1,6 +1,5 @@
 description: >-
-  Single-frame pipeline for the case in which
-  no templates exist, specialized for DECam
+  Standalone single-frame pipeline, specialized for DECam.
 instrument: lsst.obs.decam.DarkEnergyCamera
 imports:
   - location: $AP_PIPE_DIR/pipelines/_ingredients/SingleFrame.yaml

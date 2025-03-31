@@ -1,6 +1,5 @@
 description: >-
-  Single-frame pipeline for the case in which
-  no templates exist, specialized for LSSTComCam
+  Standalone single-frame pipeline, specialized for LSSTComCam.
 instrument: lsst.obs.lsst.LsstComCam
 imports:
   - location: $AP_PIPE_DIR/pipelines/_ingredients/SingleFrameWithIsrTaskLSST.yaml

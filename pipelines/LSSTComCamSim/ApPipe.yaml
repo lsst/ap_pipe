@@ -1,7 +1,5 @@
-description: |
-  AP pipeline specialized for Simulated ComCam Prompt Processing. This
-  file is imported in prompt_prototype/pipelines/LsstComCamSim/ApPipe.yaml
-  which is used in realtime Prompt Processing production.
+description: >-
+  AP pipeline specialized for Simulated ComCam.
 instrument: lsst.obs.lsst.LsstComCamSim
 imports:
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithIsrTaskLSST.yaml
