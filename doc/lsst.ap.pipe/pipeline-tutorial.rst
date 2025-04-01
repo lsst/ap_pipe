@@ -37,11 +37,11 @@ To process your ingested data, run
 
 .. prompt:: bash
 
-   apdb-cli create-sql "sqlite:///apdb.db" apdb_config.py
+   apdb-cli create-sql "sqlite:///apdb.db" apdb_config.yaml
    pipetask run -p ${AP_PIPE_DIR}/pipelines/DECam/ApPipe.yaml \
        --register-dataset-types -c parameters:coaddName=deep \
        -c isr:connections.bias=cpBias -c isr:connections.flat=cpFlat \
-       -c parameters:apdb_config=apdb_config.py -b repo/ \
+       -c parameters:apdb_config=apdb_config.yaml -b repo/ \
        -i "DECam/defaults,DECam/raw/all" -o processed \
        -d "visit in (411420, 419802) and detector=10"
 
