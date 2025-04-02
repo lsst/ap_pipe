@@ -42,9 +42,9 @@ To create an SQLite database from scratch, run the following (see the :ref:`dax_
 
 .. prompt:: bash
 
-   apdb-cli create-sql sqlite:///databases/apdb.db apdb_config.py
-   apdb-cli metadata set apdb_config.py instrument MY_INSTRUMENT
-   pipetask run -p ApPipe.yaml -c parameters:apdb_config=apdb_config.py differencer:coaddName=dcr -b repo -o myrun
+   apdb-cli create-sql sqlite:///databases/apdb.db apdb_config.yaml
+   apdb-cli metadata set apdb_config.yaml instrument MY_INSTRUMENT
+   pipetask run -p ApPipe.yaml -c parameters:apdb_config=apdb_config.yaml differencer:coaddName=dcr -b repo -o myrun
 
 The ``apdb_config.yaml`` argument to |apdb-cli| specifies the name of the created configuration file that will contain a serialized `~lsst.dax.apdb.ApdbConfig` for the new database.
 Note that ``MY_INSTRUMENT`` should be the short name of the instrument whose data will populate this APDB instance (e.g. ``DECam`` or ``HSC``).
@@ -53,9 +53,9 @@ A Postgres database can be set up and used with the following.
 
 .. prompt:: bash
     
-   apdb-cli create-sql --namespace='my_apdb_name' 'postgresql://rubin@usdf-prompt-processing-dev.slac.stanford.edu/lsst-devl' apdb_config.py
-   apdb-cli metadata set apdb_config.py instrument MY_INSTRUMENT
-   pipetask run -p ApPipe.yaml -c parameters:apdb_config=apdb_config.py -d "my_data_query" -b repo -i my/input/collection -o my/output/collection
+   apdb-cli create-sql --namespace='my_apdb_name' 'postgresql://rubin@usdf-prompt-processing-dev.slac.stanford.edu/lsst-devl' apdb_config.yaml
+   apdb-cli metadata set apdb_config.yaml instrument MY_INSTRUMENT
+   pipetask run -p ApPipe.yaml -c parameters:apdb_config=apdb_config.yaml -d "my_data_query" -b repo -i my/input/collection -o my/output/collection
 
 If a pre-existing database is registered in the ``dax_apdb`` index, this becomes:
 
@@ -67,9 +67,9 @@ A Postgres database can be set up and used within :ref:`bps yaml files <creating
 
 .. code-block:: yaml
 
-  extraQgraphOptions: "-c parameters:apdb_config=/path/to/apdb_config.py"
+  extraQgraphOptions: "-c parameters:apdb_config=/path/to/apdb_config.yaml"
   
-Note that |apdb-cli| must be run prior to submitting this bps yaml, and the path to the resulting config file (``apdb_config.py`` in this example) passed in ``extraQgraphOptions``.
+Note that |apdb-cli| must be run prior to submitting this bps yaml, and the path to the resulting config file (``apdb_config.yaml`` in this example) passed in ``extraQgraphOptions``.
   
 .. _section-ap-pipe-apdb-seealso:
 

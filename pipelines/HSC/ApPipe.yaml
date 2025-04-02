@@ -1,7 +1,7 @@
 description: End to end AP pipeline specialized for HSC
 # (1) Execute `apdb-cli create-sql`, e.g.,
-#     apdb-cli create-sql "sqlite:////project/user/association.db" apdb_config.py
-#     apdb-cli metadata set apdb_config.py instrument HSC
+#     apdb-cli create-sql "sqlite:////project/user/association.db" apdb_config.yaml
+#     apdb-cli metadata set apdb_config.yaml instrument HSC
 # (2) Run this pipeline, setting the apdb_config parameter to point to the new file
 
 instrument: lsst.obs.subaru.HyperSuprimeCam
