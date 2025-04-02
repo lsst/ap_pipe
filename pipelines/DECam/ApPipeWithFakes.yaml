@@ -3,7 +3,8 @@ description: DECam AP Pipeline with synthetic/fake sources. Templates are inputs
 # (0) Ensure median calibration products and template coadds exist for the data being processed
 # (1) Run $AP_PIPE_DIR/pipelines/DECam/RunIsrForCrosstalkSources.yaml
 # (2) Execute `apdb-cli create-sql`, e.g.,
-#     apdb-cli create-sql "sqlite:////project/user/association.db" apdb_config.py
+#     apdb-cli create-sql "sqlite:////project/user/association.db" apdb_config.yaml
+#     apdb-cli metadata set apdb_config.yaml instrument DECam
 # (3) Run this pipeline, setting the apdb_config parameter to point to the new file
 
 instrument: lsst.obs.decam.DarkEnergyCamera

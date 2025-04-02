@@ -38,6 +38,7 @@ To process your ingested data, run
 .. prompt:: bash
 
    apdb-cli create-sql "sqlite:///apdb.db" apdb_config.yaml
+   apdb-cli metadata set apdb_config.yaml instrument DECam
    pipetask run -p ${AP_PIPE_DIR}/pipelines/DECam/ApPipe.yaml \
        --register-dataset-types -c parameters:coaddName=deep \
        -c isr:connections.bias=cpBias -c isr:connections.flat=cpFlat \
@@ -46,7 +47,7 @@ To process your ingested data, run
        -d "visit in (411420, 419802) and detector=10"
 
 In this case, a ``processed/<timestamp>`` collection will be created within ``repo`` and the results will be written there.
-The ``apdb_config.py`` file will be created by ``apdb-cli`` and passed to ``pipetask``.
+The ``apdb_config.yaml`` file will be created by ``apdb-cli`` and passed to ``pipetask``.
 See :doc:`apdb` for more information on :command:`apdb-cli`.
 
 This example command only processes observations corresponding to visits 411420 and 419802, both with only detector 10.
@@ -59,7 +60,7 @@ If you prefer to have a standalone output collection, you may instead run
    pipetask run -p ${AP_PIPE_DIR}/pipelines/DECam/ApPipe.yaml \
        --register-dataset-types -c parameters:coaddName=deep \
        -c isr:connections.bias=cpBias -c isr:connections.flat=cpFlat \
-       -c parameters:apdb_config=apdb_config.py -b repo/ \
+       -c parameters:apdb_config=apdb_config.yaml -b repo/ \
        -i "DECam/defaults,DECam/raw/all" --output-run processed \
        -d "visit in (411420, 419802) and detector=10"
 
