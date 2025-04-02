@@ -1,7 +1,7 @@
 description: AP pipeline with synthetic/fakes sources specialized for ImSim
 # (1) Execute `apdb-cli create-sql`, e.g.,
-#     apdb-cli create-sql "sqlite:////project/user/association.db" apdb_config.py
-#     apdb-cli metadata set apdb_config.py instrument LSSTCam-imSim
+#     apdb-cli create-sql "sqlite:////project/user/association.db" apdb_config.yaml
+#     apdb-cli metadata set apdb_config.yaml instrument LSSTCam-imSim
 # (2) Run this pipeline, setting the apdb_config parameter to point to the new file
 
 instrument: lsst.obs.lsst.LsstCamImSim
