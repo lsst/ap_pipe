@@ -150,10 +150,9 @@ And the result will be something of the form::
                                     UNKNO | MISFI | UNREA | READY | PENDI | RUNNI | DELET | HELD  | SUCCE | FAILE
   Total                                   0 |     0 |  3731 |  4766 |     0 |     0 |     0 |     0 | 69607 |  4267
   ----------------------------------------------------------------------------------------------------------------------
-  imageDifference                         0 |     0 | 15073 |     0 |     0 |     0 |     0 |     2 |  1448 |   165
-  diaPipe                                 0 |     0 |  7234 |     0 |  1007 |    60 |     0 |     0 |  6585 |  1802
+  subtractImages                          0 |     0 | 15073 |     0 |     0 |     0 |     0 |     2 |  1448 |   165
+  associateApdb                           0 |     0 |  7234 |     0 |  1007 |    60 |     0 |     0 |  6585 |  1802
   isr                                     0 |     0 | 16688 |     0 |     0 |     0 |     0 |     0 |     0 |     0
-  characterizeImage                       0 |     0 | 16688 |     0 |     0 |     0 |     0 |     0 |     0 |     0
-  calibrate                               0 |     0 | 16688 |     0 |     0 |     0 |     0 |     0 |     0 |     0
+  calibrateImage                          0 |     0 | 16688 |     0 |     0 |     0 |     0 |     0 |     0 |     0
 
 When your run is finished, the STATE will change from RUNNING to COMPLETED (or FAILED, if any quanta were unsuccessful).
