@@ -29,14 +29,14 @@ tasks:
   inject_visit:
     class: lsst.source.injection.inject_visit.VisitInjectTask
     config:
-      external_psf: false
-      external_photo_calib: false
-      external_wcs: false
       connections.input_exposure: initial_pvi
       connections.output_exposure: fakes_initial_pvi
       connections.output_catalog: fakes_initial_pvi_catalog
       connections.injection_prefix: parameters.injection_prefix
       connections.injected_prefix: parameters.injected_prefix
+      external_psf: false
+      external_photo_calib: false
+      external_wcs: false
   loadDiaCatalogs:
     class: lsst.ap.association.LoadDiaCatalogsTask
     config:
@@ -67,16 +67,16 @@ tasks:
   filterDiaSource:
     class: lsst.ap.association.FilterDiaSourceCatalogTask
     config:
-      doRemoveSkySources: true
       connections.coaddName: parameters.coaddName
       connections.fakesType: parameters.fakesType
+      doRemoveSkySources: true
   computeReliability:
     class: lsst.meas.transiNet.RBTransiNetTask
     config:
-      modelPackageStorageMode: butler
       connections.coaddName: parameters.coaddName
       connections.fakesType: parameters.fakesType
       connections.science: fakes_initial_pvi
+      modelPackageStorageMode: butler
   standardizeDiaSource:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
     config:

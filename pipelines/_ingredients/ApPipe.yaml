@@ -33,38 +33,38 @@ tasks:
   rewarpTemplate:
     class: lsst.ip.diffim.getTemplate.GetTemplateTask
     config:
+      connections.coaddName: parameters.coaddName
       connections.bbox: initial_pvi.bbox
       connections.wcs: initial_pvi.wcs
-      connections.coaddName: parameters.coaddName
   subtractImages:
     class: lsst.ip.diffim.subtractImages.AlardLuptonSubtractTask
     config:
+      connections.coaddName: parameters.coaddName
       connections.science: initial_pvi
       connections.sources: initial_stars_footprints_detector
-      connections.coaddName: parameters.coaddName
       doApplyExternalCalibrations: False
   detectAndMeasureDiaSource:
     class: lsst.ip.diffim.detectAndMeasure.DetectAndMeasureTask
     config:
-      connections.science: initial_pvi
       connections.coaddName: parameters.coaddName
+      connections.science: initial_pvi
       doSkySources: True
   filterDiaSource:
     class: lsst.ap.association.FilterDiaSourceCatalogTask
     config:
-      doRemoveSkySources: True
       connections.coaddName: parameters.coaddName
+      doRemoveSkySources: True
   computeReliability:
     class: lsst.meas.transiNet.RBTransiNetTask
     config:
-      modelPackageStorageMode: butler
-      connections.science: initial_pvi
       connections.coaddName: parameters.coaddName
+      connections.science: initial_pvi
+      modelPackageStorageMode: butler
   standardizeDiaSource:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
     config:
-      doRemoveSkySources: True
       connections.coaddName: parameters.coaddName
+      doRemoveSkySources: True
       doIncludeReliability: True  # Output from computeReliability
       doUseApdbSchema: True  # Force the table columns to match the APDB definition in sdm_schemas
   getRegionTimeFromVisit:
@@ -76,16 +76,16 @@ tasks:
   associateApdb:
     class: lsst.ap.association.DiaPipelineTask
     config:
+      connections.coaddName: parameters.coaddName
+      connections.exposure: initial_pvi
       apdb_config_url: parameters.apdb_config
       doPackageAlerts: True  # Test alert generation, but don't output
       alertPackager.useAveragePsf: True  # Speed up production processing; don't want as default or in ApPipeWithFakes
-      connections.exposure: initial_pvi
-      connections.coaddName: parameters.coaddName
   makeSampledImageSubtractionMetrics:
     class: lsst.ip.diffim.SpatiallySampledMetricsTask
     config:
-      connections.science: initial_pvi
       connections.coaddName: parameters.coaddName
+      connections.science: initial_pvi
 
 subsets:
   apPipeSingleFrame:
