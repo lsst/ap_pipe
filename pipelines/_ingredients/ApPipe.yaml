@@ -23,47 +23,91 @@ tasks:
   loadDiaCatalogs:
     class: lsst.ap.association.LoadDiaCatalogsTask
     config:
+      connections.regionTime: regionTimeInfo
+      connections.diaObjects: preloaded_diaObjects
+      connections.diaSources: preloaded_diaSources
+      connections.diaForcedSources: preloaded_diaForcedSources
       apdb_config_url: parameters.apdb_config
   isr:
     class: lsst.ip.isr.IsrTask
     config:
+      connections.outputExposure: postISRCCD
       doBrighterFatter: False
   calibrateImage:
     class: lsst.pipe.tasks.calibrateImage.CalibrateImageTask
+    config:
+      connections.exposures: postISRCCD
+      connections.initial_stars_schema: initial_stars_schema
+      connections.exposure: initial_pvi
+      connections.stars: initial_stars_detector
+      connections.stars_footprints: initial_stars_footprints_detector
+      connections.applied_photo_calib: initial_photoCalib_detector
+      connections.background: initial_pvi_background
+      connections.psf_stars_footprints: initial_psf_stars_footprints_detector
+      connections.psf_stars: initial_psf_stars_detector
+      connections.astrometry_matches: initial_astrometry_match_detector
+      connections.photometry_matches: initial_photometry_match_detector
   rewarpTemplate:
     class: lsst.ip.diffim.getTemplate.GetTemplateTask
     config:
       connections.coaddName: parameters.coaddName
       connections.bbox: initial_pvi.bbox
       connections.wcs: initial_pvi.wcs
+      connections.coaddExposures: "{fakesType}{coaddName}Coadd"
+      connections.template: "{fakesType}{coaddName}Diff_templateExp"
   subtractImages:
     class: lsst.ip.diffim.subtractImages.AlardLuptonSubtractTask
     config:
       connections.coaddName: parameters.coaddName
-      connections.science: initial_pvi
+      connections.science: "{fakesType}initial_pvi"
       connections.sources: initial_stars_footprints_detector
+      connections.template: "{fakesType}{coaddName}Diff_templateExp"
+      connections.difference: "{fakesType}{coaddName}Diff_differenceTempExp"
+      connections.matchedTemplate: "{fakesType}{coaddName}Diff_matchedExp"
+      connections.psfMatchingKernel: "{fakesType}{coaddName}Diff_psfMatchKernel"
+      connections.kernelSources: "{fakesType}{coaddName}Diff_psfMatchSources"
       doApplyExternalCalibrations: False
   detectAndMeasureDiaSource:
     class: lsst.ip.diffim.detectAndMeasure.DetectAndMeasureTask
     config:
       connections.coaddName: parameters.coaddName
-      connections.science: initial_pvi
+      connections.science: "{fakesType}initial_pvi"
+      connections.matchedTemplate: "{fakesType}{coaddName}Diff_matchedExp"
+      connections.difference: "{fakesType}{coaddName}Diff_differenceTempExp"
+      connections.outputSchema: "{fakesType}{coaddName}Diff_diaSrc_schema"
+      connections.diaSources: "{fakesType}{coaddName}Diff_diaSrc"
+      connections.subtractedMeasuredExposure: "{fakesType}{coaddName}Diff_differenceExp"
+      connections.maskedStreaks: "{fakesType}{coaddName}Diff_streaks"
       doSkySources: True
   filterDiaSource:
     class: lsst.ap.association.FilterDiaSourceCatalogTask
     config:
       connections.coaddName: parameters.coaddName
+      connections.diaSourceCat: "{fakesType}{coaddName}Diff_diaSrc"
+      connections.filteredDiaSourceCat: "{fakesType}{coaddName}Diff_candidateDiaSrc"
+      connections.rejectedDiaSources: "{fakesType}{coaddName}Diff_rejectedDiaSrc"
+      connections.diffImVisitInfo: "{fakesType}{coaddName}Diff_differenceExp.visitInfo"
+      connections.longTrailedSources: "{fakesType}{coaddName}Diff_longTrailedSrc"
       doRemoveSkySources: True
   computeReliability:
     class: lsst.meas.transiNet.RBTransiNetTask
     config:
       connections.coaddName: parameters.coaddName
-      connections.science: initial_pvi
+      connections.science: "{fakesType}initial_pvi"
+      connections.template: "{fakesType}{coaddName}Diff_templateExp"
+      connections.difference: "{fakesType}{coaddName}Diff_differenceExp"
+      connections.diaSources: "{fakesType}{coaddName}Diff_candidateDiaSrc"
+      connections.classifications: "{fakesType}{coaddName}RealBogusSources"
       modelPackageStorageMode: butler
   standardizeDiaSource:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
     config:
       connections.coaddName: parameters.coaddName
+      connections.diaSourceSchema: "{fakesType}{coaddName}Diff_diaSrc_schema"
+      connections.diaSourceCat: "{fakesType}{coaddName}Diff_candidateDiaSrc"
+      connections.diffIm: "{fakesType}{coaddName}Diff_differenceExp"
+      connections.reliability: "{fakesType}{coaddName}RealBogusSources"
+      connections.diaSourceTable: "{fakesType}{coaddName}Diff_diaSrcTable"
       doRemoveSkySources: True
       doIncludeReliability: True  # Output from computeReliability
       doUseApdbSchema: True  # Force the table columns to match the APDB definition in sdm_schemas
@@ -71,13 +115,32 @@ tasks:
     class: lsst.pipe.tasks.getRegionTimeFromVisit.GetRegionTimeFromVisitTask
     config:
       connections.coaddName: parameters.coaddName
+      connections.dummy_visit: initial_stars_footprints_detector
+      connections.output: regionTimeInfo
   mpSkyEphemerisQuery:
     class: lsst.ap.association.MPSkyEphemerisQueryTask
+    config:
+      connections.predictedRegionTime: regionTimeInfo
+      connections.ssObjects: preloaded_SsObjects
   associateApdb:
     class: lsst.ap.association.DiaPipelineTask
     config:
       connections.coaddName: parameters.coaddName
-      connections.exposure: initial_pvi
+      connections.exposure: "{fakesType}initial_pvi"
+      connections.diaSourceTable: "{fakesType}{coaddName}Diff_diaSrcTable"
+      connections.solarSystemObjectTable: preloaded_SsObjects
+      connections.diffIm: "{fakesType}{coaddName}Diff_differenceExp"
+      connections.template: "{fakesType}{coaddName}Diff_templateExp"
+      connections.preloadedDiaObjects: preloaded_diaObjects
+      connections.preloadedDiaSources: preloaded_diaSources
+      connections.preloadedDiaForcedSources: preloaded_diaForcedSources
+      connections.associatedDiaSources: "{fakesType}{coaddName}Diff_assocDiaSrc"
+      connections.associatedSsSources: "{fakesType}{coaddName}Diff_associatedSsSources"
+      connections.unassociatedSsObjects: ssUnassociatedObjects
+      connections.diaForcedSources: "{fakesType}{coaddName}Diff_diaForcedSrc"
+      connections.diaObjects: "{fakesType}{coaddName}Diff_diaObject"
+      connections.newDiaSources: "{fakesType}{coaddName}Diff_newDiaSources"
+      connections.marginalDiaSources: "{fakesType}{coaddName}Diff_marginalDiaSources"
       apdb_config_url: parameters.apdb_config
       doPackageAlerts: True  # Test alert generation, but don't output
       alertPackager.useAveragePsf: True  # Speed up production processing; don't want as default or in ApPipeWithFakes
@@ -85,7 +148,13 @@ tasks:
     class: lsst.ip.diffim.SpatiallySampledMetricsTask
     config:
       connections.coaddName: parameters.coaddName
-      connections.science: initial_pvi
+      connections.science: "{fakesType}initial_pvi"
+      connections.matchedTemplate: "{fakesType}{coaddName}Diff_matchedExp"
+      connections.template: "{fakesType}{coaddName}Diff_templateExp"
+      connections.difference: "{fakesType}{coaddName}Diff_differenceExp"
+      connections.diaSources: "{fakesType}{coaddName}Diff_candidateDiaSrc"
+      connections.psfMatchingKernel: "{fakesType}{coaddName}Diff_psfMatchKernel"
+      connections.spatiallySampledMetrics: "{fakesType}{coaddName}Diff_spatiallySampledMetrics"
 
 subsets:
   apPipeSingleFrame:

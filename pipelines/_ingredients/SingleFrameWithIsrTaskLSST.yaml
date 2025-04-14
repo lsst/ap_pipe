@@ -7,6 +7,7 @@ tasks:
   isr:
     class: lsst.ip.isr.IsrTaskLSST
     config:
+      connections.outputExposure: postISRCCD
       # Some instruments have this already in obs_lsst.
       # Here we turn if off for AP generally.
       doBrighterFatter: False

@@ -8,6 +8,12 @@ imports:
 tasks:
   associateSolarSystemDirectSource:
     class: lsst.ap.association.SsSingleFrameAssociationTask
+    config:
+      connections.exposure: initial_pvi
+      connections.sourceTable: initial_stars_footprints_detector
+      connections.solarSystemObjectTable: preloaded_SsObjects
+      connections.associatedSsSources: ssSingleFrameAssociatedSources
+      connections.unassociatedSsObjects: ssSingleFrameUnassociatedObjects
 subsets:
   singleFrame:
     subset:
