@@ -1,0 +1,100 @@
+description: HSC AP Pipeline with synthetic/fake sources. Templates are inputs.
+# Remember:
+# (0) Ensure median calibration products and template coadds exist for the data being processed
+# (1) Execute `apdb-cli create-sql`, e.g.,
+#     apdb-cli create-sql "sqlite:////project/user/association.db" apdb_config.py
+# (2) Run this pipeline, setting the apdb_config parameter to point to the new file
+
+instrument: lsst.obs.lsst.LsstCam
+imports:
+  - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithFakes.yaml
+    exclude:
+      - isr
+  - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithIsrTaskLSST.yaml
+    include:
+      - isr
+
+parameters:
+  coaddName: goodSeeing
+  # APDB config file must be user-specified
+  apdb_config:
+  fakesType: 'fakes_'
+  injected_prefix: 'fakes_'
+  injection_prefix: 'injection_'
+subsets:
+  apPipeSingleFrame:
+    subset:
+      - isr
+      - calibrateImage
+      - analyzeCalibrationMetrics
+    description: >-
+      The prompt ApPipe tasks that make up single-frame processing. Not to be confused with the
+      SingleFrame.yaml pipeline, which does more than just ApPipe single frame processing, and
+      is designed as a standalone alternative to ApPipeWithFakes.yaml.
+  processCcd:  # TODO: remove on DM-48428
+    subset:
+      - isr
+      - calibrateImage
+      - analyzeCalibrationMetrics
+    description: Deprecated alias for apPipeSingleFrame, will be removed after v29.
+  apPipe:
+    subset:
+      - isr
+      - calibrateImage
+      - inject_visit
+      - loadDiaCatalogs
+      - rewarpTemplate
+      - subtractImages
+      - detectAndMeasureDiaSource
+      - filterDiaSource
+      - computeReliability
+      - standardizeDiaSource
+      - getRegionTimeFromVisit
+      - mpSkyEphemerisQuery
+      - associateApdb
+      - injectedMatchDiaSrc
+      - injectedMatchAssocDiaSrc
+      - consolidateMatchDiaSrc
+      - consolidateMatchAssocDiaSrc
+      - makeSampledImageSubtractionMetrics
+      - analyzeAssociatedDiaSourceTable
+      - analyzeTrailedDiaSourceTable
+      - analyzeDiaFakesDetectorVisitCore
+      - analyzeAssocDiaFakesDetectorVisitCore
+      - analyzeDiaFakesVisitCore
+      - analyzeAssocDiaFakesVisitCore
+      - analyzeImageDifferenceMetrics
+      - analyzeDiaSourceDetectionMetrics
+      - analyzeLoadDiaCatalogsMetrics
+      - analyzeDiaSourceAssociationMetrics
+      - analyzeAssociateDiaSourceTiming
+      - analyzeSampledImageSubtractionMetrics
+      - analyzeCalibrationMetrics
+    description: >
+      An alias of ApPipe to use in higher-level pipelines.
+  prompt:
+    subset:
+      - isr
+      - calibrateImage
+      - inject_visit
+      - rewarpTemplate
+      - subtractImages
+      - detectAndMeasureDiaSource
+      - filterDiaSource
+      - computeReliability
+      - standardizeDiaSource
+      - associateApdb
+      - injectedMatchDiaSrc
+      - injectedMatchAssocDiaSrc
+      - consolidateMatchDiaSrc
+      - consolidateMatchAssocDiaSrc
+      - analyzeAssociatedDiaSourceTable
+      - analyzeTrailedDiaSourceTable
+      - analyzeImageDifferenceMetrics
+      - analyzeDiaSourceDetectionMetrics
+      - analyzeDiaSourceAssociationMetrics
+      - analyzeAssociateDiaSourceTiming
+      - analyzeCalibrationMetrics
+    description: >
+      Tasks necessary to turn raw images into APDB rows and alerts.
+      Requires preload subset to be run first.
