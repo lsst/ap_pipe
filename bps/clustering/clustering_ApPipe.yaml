@@ -19,7 +19,7 @@
 clusterAlgorithm: lsst.ctrl.bps.quantum_clustering_funcs.dimension_clustering
 cluster:
   singleFrame:
-    pipetasks: isr,calibrateImage,analyzeCalibrationMetrics
+    pipetasks: isr,calibrateImage,analyzePreliminarySummaryStats
     dimensions: visit,detector
     equalDimensions: visit:exposure
   diffim:

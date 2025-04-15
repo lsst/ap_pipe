@@ -23,4 +23,4 @@ tasks:
     class: lsst.ip.isr.IsrTask
     config:
       file: $AP_PIPE_DIR/config/DECam/runIsrWithCrosstalk.py
-      connections.outputExposure: postISRCCD
+      connections.outputExposure: post_isr_image

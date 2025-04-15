@@ -26,7 +26,7 @@ subsets:
     subset:
       - isr
       - calibrateImage
-      - analyzeCalibrationMetrics
+      - analyzePreliminarySummaryStats
     description: >-
       The prompt ApPipe tasks that make up single-frame processing. Not to be confused with the
       SingleFrame.yaml pipeline, which does more than just ApPipe single frame processing, and
@@ -35,7 +35,7 @@ subsets:
     subset:
       - isr
       - calibrateImage
-      - analyzeCalibrationMetrics
+      - analyzePreliminarySummaryStats
     description: Deprecated alias for apPipeSingleFrame, will be removed after v29.
   apPipe:
     subset:
@@ -69,7 +69,7 @@ subsets:
       - analyzeDiaSourceAssociationMetrics
       - analyzeAssociateDiaSourceTiming
       - analyzeSampledImageSubtractionMetrics
-      - analyzeCalibrationMetrics
+      - analyzePreliminarySummaryStats
     description: >
       An alias of ApPipe to use in higher-level pipelines.
   prompt:
@@ -94,7 +94,7 @@ subsets:
       - analyzeDiaSourceDetectionMetrics
       - analyzeDiaSourceAssociationMetrics
       - analyzeAssociateDiaSourceTiming
-      - analyzeCalibrationMetrics
+      - analyzePreliminarySummaryStats
     description: >
       Tasks necessary to turn raw images into APDB rows and alerts.
       Requires preload subset to be run first.

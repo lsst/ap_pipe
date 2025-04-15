@@ -9,11 +9,11 @@ tasks:
   associateSolarSystemDirectSource:
     class: lsst.ap.association.SsSingleFrameAssociationTask
     config:
-      connections.exposure: initial_pvi
-      connections.sourceTable: initial_stars_footprints_detector
-      connections.solarSystemObjectTable: preloaded_SsObjects
-      connections.associatedSsSources: ssSingleFrameAssociatedSources
-      connections.unassociatedSsObjects: ssSingleFrameUnassociatedObjects
+      connections.exposure: preliminary_visit_image
+      connections.sourceTable: single_visit_star_footprints
+      connections.solarSystemObjectTable: preloaded_ss_object
+      connections.associatedSsSources: ss_source_direct_detector
+      connections.unassociatedSsObjects: ss_object_direct_unassociated
 subsets:
   singleFrame:
     subset:
@@ -21,7 +21,7 @@ subsets:
       - calibrateImage
       - getRegionTimeFromVisit
       - mpSkyEphemerisQuery
-      - analyzeCalibrationMetrics
       - associateSolarSystemDirectSource
+      - analyzePreliminarySummaryStats
     description: >
       An alias of SingleFrame to use in higher-level pipelines.

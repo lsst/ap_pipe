@@ -24,90 +24,96 @@ tasks:
     class: lsst.ap.association.LoadDiaCatalogsTask
     config:
       connections.regionTime: regionTimeInfo
-      connections.diaObjects: preloaded_diaObjects
-      connections.diaSources: preloaded_diaSources
-      connections.diaForcedSources: preloaded_diaForcedSources
+      connections.diaSources: preloaded_dia_source
+      connections.diaForcedSources: preloaded_dia_forced_source
+      connections.diaObjects: preloaded_dia_object
       apdb_config_url: parameters.apdb_config
   isr:
     class: lsst.ip.isr.IsrTask
     config:
-      connections.outputExposure: postISRCCD
+      connections.outputExposure: post_isr_image
       doBrighterFatter: False
   calibrateImage:
     class: lsst.pipe.tasks.calibrateImage.CalibrateImageTask
     config:
-      connections.exposures: postISRCCD
-      connections.initial_stars_schema: initial_stars_schema
-      connections.exposure: initial_pvi
-      connections.stars: initial_stars_detector
-      connections.stars_footprints: initial_stars_footprints_detector
+      connections.exposures: post_isr_image
+      connections.initial_stars_schema: single_visit_star_schema
+      connections.exposure: preliminary_visit_image
+      connections.stars: single_visit_star_unstandardized
+      connections.stars_footprints: single_visit_star_footprints
       connections.applied_photo_calib: initial_photoCalib_detector
-      connections.background: initial_pvi_background
-      connections.psf_stars_footprints: initial_psf_stars_footprints_detector
-      connections.psf_stars: initial_psf_stars_detector
+      connections.background: preliminary_visit_image_background
+      connections.psf_stars_footprints: single_visit_psf_star_footprints
+      connections.psf_stars: single_visit_psf_star
       connections.astrometry_matches: initial_astrometry_match_detector
       connections.photometry_matches: initial_photometry_match_detector
   rewarpTemplate:
     class: lsst.ip.diffim.getTemplate.GetTemplateTask
     config:
       connections.coaddName: parameters.coaddName
-      connections.bbox: initial_pvi.bbox
-      connections.wcs: initial_pvi.wcs
-      connections.coaddExposures: "{fakesType}{coaddName}Coadd"
-      connections.template: "{fakesType}{coaddName}Diff_templateExp"
+      connections.fakesType: parameters.fakesType
+      connections.bbox: preliminary_visit_image.bbox
+      connections.wcs: preliminary_visit_image.wcs
+      connections.coaddExposures: template_coadd
+      connections.template: "{fakesType}template_detector"
   subtractImages:
     class: lsst.ip.diffim.subtractImages.AlardLuptonSubtractTask
     config:
       connections.coaddName: parameters.coaddName
-      connections.science: "{fakesType}initial_pvi"
-      connections.sources: initial_stars_footprints_detector
-      connections.template: "{fakesType}{coaddName}Diff_templateExp"
-      connections.difference: "{fakesType}{coaddName}Diff_differenceTempExp"
-      connections.matchedTemplate: "{fakesType}{coaddName}Diff_matchedExp"
-      connections.psfMatchingKernel: "{fakesType}{coaddName}Diff_psfMatchKernel"
-      connections.kernelSources: "{fakesType}{coaddName}Diff_psfMatchSources"
+      connections.fakesType: parameters.fakesType
+      connections.science: "{fakesType}preliminary_visit_image"
+      connections.sources: single_visit_star_footprints
+      connections.template: "{fakesType}template_detector"
+      connections.difference: "{fakesType}difference_image_predetection"
+      connections.matchedTemplate: "{fakesType}template_matched"
+      connections.psfMatchingKernel: "{fakesType}difference_kernel"
+      connections.kernelSources: "{fakesType}difference_kernel_sources"
       doApplyExternalCalibrations: False
   detectAndMeasureDiaSource:
     class: lsst.ip.diffim.detectAndMeasure.DetectAndMeasureTask
     config:
       connections.coaddName: parameters.coaddName
-      connections.science: "{fakesType}initial_pvi"
-      connections.matchedTemplate: "{fakesType}{coaddName}Diff_matchedExp"
-      connections.difference: "{fakesType}{coaddName}Diff_differenceTempExp"
-      connections.outputSchema: "{fakesType}{coaddName}Diff_diaSrc_schema"
-      connections.diaSources: "{fakesType}{coaddName}Diff_diaSrc"
-      connections.subtractedMeasuredExposure: "{fakesType}{coaddName}Diff_differenceExp"
-      connections.maskedStreaks: "{fakesType}{coaddName}Diff_streaks"
+      connections.fakesType: parameters.fakesType
+      connections.science: "{fakesType}preliminary_visit_image"
+      connections.matchedTemplate: "{fakesType}template_matched"
+      connections.difference: "{fakesType}difference_image_predetection"
+      connections.outputSchema: "{fakesType}dia_source_schema"
+      connections.diaSources: "{fakesType}dia_source_unfiltered"
+      connections.subtractedMeasuredExposure: "{fakesType}difference_image"
+      connections.maskedStreaks: "{fakesType}goodSeeingDiff_streaks"
       doSkySources: True
   filterDiaSource:
     class: lsst.ap.association.FilterDiaSourceCatalogTask
     config:
       connections.coaddName: parameters.coaddName
-      connections.diaSourceCat: "{fakesType}{coaddName}Diff_diaSrc"
-      connections.filteredDiaSourceCat: "{fakesType}{coaddName}Diff_candidateDiaSrc"
-      connections.rejectedDiaSources: "{fakesType}{coaddName}Diff_rejectedDiaSrc"
-      connections.diffImVisitInfo: "{fakesType}{coaddName}Diff_differenceExp.visitInfo"
-      connections.longTrailedSources: "{fakesType}{coaddName}Diff_longTrailedSrc"
+      connections.fakesType: parameters.fakesType
+      connections.diaSourceCat: "{fakesType}dia_source_unfiltered"
+      connections.filteredDiaSourceCat: "{fakesType}dia_source_unstandardized"
+      connections.rejectedDiaSources: "{fakesType}rejected_dia_source"
+      connections.diffImVisitInfo: "{fakesType}difference_image.visitInfo"
+      connections.longTrailedSources: "{fakesType}long_trailed_source_detector"
       doRemoveSkySources: True
   computeReliability:
     class: lsst.meas.transiNet.RBTransiNetTask
     config:
       connections.coaddName: parameters.coaddName
-      connections.science: "{fakesType}initial_pvi"
-      connections.template: "{fakesType}{coaddName}Diff_templateExp"
-      connections.difference: "{fakesType}{coaddName}Diff_differenceExp"
-      connections.diaSources: "{fakesType}{coaddName}Diff_candidateDiaSrc"
-      connections.classifications: "{fakesType}{coaddName}RealBogusSources"
+      connections.fakesType: parameters.fakesType
+      connections.science: "{fakesType}preliminary_visit_image"
+      connections.template: "{fakesType}template_detector"
+      connections.difference: "{fakesType}difference_image"
+      connections.diaSources: "{fakesType}dia_source_unstandardized"
+      connections.classifications: "{fakesType}dia_source_reliability"
       modelPackageStorageMode: butler
   standardizeDiaSource:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
     config:
       connections.coaddName: parameters.coaddName
-      connections.diaSourceSchema: "{fakesType}{coaddName}Diff_diaSrc_schema"
-      connections.diaSourceCat: "{fakesType}{coaddName}Diff_candidateDiaSrc"
-      connections.diffIm: "{fakesType}{coaddName}Diff_differenceExp"
-      connections.reliability: "{fakesType}{coaddName}RealBogusSources"
-      connections.diaSourceTable: "{fakesType}{coaddName}Diff_diaSrcTable"
+      connections.fakesType: parameters.fakesType
+      connections.diaSourceSchema: "{fakesType}dia_source_schema"
+      connections.diaSourceCat: "{fakesType}dia_source_unstandardized"
+      connections.diffIm: "{fakesType}difference_image"
+      connections.reliability: "{fakesType}dia_source_reliability"
+      connections.diaSourceTable: "{fakesType}dia_source_detector"
       doRemoveSkySources: True
       doIncludeReliability: True  # Output from computeReliability
       doUseApdbSchema: True  # Force the table columns to match the APDB definition in sdm_schemas
@@ -115,32 +121,33 @@ tasks:
     class: lsst.pipe.tasks.getRegionTimeFromVisit.GetRegionTimeFromVisitTask
     config:
       connections.coaddName: parameters.coaddName
-      connections.dummy_visit: initial_stars_footprints_detector
+      connections.dummy_visit: single_visit_star_footprints
       connections.output: regionTimeInfo
   mpSkyEphemerisQuery:
     class: lsst.ap.association.MPSkyEphemerisQueryTask
     config:
       connections.predictedRegionTime: regionTimeInfo
-      connections.ssObjects: preloaded_SsObjects
+      connections.ssObjects: preloaded_ss_object
   associateApdb:
     class: lsst.ap.association.DiaPipelineTask
     config:
       connections.coaddName: parameters.coaddName
-      connections.exposure: "{fakesType}initial_pvi"
-      connections.diaSourceTable: "{fakesType}{coaddName}Diff_diaSrcTable"
-      connections.solarSystemObjectTable: preloaded_SsObjects
-      connections.diffIm: "{fakesType}{coaddName}Diff_differenceExp"
-      connections.template: "{fakesType}{coaddName}Diff_templateExp"
-      connections.preloadedDiaObjects: preloaded_diaObjects
-      connections.preloadedDiaSources: preloaded_diaSources
-      connections.preloadedDiaForcedSources: preloaded_diaForcedSources
-      connections.associatedDiaSources: "{fakesType}{coaddName}Diff_assocDiaSrc"
-      connections.associatedSsSources: "{fakesType}{coaddName}Diff_associatedSsSources"
-      connections.unassociatedSsObjects: ssUnassociatedObjects
-      connections.diaForcedSources: "{fakesType}{coaddName}Diff_diaForcedSrc"
-      connections.diaObjects: "{fakesType}{coaddName}Diff_diaObject"
-      connections.newDiaSources: "{fakesType}{coaddName}Diff_newDiaSources"
-      connections.marginalDiaSources: "{fakesType}{coaddName}Diff_marginalDiaSources"
+      connections.fakesType: parameters.fakesType
+      connections.exposure: "{fakesType}preliminary_visit_image"
+      connections.diaSourceTable: "{fakesType}dia_source_detector"
+      connections.solarSystemObjectTable: preloaded_ss_object
+      connections.diffIm: "{fakesType}difference_image"
+      connections.template: "{fakesType}template_detector"
+      connections.preloadedDiaObjects: preloaded_dia_object
+      connections.preloadedDiaSources: preloaded_dia_source
+      connections.preloadedDiaForcedSources: preloaded_dia_forced_source
+      connections.associatedDiaSources: "{fakesType}dia_source_apdb"
+      connections.associatedSsSources: "{fakesType}ss_source_detector"
+      connections.unassociatedSsObjects: "{fakesType}ss_object_unassociated"
+      connections.diaForcedSources: "{fakesType}dia_forced_source_apdb"
+      connections.diaObjects: "{fakesType}dia_object_apdb"
+      connections.newDiaSources: "{fakesType}new_dia_source"
+      connections.marginalDiaSources: "{fakesType}marginal_new_dia_source"
       apdb_config_url: parameters.apdb_config
       doPackageAlerts: True  # Test alert generation, but don't output
       alertPackager.useAveragePsf: True  # Speed up production processing; don't want as default or in ApPipeWithFakes
@@ -148,20 +155,21 @@ tasks:
     class: lsst.ip.diffim.SpatiallySampledMetricsTask
     config:
       connections.coaddName: parameters.coaddName
-      connections.science: "{fakesType}initial_pvi"
-      connections.matchedTemplate: "{fakesType}{coaddName}Diff_matchedExp"
-      connections.template: "{fakesType}{coaddName}Diff_templateExp"
-      connections.difference: "{fakesType}{coaddName}Diff_differenceExp"
-      connections.diaSources: "{fakesType}{coaddName}Diff_candidateDiaSrc"
-      connections.psfMatchingKernel: "{fakesType}{coaddName}Diff_psfMatchKernel"
-      connections.spatiallySampledMetrics: "{fakesType}{coaddName}Diff_spatiallySampledMetrics"
+      connections.fakesType: parameters.fakesType
+      connections.science: "{fakesType}preliminary_visit_image"
+      connections.matchedTemplate: "{fakesType}template_matched"
+      connections.template: "{fakesType}template_detector"
+      connections.difference: "{fakesType}difference_image"
+      connections.diaSources: "{fakesType}dia_source_unstandardized"
+      connections.psfMatchingKernel: "{fakesType}difference_kernel"
+      connections.spatiallySampledMetrics: "{fakesType}difference_image_metrics"
 
 subsets:
   apPipeSingleFrame:
     subset:
       - isr
       - calibrateImage
-      - analyzeCalibrationMetrics
+      - analyzePreliminarySummaryStats
     description: >-
       The prompt ApPipe tasks that make up single-frame processing. Not to be confused with the
       SingleFrame.yaml pipeline, which does more than just ApPipe single frame processing, and
@@ -170,7 +178,7 @@ subsets:
     subset:
       - isr
       - calibrateImage
-      - analyzeCalibrationMetrics
+      - analyzePreliminarySummaryStats
     description: Deprecated alias for apPipeSingleFrame, will be removed after v29.
   apPipe:
     subset:
@@ -195,7 +203,7 @@ subsets:
       - analyzeDiaSourceAssociationMetrics
       - analyzeAssociateDiaSourceTiming
       - analyzeSampledImageSubtractionMetrics
-      - analyzeCalibrationMetrics
+      - analyzePreliminarySummaryStats
     description: >
       An alias of ApPipe to use in higher-level pipelines.
   preload:
@@ -221,7 +229,7 @@ subsets:
       - analyzeDiaSourceDetectionMetrics
       - analyzeDiaSourceAssociationMetrics
       - analyzeAssociateDiaSourceTiming
-      - analyzeCalibrationMetrics
+      - analyzePreliminarySummaryStats
     description: >
       Tasks necessary to turn raw images into APDB rows and alerts.
       Requires preload subset to be run first.
@@ -248,21 +256,6 @@ contracts:
   - contract: loadDiaCatalogs.connections.ConnectionsClass(config=loadDiaCatalogs).diaForcedSources.name ==
               associateApdb.connections.ConnectionsClass(config=associateApdb).preloadedDiaForcedSources.name
     msg: "loadDiaCatalogs.diaForcedSources != associateApdb.preloadedDiaForcedSources"
-  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
-              subtractImages.connections.ConnectionsClass(config=subtractImages).science.name
-    msg: "calibrateImage.exposure != subtractImages.science"
-  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).stars_footprints.name ==
-              subtractImages.connections.ConnectionsClass(config=subtractImages).sources.name
-    msg: "calibrateImage.footprints_stars != subtractImages.sources"
-  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
-              computeReliability.connections.ConnectionsClass(config=computeReliability).science.name
-    msg: "calibrateImage.exposure != computeReliability.science"
-  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
-              makeSampledImageSubtractionMetrics.connections.ConnectionsClass(config=makeSampledImageSubtractionMetrics).science.name
-    msg: "calibrateImage.exposure != makeSampledImageSubtractionMetrics.science"
-  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name + ".summaryStats" ==
-              analyzeCalibrationMetrics.connections.ConnectionsClass(config=analyzeCalibrationMetrics).data.name
-    msg: "calibrateImage.exposure != analyzeCalibrationMetrics.data"
   - contract: rewarpTemplate.connections.ConnectionsClass(config=rewarpTemplate).template.name ==
               subtractImages.connections.ConnectionsClass(config=subtractImages).template.name
     msg: "rewarpTemplate.template != subtractImages.template"
@@ -318,9 +311,6 @@ contracts:
   - contract: standardizeDiaSource.connections.ConnectionsClass(config=standardizeDiaSource).diaSourceTable.name ==
               associateApdb.connections.ConnectionsClass(config=associateApdb).diaSourceTable.name
     msg: "standardizeDiaSource.diaSourceTable != associateApdb.diaSourceTable"
-  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).stars_footprints.name ==
-              getRegionTimeFromVisit.connections.ConnectionsClass(config=getRegionTimeFromVisit).dummy_visit.name
-    msg: "calibrateImage.stars_footprints != getRegionTimeFromVisit.dummy_visit"
   - contract: getRegionTimeFromVisit.connections.ConnectionsClass(config=getRegionTimeFromVisit).output.name ==
               mpSkyEphemerisQuery.connections.ConnectionsClass(config=mpSkyEphemerisQuery).predictedRegionTime.name
     msg: "mpSkyEphemerisQuery.predictedRegionTime != getRegionTimeFromVisit.output"    

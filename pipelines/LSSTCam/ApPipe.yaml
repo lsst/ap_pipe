@@ -3,3 +3,23 @@ description: >-
 instrument: lsst.obs.lsst.LsstCam
 imports:
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithIsrTaskLSST.yaml
+contracts:
+  # Add contracts for calibrateImage here since they are not valid for the Fakes pipeline
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
+              subtractImages.connections.ConnectionsClass(config=subtractImages).science.name
+    msg: "calibrateImage.exposure != subtractImages.science"
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).stars_footprints.name ==
+              subtractImages.connections.ConnectionsClass(config=subtractImages).sources.name
+    msg: "calibrateImage.footprints_stars != subtractImages.sources"
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
+              computeReliability.connections.ConnectionsClass(config=computeReliability).science.name
+    msg: "calibrateImage.exposure != computeReliability.science"
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
+              makeSampledImageSubtractionMetrics.connections.ConnectionsClass(config=makeSampledImageSubtractionMetrics).science.name
+    msg: "calibrateImage.exposure != makeSampledImageSubtractionMetrics.science"
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name + ".summaryStats" ==
+              analyzePreliminarySummaryStats.connections.ConnectionsClass(config=analyzePreliminarySummaryStats).data.name
+    msg: "calibrateImage.exposure != analyzePreliminarySummaryStats.data"
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).stars_footprints.name ==
+              getRegionTimeFromVisit.connections.ConnectionsClass(config=getRegionTimeFromVisit).dummy_visit.name
+    msg: "calibrateImage.stars_footprints != getRegionTimeFromVisit.dummy_visit"
