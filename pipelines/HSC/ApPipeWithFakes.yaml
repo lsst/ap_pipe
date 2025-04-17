@@ -2,7 +2,8 @@ description: HSC AP Pipeline with synthetic/fake sources. Templates are inputs.
 # Remember:
 # (0) Ensure median calibration products and template coadds exist for the data being processed
 # (1) Execute `apdb-cli create-sql`, e.g.,
-#     apdb-cli create-sql "sqlite:////project/user/association.db" apdb_config.py
+#     apdb-cli create-sql "sqlite:////project/user/association.db" apdb_config.yaml
+#     apdb-cli metadata set apdb_config.yaml instrument HSC
 # (2) Run this pipeline, setting the apdb_config parameter to point to the new file
 
 instrument: lsst.obs.subaru.HyperSuprimeCam
