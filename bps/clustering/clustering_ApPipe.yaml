@@ -19,16 +19,16 @@
 clusterAlgorithm: lsst.ctrl.bps.quantum_clustering_funcs.dimension_clustering
 cluster:
   singleFrame:
-    pipetasks: isr,calibrateImage,initialPviCore
+    pipetasks: isr,calibrateImage,analyzePreliminarySummaryStats
     dimensions: visit,detector
     equalDimensions: visit:exposure
   diffim:
-    pipetasks: retrieveTemplate,subtractImages,detectAndMeasure,diffimTaskCore,detectionTaskCore,filterDiaSrcCat,sampleSpatialMetrics,diffimTaskPlots,rbClassify,transformDiaSrcCat
+    pipetasks: rewarpTemplate,subtractImages,detectAndMeasureDiaSource,analyzeImageDifferenceMetrics,analyzeDiaSourceDetectionMetrics,filterDiaSource,makeSampledImageSubtractionMetrics,analyzeSampledImageSubtractionMetrics,computeReliability,standardizeDiaSource
     dimensions: visit,detector
   association:
-    pipetasks: getRegionTimeFromVisit,mpSkyEphemerisQuery,loadDiaCatalogs,diaPipe
+    pipetasks: getRegionTimeFromVisit,mpSkyEphemerisQuery,loadDiaCatalogs,associateApdb,analyzeLoadDiaCatalogsMetrics,analyzeDiaSourceAssociationMetrics,analyzeAssociateDiaSourceTiming
     dimensions: visit,detector
     equalDimensions: visit:group
   diaSrcDetectorAnalysis:
-    pipetasks: analyzeAssocDiaSrcCore,analyzeTrailedDiaSrcCore
+    pipetasks: analyzeAssociatedDiaSourceTable,analyzeTrailedDiaSourceTable
     dimensions: visit,detector

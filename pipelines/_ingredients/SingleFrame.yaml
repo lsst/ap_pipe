@@ -6,8 +6,14 @@ imports:
       - getRegionTimeFromVisit
       - mpSkyEphemerisQuery
 tasks:
-  ssSingleFrameAssociation:
-    class: lsst.ap.association.SsSingleFrameAssociationTask 
+  associateSolarSystemDirectSource:
+    class: lsst.ap.association.SsSingleFrameAssociationTask
+    config:
+      connections.exposure: preliminary_visit_image
+      connections.sourceTable: single_visit_star_footprints
+      connections.solarSystemObjectTable: preloaded_ss_object
+      connections.associatedSsSources: ss_source_direct_detector
+      connections.unassociatedSsObjects: ss_object_direct_unassociated
 subsets:
   singleFrame:
     subset:
@@ -15,7 +21,7 @@ subsets:
       - calibrateImage
       - getRegionTimeFromVisit
       - mpSkyEphemerisQuery
-      - ssSingleFrameAssociation
-      - initialPviCore
+      - associateSolarSystemDirectSource
+      - analyzePreliminarySummaryStats
     description: >
       An alias of SingleFrame to use in higher-level pipelines.

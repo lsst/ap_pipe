@@ -77,7 +77,7 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                     "bfk", "cti", "dnlLUT",
                     # Everything else
                     "skyMap", "gaia_dr3_20230707", "gaia_dr2_20200414", "ps1_pv3_3pi_20170110",
-                    "goodSeeingCoadd", "pretrainedModelPackage",
+                    "template_coadd", "pretrainedModelPackage",
                 }
                 if "WithFakes" in file:
                     expected_inputs.add("injection_catalog")
