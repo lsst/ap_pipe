@@ -143,7 +143,7 @@ tasks:
       connections.preloadedDiaForcedSources: preloaded_dia_forced_source
       connections.associatedDiaSources: "{fakesType}dia_source_apdb"
       connections.associatedSsSources: "{fakesType}ss_source_detector"
-      connections.unassociatedSsObjects: "{fakesType}ss_object_unassociated"
+      connections.unassociatedSsObjects: "{fakesType}ss_object_unassociated_detector"
       connections.diaForcedSources: "{fakesType}dia_forced_source_apdb"
       connections.diaObjects: "{fakesType}dia_object_apdb"
       connections.newDiaSources: "{fakesType}new_dia_source"
