@@ -5,6 +5,7 @@ imports:
       - apPipeSingleFrame
       - getRegionTimeFromVisit
       - mpSkyEphemerisQuery
+  - location: $ANALYSIS_TOOLS_DIR/pipelines/apSingleFrameDetectorVisitQuality.yaml
 tasks:
   associateSolarSystemDirectSource:
     class: lsst.ap.association.SsSingleFrameAssociationTask
@@ -23,5 +24,7 @@ subsets:
       - mpSkyEphemerisQuery
       - associateSolarSystemDirectSource
       - analyzePreliminarySummaryStats
+      - analyzeAssociatedDirectSolarSystemObjectTable
+      - analyzeUnassociatedDirectSolarSystemObjectTable
     description: >
       An alias of SingleFrame to use in higher-level pipelines.
