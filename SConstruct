@@ -1,4 +1,6 @@
 # -*- python -*-
+import os
+
 from lsst.sconsUtils import scripts
 from lsst.sconsUtils.state import env
 from lsst.sconsUtils.utils import libraryLoaderEnvironment
