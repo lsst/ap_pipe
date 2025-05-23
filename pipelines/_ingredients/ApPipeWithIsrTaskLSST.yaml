@@ -16,3 +16,4 @@ tasks:
       # Some instruments have this already in obs_lsst.
       # Here we turn if off for AP generally.
       doBrighterFatter: False
+      doAmpOffset: False
