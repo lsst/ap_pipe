@@ -47,6 +47,9 @@ tasks:
       connections.psf_stars: single_visit_psf_star
       connections.astrometry_matches: initial_astrometry_match_detector
       connections.photometry_matches: initial_photometry_match_detector
+      # Downsample footprints prior to deblending to optimize speed
+      do_downsample_footprints: True
+      downsample_max_footprints: 1000
   rewarpTemplate:
     class: lsst.ip.diffim.getTemplate.GetTemplateTask
     config:
