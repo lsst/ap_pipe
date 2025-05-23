@@ -11,3 +11,6 @@ tasks:
       # Some instruments have this already in obs_lsst.
       # Here we turn if off for AP generally.
       doBrighterFatter: False
+      # Turn off the amp offset calculation.
+      # It is only used to compute metrics, and takes several seconds.
+      doAmpOffset: False
