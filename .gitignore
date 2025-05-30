@@ -27,3 +27,7 @@ tests/.tests
 ups/*.cfgc
 version.py
 python/*.dist-info/
+
+# Dynamically generated source injection pipelines
+pipelines/_ingredients/ApPipeWithFakes.yaml
+python/*.dist-info/
