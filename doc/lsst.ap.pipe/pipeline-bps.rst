@@ -134,6 +134,29 @@ The number of nodes and cores per node are given by ``-n`` and ``-c``, respectiv
 
     If you want your nodes to scale with your run automatically, consider adding ``provisionResources: true`` to your submit yaml.
     You can find more information about this feature in the `ctrl_bps HTCondor Overview <https://pipelines.lsst.io/modules/lsst.ctrl.bps.htcondor/userguide.html#provisioning-resources-automatically>`_.
+
+.. _section-ap-pipe-pipeline-bps-ordering:
+
+Visit Ordering
+==============
+
+When processes run in batch mode, catalogs are read for multiple visits before the preceding visits have written to the APDB, resulting in missing history.
+To combat this, we can add visit ordering to our submit yaml:
+
+.. code-block:: yaml
+
+  ordering:
+    ordered_ap:
+      labels: getRegionTimeFromVisit,loadDiaCatalogs,associateApdb
+      dimensions: visit,detector
+      equalDimensions: visit:group
+      findDependencyMethod: sink
+
+You can find more information about this feature in the `ctrl_bps Quickstart Guide <https://github.com/lsst/ctrl_bps/blob/main/doc/lsst.ctrl.bps/quickstart.rst#job-ordering>`_.
+
+.. note::
+
+    If you run with clustering, make sure that these three tasks are not in the clustering file.
    
 .. _section-ap-pipe-pipeline-bps-submit:
 
