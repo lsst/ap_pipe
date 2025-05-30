@@ -21,6 +21,19 @@ Assuming you are on one of the rubin-devl machines (paths may differ if you are 
   source /sdf/group/rubin/sw/loadLSST.bash
   setup lsst_distrib -t your_favorite_weekly
 
+.. _section-ap-pipe-pipeline-bps-apdb
+
+Setting Up an APDB
+==================
+
+In order to run the AP Pipeline, you need a database to store the results of difference imaging.
+You can make an Alert Production Database (APDB) by following the `Setting up the Alert Production Database for ap_pipe guide <https://pipelines.lsst.io/modules/lsst.ap.pipe/apdb.html>`_.
+
+.. note::
+
+  It is recommended that you use a PostgreSQL database for batch processing jobs.
+  You need to include the full filepath to this file in the ``extraQgraphOptions`` in your submit yaml.
+
 .. _section-ap-pipe-pipeline-bps-yaml:
 
 Creating a yaml file
@@ -53,7 +66,10 @@ Again, as of May 2025 this assumes you are running on one of the rubin-devl mach
     inCollection: HSC/calib,HSC/raw/all,refcats,u/elhoward/DM-38242/templates
     # Same as -d on the command line. Here is an example of a small data query just for testing.
     dataQuery: 'exposure IN (11690, 11692) AND detector in (49, 50)'
-  
+
+  # Add extra quantum graph options, such as specifying parameters.
+  extraQgraphOptions: "-c parameters:apdb_config=path/to/your/apdb_config.yaml"
+
   # An example on how to customize a pipeline task.
   pipetask:
     # Here you can set options to various pipeline tasks if they should run with something other than the defaults you specified above.
