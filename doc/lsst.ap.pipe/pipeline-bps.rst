@@ -63,12 +63,16 @@ Again, as of May 2025 this assumes you are running on one of the rubin-devl mach
     # Same as -b on the command line.
     butlerConfig: /sdf/group/rubin/repo/main/butler.yaml
     # Same as -i on the command line; actual input collections may differ from what is shown here.
-    inCollection: HSC/calib,HSC/raw/all,refcats,u/elhoward/DM-38242/templates
+    inCollection: u/elhoward/DM-38243/templates,DECam/defaults
     # Same as -d on the command line. Here is an example of a small data query just for testing.
-    dataQuery: 'exposure IN (11690, 11692) AND detector in (49, 50)'
+    dataQuery: "instrument='DECam' AND skymap='decam_rings_v1' AND tract=8122"
 
   # Add extra quantum graph options, such as specifying parameters.
   extraQgraphOptions: "-c parameters:apdb_config=path/to/your/apdb_config.yaml"
+
+  # An example on how to add more configurations, such as clustering.
+  includeConfigs:
+    - ${AP_PIPE_DIR}/bps/clustering/clustering_ApPipe.yaml
 
   # An example on how to customize a pipeline task.
   pipetask:
@@ -140,40 +144,59 @@ Now we should be able to run a ``bps submit`` command with our appropriately-mod
 
 .. prompt:: bash
 
-   bps submit yaml/bps_ApPipe.yaml
+  bps submit yaml/bps_ApPipe.yaml
+
+After your ``bps submit`` is complete, you will see helpful details about your run at the end of the log::
+
+  Submit dir: /sdf/home/e/elhoward/u/repo-main-logs/DM-49903/submit/u/elhoward/DM-49903/HiTS_sample/20250530T063908Z
+  Run Id: 15828852.0
+  Run Name: u_elhoward_DM-49903_HiTS_sample_20250530T063908Z
 
 To see the status of our submission we can run
 
 .. prompt:: bash
 
-   bps report --user ${USER}
+  bps report --user ${USER}
 
 Which will look something like::
 
-  X     STATE  %S       ID OPERATOR   PRJ      CMPGN                     PAYLOAD                        RUN                                               
-  -----------------------------------------------------------------------------------------------------------------------
-  F    RUNNING  83    25639 kherner    ApPipe kh_default_bestSeeing_FULL ApPipe_default_bestSeeing_FULL u_kherner_ApPipe_default_bestSeeing_FULL_20210329T
+    X   STATE   %S     ID     OPERATOR   PROJECT   CAMPAIGN       PAYLOAD                              RUN
+    --- ------- --- ---------- -------- ----------- -------- -------------------- ------------------------------------------------
+    F RUNNING   8 15828856.0 elhoward ApPipe-HiTS DM-49903 DM-49903/HiTS_sample u_elhoward_DM-49903_HiTS_sample_20250530T063908Z
 
-You can get additional information about the status of your run by passing the ``--id ID`` option to ``bps report``. For example: 
+You can get additional information about the status of your run by passing ``--id submit_dir`` (from the end of your ``bps submit`` log) or ``--id run_id`` option to ``bps report``. For example: 
 
 .. prompt:: bash
 
-  bps report --id 25639
+  bps report --id /sdf/home/e/elhoward/u/repo-main-logs/DM-49903/submit/u/elhoward/DM-49903/HiTS_sample/20250530T063908Z
 
 And the result will be something of the form::
 
-    X      STATE  %S       ID OPERATOR   PRJ   CMPGN    PAYLOAD    RUN                                               
-  -----------------------------------------------------------------------------------------------------------------------
-  F    RUNNING  83    25639 kherner    ApPipe kh_default_bestSeeing_FULL ApPipe_default_bestSeeing_FULL u_kherner_ApPipe_default_bestSeeing_FULL_20210329T
-
-  Path: /project/kherner/diffim_sprint_2021-02/bps_testing/bps/u/kherner/ApPipe_default_bestSeeing_FULL/20210329T230709Z
-
-                                    UNKNO | MISFI | UNREA | READY | PENDI | RUNNI | DELET | HELD  | SUCCE | FAILE
-  Total                                   0 |     0 |  3731 |  4766 |     0 |     0 |     0 |     0 | 69607 |  4267
-  ----------------------------------------------------------------------------------------------------------------------
-  subtractImages                          0 |     0 | 15073 |     0 |     0 |     0 |     0 |     2 |  1448 |   165
-  associateApdb                           0 |     0 |  7234 |     0 |  1007 |    60 |     0 |     0 |  6585 |  1802
-  isr                                     0 |     0 | 16688 |     0 |     0 |     0 |     0 |     0 |     0 |     0
-  calibrateImage                          0 |     0 | 16688 |     0 |     0 |     0 |     0 |     0 |     0 |     0
+     X   STATE   %S     ID     OPERATOR   PROJECT   CAMPAIGN       PAYLOAD                              RUN
+    --- ------- --- ---------- -------- ----------- -------- -------------------- ------------------------------------------------
+      F RUNNING   7 15828856.0 elhoward ApPipe-HiTS DM-49903 DM-49903/HiTS_sample u_elhoward_DM-49903_HiTS_sample_20250530T063908Z
+    
+    Path: /sdf/data/rubin/user/elhoward/repo-main-logs/DM-49903/submit/u/elhoward/DM-49903/HiTS_sample/20250530T063908Z
+    Global job id: sdfiana014.sdf.slac.stanford.edu#15828856.0#1748588023
+    Status of provisioningJob: RUNNING
+    
+                           UNKNOWN MISFIT UNREADY READY PENDING RUNNING DELETED HELD SUCCEEDED FAILED PRUNED EXPECTED
+    ---------------------- ------- ------ ------- ----- ------- ------- ------- ---- --------- ------ ------ --------
+    TOTAL                        0      0     205     0     219      32       0    0       144     26   1350     1976
+    ---------------------- ------- ------ ------- ----- ------- ------- ------- ---- --------- ------ ------ --------
+    pipetaskInit                 0      0       0     0       0       0       0    0         1      0      0        1
+    singleFrame                  0      0       0     0      81      32       0    0       143     26      0      282
+    diffim                       0      0     124     0     138       0       0    0         0      0     20      282
+    getRegionTimeFromVisit       0      0      16     0       0       0       0    0         0      0    266      282
+    loadDiaCatalogs              0      0      16     0       0       0       0    0         0      0    266      282
+    associateApdb                0      0      16     0       0       0       0    0         0      0    266      282
+    associationMetrics           0      0      16     0       0       0       0    0         0      0    266      282
+    diaSrcDetectorAnalysis       0      0      16     0       0       0       0    0         0      0    266      282
+    finalJob                     0      0       1     0       0       0       0    0         0      0      0        1
 
 When your run is finished, the STATE will change from RUNNING to COMPLETED (or FAILED, if any quanta were unsuccessful).
+
+.. note::
+
+    Using run ID for ``bps report`` only works if you are on the same interactive node as when you submitted the run, and it is by default limited to the default ``--hist`` if left unchanged.
+    However, using the submit directory will always get you the ``bps report`` without any additional modifications to the incantation.
