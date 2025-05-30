@@ -3,6 +3,7 @@ import os
 
 from lsst.sconsUtils import scripts
 from lsst.sconsUtils.state import env
+from lsst.sconsUtils import targets
 from lsst.sconsUtils.utils import libraryLoaderEnvironment
 from SCons.Script import Default
 
@@ -56,5 +57,5 @@ scripts.BasicSConstruct(
     "ap_pipe", disableCc=True, noCfgFile=False, defaultTargets=targetList,
 )
 
-env.Depends(ap_pipe_with_fakes_path, "version")
-env.Depends("tests", ap_pipe_with_fakes_path)
+env.Depends(ap_pipe_with_fakes_path, targets["version"])
+env.Depends(targets["tests"], ap_pipe_with_fakes_path)
