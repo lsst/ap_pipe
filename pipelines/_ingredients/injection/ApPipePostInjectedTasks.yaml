@@ -15,7 +15,7 @@ parameters:
 
 tasks:
   injectedMatchDiaSrc:
-    class: lsst.ap.pipe.matchSourceInjected.MatchInjectedToDiaSourceTask
+    class: lsst.pipe.tasks.matchDiffimSourceInjected.MatchInjectedToDiaSourceTask
     config:
       connections.coaddName: parameters.coaddName
       connections.matchDiaSources: "fakes_{coaddName}Diff_matchDiaSrc"
@@ -25,7 +25,7 @@ tasks:
       matchDistanceArcseconds: 0.5
       trimBuffer: 50
   injectedMatchAssocDiaSrc:
-    class: lsst.ap.pipe.matchSourceInjected.MatchInjectedToAssocDiaSourceTask
+    class: lsst.pipe.tasks.matchDiffimSourceInjected.MatchInjectedToAssocDiaSourceTask
     config:
       connections.coaddName: parameters.coaddName
       connections.assocDiaSources: fakes_dia_source_apdb
