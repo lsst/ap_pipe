@@ -80,6 +80,7 @@ tasks:
       connections.science: "{fakesType}preliminary_visit_image"
       connections.matchedTemplate: "{fakesType}template_matched"
       connections.difference: "{fakesType}difference_image_predetection"
+      connections.kernelSources: "{fakesType}difference_kernel_sources"
       connections.outputSchema: "{fakesType}dia_source_schema"
       connections.diaSources: "{fakesType}dia_source_unfiltered"
       connections.subtractedMeasuredExposure: "{fakesType}difference_image"
