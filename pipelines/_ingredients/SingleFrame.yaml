@@ -7,11 +7,19 @@ imports:
       - mpSkyEphemerisQuery
   - location: $ANALYSIS_TOOLS_DIR/pipelines/apSingleFrameDetectorVisitQuality.yaml
 tasks:
+  singleFrameDetectAndMeasure:
+    class: lsst.drp.tasks.single_frame_detect_and_measure.SingleFrameDetectAndMeasureTask
+    config:
+      connections.exposure: preliminary_visit_image
+      connections.input_background: preliminary_visit_image_background
+      connections.sources: single_visit_star_reprocessed_unstandardized
+      connections.sources_footprints: single_visit_star_reprocessed_footprints
+      connections.background: preliminary_visit_image_reprocessed_background
   associateSolarSystemDirectSource:
     class: lsst.ap.association.SsSingleFrameAssociationTask
     config:
       connections.exposure: preliminary_visit_image
-      connections.sourceTable: single_visit_star_footprints
+      connections.sourceTable: single_visit_star_reprocessed_footprints
       connections.solarSystemObjectTable: preloaded_ss_object
       connections.associatedSsSources: ss_source_direct_detector
       connections.unassociatedSsObjects: ss_object_direct_unassociated
@@ -20,6 +28,7 @@ subsets:
     subset:
       - isr
       - calibrateImage
+      - singleFrameDetectAndMeasure
       - getRegionTimeFromVisit
       - mpSkyEphemerisQuery
       - associateSolarSystemDirectSource
