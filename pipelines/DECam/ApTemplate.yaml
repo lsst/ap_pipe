@@ -4,17 +4,25 @@ description: The AP template building pipeline specialized for DECam
 
 instrument: lsst.obs.decam.DarkEnergyCamera
 imports:
-  - location: $AP_PIPE_DIR/pipelines/DECam/ProcessCcd.yaml
+  - location: $AP_PIPE_DIR/pipelines/DECam/ApPipe.yaml
+    include:
+      - isr
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ApTemplate.yaml
-    exclude:  # These tasks come from DECam/ProcessCcdCalibrate.yaml instead
-      - processCcd
+    exclude:
+      - isr
 
 subsets:
 # The singleFrameAp subset is identical to the one in
 # $AP_PIPE_DIR/pipelines/_ingredients/ApTemplate.yaml, but needs to be defined
-# here because isr, characterizeImage, and calibrate are coming from the
+# here because isr is coming from the
 # DECam-specific ProcessCcd pipeline.
-  singleFrameAp:
+  processCcd:  # TODO: remove on DM-48428
+    subset:
+      - isr
+      - calibrateImage
+      - analyzePreliminarySummaryStats
+    description: Deprecated alias for apPipeSingleFrame, will be removed after v29.
+  apPipeSingleFrame:
     subset:
       - isr
       - calibrateImage
@@ -22,3 +30,11 @@ subsets:
     description: >
       Tasks to run for single frame processing that are necessary to use the good
       seeing selector to build coadds for use as difference imaging templates.
+  makeTemplate:
+    subset:
+      - selectGoodSeeingVisits
+      - makeWarp
+      - assembleCoadd
+    description: >
+      Tasks to run once calexps and visit summaries exist to build good seeing
+      coadds for use as templates.
