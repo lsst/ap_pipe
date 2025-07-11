@@ -9,23 +9,27 @@ description: The AP template building pipeline
 # pipeline, e.g., $AP_PIPE_DIR/pipelines/$CAMERA/ApTemplate.yaml.
 
 imports:
-  - location: $AP_PIPE_DIR/pipelines/_ingredients/ProcessCcd.yaml
-parameters:
-  coaddName: goodSeeing
+  - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipe.yaml
+    include:
+    - apPipeSingleFrame
 tasks:
   consolidateVisitSummary:
     class: lsst.pipe.tasks.postprocess.ConsolidateVisitSummaryTask
     config:
-      connections.calexp: "initial_pvi"
-      # connections.visitSummary: "visitSummary"
-      # connections.visitSummarySchema: "visitSummary_schema"
+      # Inputs
+      connections.calexp: preliminary_visit_image
+      # Outputs
+      connections.visitSummary: preliminary_visit_summary
+      connections.visitSummarySchema: preliminary_visit_summary_schema
   selectGoodSeeingVisits:
     class: lsst.pipe.tasks.selectImages.BestSeeingQuantileSelectVisitsTask
     config:
-      connections.coaddName: parameters.coaddName
-      # connections.visitSummaries: "visitSummary"
+      # Inputs
+      connections.visitSummaries: preliminary_visit_summary
+      # Outputs
+      connections.goodVisits: template_coadd_visit_selection
   makeWarp:
-    class: lsst.pipe.tasks.makeWarp.MakeWarpTask
+    class: lsst.drp.tasks.make_direct_warp.MakeDirectWarpTask
     config:
       # The upstream default is now finalVisitSummary, which doesn't exist
       # in this pipeline since there's nothing to update relative to the
@@ -34,18 +38,38 @@ tasks:
       # The original visitSummary also doesn't have PSFs, so use the calexp
       # PSFs (and ApCorrMaps).
       useVisitSummaryPsf: False
-      doWriteEmptyWarps: True
-      makePsfMatched: True
+      doRevertOldBackground: False
+      doApplyNewBackground: False
+      doApplyFlatBackgroundRatio: False
+      doWarpMaskedFraction: False
+      # Inputs
+      connections.calexp_list: preliminary_visit_image
+      connections.visit_summary: preliminary_visit_summary
+      # Outputs
+      connections.warp: direct_warp
   assembleCoadd:
     class: lsst.drp.tasks.assemble_coadd.CompareWarpAssembleCoaddTask
     config:
       doSelectVisits: True
       doNImage: True
+      doMaskBrightObjects: False
+      doInputMap: False
+      doWriteArtifactMasks: False
       assembleStaticSkyModel.doSelectVisits: True
-      connections.outputCoaddName: parameters.coaddName
-
+      # Inputs
+      connections.selectedVisits: template_coadd_visit_selection
+      connections.inputWarps: direct_warp
+      # Outputs
+      connections.coaddExposure: template_coadd
+      connections.nImage: template_coadd_n_image
 subsets:
-  singleFrameAp:
+  processCcd:  # TODO: remove on DM-48428
+    subset:
+      - isr
+      - calibrateImage
+      - analyzePreliminarySummaryStats
+    description: Deprecated alias for apPipeSingleFrame, will be removed after v29.
+  apPipeSingleFrame:
     subset:
       - isr
       - calibrateImage
@@ -63,27 +87,21 @@ subsets:
       coadds for use as templates.
 
 contracts:
-  - makeWarp.makeDirect is True
-  - makeWarp.makePsfMatched is True
-  - makeWarp.matchingKernelSize == assembleCoadd.matchingKernelSize  # TODO: Remove this in DM-44688.
   # Inputs and outputs must match. For consistency, contracts are written in execution order:
   #     first task == second task, then sorted by (first, second)
   # Use of ConnectionsClass for templated fields is a workaround for DM-30210
-  - contract: calibrateImage.connections.outputExposure ==
+  - contract: calibrateImage.connections.exposure ==
               consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).calexp.name
-    msg: "calibrateImage.outputExposure != consolidateVisitSummary.calexp"
-  - contract: calibrateImage.connections.outputExposure ==
-              makeWarp.connections.ConnectionsClass(config=makeWarp).calExpList.name
-    msg: "calibrateImage.outputExposure != makeWarp.calExpList"
+    msg: "calibrateImage.exposure != consolidateVisitSummary.calexp"
+  - contract: calibrateImage.connections.exposure ==
+              makeWarp.connections.ConnectionsClass(config=makeWarp).calexp_list.name
+    msg: "calibrateImage.exposure != makeWarp.calexp_list"
   - contract: consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).visitSummary.name ==
               selectGoodSeeingVisits.connections.ConnectionsClass(config=selectGoodSeeingVisits).visitSummaries.name
     msg: "consolidateVisitSummary.visitSummary != selectGoodSeeingVisits.visitSummaries"
   - contract: consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).visitSummary.name ==
-              makeWarp.connections.ConnectionsClass(config=makeWarp).visitSummary.name
-    msg: "consolidateVisitSummary.visitSummary != makeWarp.visitSummary"
+              makeWarp.connections.ConnectionsClass(config=makeWarp).visit_summary.name
+    msg: "consolidateVisitSummary.visitSummary != makeWarp.visit_summary"
   - contract: selectGoodSeeingVisits.connections.ConnectionsClass(config=selectGoodSeeingVisits).goodVisits.name ==
               assembleCoadd.connections.ConnectionsClass(config=assembleCoadd).selectedVisits.name
     msg: "selectGoodSeeingVisits.goodVisits != assembleCoadd.selectedVisits"
-  - contract: makeWarp.connections.ConnectionsClass(config=makeWarp).psfMatched.name ==
-              assembleCoadd.connections.ConnectionsClass(config=assembleCoadd).psfMatchedWarps.name
-    msg: "makeWarp.psfMatched != assembleCoadd.psfMatchedWarps"
