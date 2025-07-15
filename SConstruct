@@ -1,9 +1,8 @@
 # -*- python -*-
 import os
 
-from lsst.sconsUtils import scripts
+from lsst.sconsUtils import scripts, targets
 from lsst.sconsUtils.state import env
-from lsst.sconsUtils import targets
 from lsst.sconsUtils.utils import libraryLoaderEnvironment
 from SCons.Script import Default
 
@@ -26,8 +25,7 @@ ap_pipe_with_fakes_path = os.path.join(
     "ApPipeWithFakes.yaml"
 )
 
-subset_names = "apPipe,prompt"
-subset_description = "Post injection diffim analysis tasks"
+subset_names = ["apPipe", "prompt"]
 
 ingredients_ap_pipe_with_fakes = env.Command(
     target=ap_pipe_with_fakes_path,
@@ -36,7 +34,8 @@ ingredients_ap_pipe_with_fakes = env.Command(
         [
             libraryLoaderEnvironment(),
             f"make_injection_pipeline  -t preliminary_visit_image -r $SOURCE -f $TARGET "
-            f"-a {additional_fakes_tasks} -s '{subset_names}' ",
+            f"-a {additional_fakes_tasks} ",
+            " ".join(f"-s {subset_name}" for subset_name in subset_names),
             f"--config inject_visit:external_psf=False ",
             f"--config inject_visit:external_photo_calib=False ",
             f"--config inject_visit:external_wcs=False ",
