@@ -28,7 +28,7 @@ tasks:
       connections.visitSummaries: preliminary_visit_summary
       # Outputs
       connections.goodVisits: template_coadd_visit_selection
-  makeWarp:
+  makeDirectWarp:
     class: lsst.drp.tasks.make_direct_warp.MakeDirectWarpTask
     config:
       # The upstream default is now finalVisitSummary, which doesn't exist
@@ -47,6 +47,13 @@ tasks:
       connections.visit_summary: preliminary_visit_summary
       # Outputs
       connections.warp: direct_warp
+  makePsfMatchedWarp:
+    class: lsst.drp.tasks.make_psf_matched_warp.MakePsfMatchedWarpTask
+    config:
+      # Input
+      connections.direct_warp: direct_warp
+      # Output
+      connections.psf_matched_warp: psf_matched_warp
   assembleCoadd:
     class: lsst.drp.tasks.assemble_coadd.CompareWarpAssembleCoaddTask
     config:
@@ -59,6 +66,7 @@ tasks:
       # Inputs
       connections.selectedVisits: template_coadd_visit_selection
       connections.inputWarps: direct_warp
+      connections.psfMatchedWarps: psf_matched_warp
       # Outputs
       connections.coaddExposure: template_coadd
       connections.nImage: template_coadd_n_image
@@ -80,7 +88,8 @@ subsets:
   makeTemplate:
     subset:
       - selectGoodSeeingVisits
-      - makeWarp
+      - makeDirectWarp
+      - makePsfMatchedWarp
       - assembleCoadd
     description: >
       Tasks to run once calexps and visit summaries exist to build good seeing
@@ -94,14 +103,14 @@ contracts:
               consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).calexp.name
     msg: "calibrateImage.exposure != consolidateVisitSummary.calexp"
   - contract: calibrateImage.connections.exposure ==
-              makeWarp.connections.ConnectionsClass(config=makeWarp).calexp_list.name
-    msg: "calibrateImage.exposure != makeWarp.calexp_list"
+              makeDirectWarp.connections.ConnectionsClass(config=makeDirectWarp).calexp_list.name
+    msg: "calibrateImage.exposure != makeDirectWarp.calexp_list"
   - contract: consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).visitSummary.name ==
               selectGoodSeeingVisits.connections.ConnectionsClass(config=selectGoodSeeingVisits).visitSummaries.name
     msg: "consolidateVisitSummary.visitSummary != selectGoodSeeingVisits.visitSummaries"
   - contract: consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).visitSummary.name ==
-              makeWarp.connections.ConnectionsClass(config=makeWarp).visit_summary.name
-    msg: "consolidateVisitSummary.visitSummary != makeWarp.visit_summary"
+              makeDirectWarp.connections.ConnectionsClass(config=makeDirectWarp).visit_summary.name
+    msg: "consolidateVisitSummary.visitSummary != makeDirectWarp.visit_summary"
   - contract: selectGoodSeeingVisits.connections.ConnectionsClass(config=selectGoodSeeingVisits).goodVisits.name ==
               assembleCoadd.connections.ConnectionsClass(config=assembleCoadd).selectedVisits.name
     msg: "selectGoodSeeingVisits.goodVisits != assembleCoadd.selectedVisits"
