@@ -248,6 +248,8 @@ contracts:
   - detectAndMeasureDiaSource.doSkySources == standardizeDiaSource.doRemoveSkySources
   # Both loadDiaCatalogs and associateApdb connect to the APDB, so make sure they use the same configuration
   - loadDiaCatalogs.apdb_config_url == associateApdb.apdb_config_url
+  # to reduce latency, we need two calls to the sattle service when active
+  - calibrateImage.run_sattle == detectAndMeasureDiaSource.run_sattle
   # Inputs and outputs must match. For consistency, contracts are written in execution order:
   #     first task == second task, then sorted by (first, second)
   # Use of ConnectionsClass for templated fields is a workaround for DM-30210

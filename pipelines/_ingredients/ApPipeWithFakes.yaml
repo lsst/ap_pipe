@@ -188,6 +188,8 @@ subsets:
       All tasks from the 'apPipe' subset impacted by source injection.
 contracts:
   - contract: detectAndMeasureDiaSource.doSkySources == standardizeDiaSource.doRemoveSkySources
+  # to reduce latency, we need two calls to the sattle service when active
+  - calibrateImage.run_sattle == detectAndMeasureDiaSource.run_sattle
   # Both loadDiaCatalogs and associateApdb connect to the APDB, so make sure they use the same configuration
   - loadDiaCatalogs.apdb_config_url == associateApdb.apdb_config_url
   # Inputs and outputs must match. For consistency, contracts are written in execution order:
