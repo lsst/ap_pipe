@@ -15,9 +15,7 @@ parameters:
   coaddName: goodSeeing
   # APDB config file must be user-specified
   apdb_config:
-  fakesType: 'fakes_'
-  injected_prefix: 'fakes_'
-  injection_prefix: 'injection_'
+
 tasks:
   isr:
     class: lsst.ip.isr.IsrTask
