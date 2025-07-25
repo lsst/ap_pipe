@@ -152,6 +152,7 @@ tasks:
       connections.diaObjects: "{fakesType}dia_object_apdb"
       connections.newDiaSources: "{fakesType}new_dia_source"
       connections.marginalDiaSources: "{fakesType}marginal_new_dia_source"
+      maxNewDiaObjects: 1000
       apdb_config_url: parameters.apdb_config
       doPackageAlerts: True  # Test alert generation, but don't output
       alertPackager.useAveragePsf: True  # Speed up production processing; don't want as default or in ApPipeWithFakes
