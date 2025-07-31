@@ -18,9 +18,7 @@ parameters:
   coaddName: goodSeeing
   # APDB config file must be user-specified
   apdb_config:
-  fakesType: 'fakes_'
-  injected_prefix: 'fakes_'
-  injection_prefix: 'injection_'
+
 subsets:
   apPipeSingleFrame:
     subset:
@@ -87,9 +85,7 @@ subsets:
       - standardizeDiaSource
       - associateApdb
       - injectedMatchDiaSrc
-      - injectedMatchAssocDiaSrc
       - consolidateMatchDiaSrc
-      - consolidateMatchAssocDiaSrc
       - analyzeAssociatedDiaSourceTable
       - analyzeTrailedDiaSourceTable
       - analyzeImageDifferenceMetrics
@@ -100,3 +96,16 @@ subsets:
     description: >
       Tasks necessary to turn raw images into APDB rows and alerts.
       Requires preload subset to be run first.
+  afterburner:
+    subset:
+    - analyzeAssocDiaFakesDetectorVisitCore
+    - analyzeDiaFakesDetectorVisitCore
+    - consolidateMatchAssocDiaSrc
+    - injectedMatchAssocDiaSrc
+    - analyzeAssocDiaFakesVisitCore
+    - makeSampledImageSubtractionMetrics
+    - analyzeSampledImageSubtractionMetrics
+    - analyzeDiaFakesVisitCore
+    description: >
+      Tasks for QA and other non-real-time processing.
+      Requires prompt subset to be run first.
