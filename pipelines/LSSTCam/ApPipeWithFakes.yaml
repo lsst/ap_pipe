@@ -48,6 +48,7 @@ subsets:
       - detectAndMeasureDiaSource
       - filterDiaSource
       - computeReliability
+      - filterDiaSourcePostReliability
       - standardizeDiaSource
       - getRegionTimeFromVisit
       - mpSkyEphemerisQuery
@@ -82,6 +83,7 @@ subsets:
       - detectAndMeasureDiaSource
       - filterDiaSource
       - computeReliability
+      - filterDiaSourcePostReliability
       - standardizeDiaSource
       - associateApdb
       - injectedMatchDiaSrc

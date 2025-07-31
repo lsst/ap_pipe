@@ -108,18 +108,24 @@ tasks:
       connections.diaSources: "{fakesType}dia_source_unstandardized"
       connections.classifications: "{fakesType}dia_source_reliability"
       modelPackageStorageMode: butler
+  filterDiaSourcePostReliability:
+    class: lsst.ap.association.FilterDiaSourceReliabilityTask
+    config:
+      connections.coaddName: parameters.coaddName
+      connections.fakesType: parameters.fakesType
+      connections.diaSourceCat: "{fakesType}dia_source_unstandardized"
+      connections.reliability: "{fakesType}dia_source_reliability"
+      connections.filteredDiaSources: "{fakesType}dia_source_high_reliability"
+      connections.rejectedDiaSources: "{fakesType}dia_source_low_reliability"
   standardizeDiaSource:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
     config:
       connections.coaddName: parameters.coaddName
       connections.fakesType: parameters.fakesType
       connections.diaSourceSchema: "{fakesType}dia_source_schema"
-      connections.diaSourceCat: "{fakesType}dia_source_unstandardized"
+      connections.diaSourceCat: "{fakesType}dia_source_high_reliability"
       connections.diffIm: "{fakesType}difference_image"
-      connections.reliability: "{fakesType}dia_source_reliability"
       connections.diaSourceTable: "{fakesType}dia_source_detector"
-      doRemoveSkySources: True
-      doIncludeReliability: True  # Output from computeReliability
       doUseApdbSchema: True  # Force the table columns to match the APDB definition in sdm_schemas
   getRegionTimeFromVisit:
     class: lsst.pipe.tasks.getRegionTimeFromVisit.GetRegionTimeFromVisitTask
@@ -195,6 +201,7 @@ subsets:
       - detectAndMeasureDiaSource
       - filterDiaSource
       - computeReliability
+      - filterDiaSourcePostReliability
       - standardizeDiaSource
       - getRegionTimeFromVisit
       - mpSkyEphemerisQuery
@@ -226,6 +233,7 @@ subsets:
       - detectAndMeasureDiaSource
       - filterDiaSource
       - computeReliability
+      - filterDiaSourcePostReliability
       - standardizeDiaSource
       - associateApdb
       - analyzeAssociatedDiaSourceTable
@@ -246,7 +254,7 @@ subsets:
       Tasks for QA and other non-real-time processing.
       Requires prompt subset to be run first.
 contracts:
-  - detectAndMeasureDiaSource.doSkySources == standardizeDiaSource.doRemoveSkySources
+  - detectAndMeasureDiaSource.doSkySources == filterDiaSource.doRemoveSkySources
   # Both loadDiaCatalogs and associateApdb connect to the APDB, so make sure they use the same configuration
   - loadDiaCatalogs.apdb_config_url == associateApdb.apdb_config_url
   # to reduce latency, we need two calls to the sattle service when active
@@ -303,18 +311,17 @@ contracts:
               computeReliability.connections.ConnectionsClass(config=computeReliability).diaSources.name
     msg: "filterDiaSource.filteredDiaSourceCat != computeReliability.diaSources"
   - contract: filterDiaSource.connections.ConnectionsClass(config=filterDiaSource).filteredDiaSourceCat.name ==
-              standardizeDiaSource.connections.ConnectionsClass(config=standardizeDiaSource).diaSourceCat.name
-    msg: "filterDiaSource.filteredDiaSourceCat != standardizeDiaSource.diaSourceCat"
+              filterDiaSourcePostReliability.connections.ConnectionsClass(config=filterDiaSourcePostReliability).diaSourceCat.name
+    msg: "filterDiaSource.filteredDiaSourceCat != filterDiaSourcePostReliability.diaSourceCat"
   - contract: filterDiaSource.connections.ConnectionsClass(config=filterDiaSource).filteredDiaSourceCat.name ==
               makeSampledImageSubtractionMetrics.connections.ConnectionsClass(config=makeSampledImageSubtractionMetrics).diaSources.name
     msg: "filterDiaSource.filteredDiaSourceCat != makeSampledImageSubtractionMetrics.diaSources"
   - contract: filterDiaSource.connections.ConnectionsClass(config=filterDiaSource).longTrailedSources.name ==
       analyzeTrailedDiaSourceTable.connections.ConnectionsClass(config=analyzeTrailedDiaSourceTable).data.name
     msg: "filterDiaSource.longTrailedSources != analyzeTrailedDiaSourceTable.data"
-  - contract: (not standardizeDiaSource.doIncludeReliability) or
-              (computeReliability.connections.ConnectionsClass(config=computeReliability).classifications.name ==
-               standardizeDiaSource.connections.ConnectionsClass(config=standardizeDiaSource).reliability.name)
-    msg: "computeReliability.classifications != standardizeDiaSource.reliability"
+  - contract: computeReliability.connections.ConnectionsClass(config=computeReliability).classifications.name ==
+               filterDiaSourcePostReliability.connections.ConnectionsClass(config=filterDiaSourcePostReliability).reliability.name
+    msg: "computeReliability.classifications != filterDiaSourcePostReliability.reliability"
   - contract: standardizeDiaSource.connections.ConnectionsClass(config=standardizeDiaSource).diaSourceTable.name ==
               associateApdb.connections.ConnectionsClass(config=associateApdb).diaSourceTable.name
     msg: "standardizeDiaSource.diaSourceTable != associateApdb.diaSourceTable"
