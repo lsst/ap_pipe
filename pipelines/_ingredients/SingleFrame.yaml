@@ -15,6 +15,7 @@ tasks:
       connections.sources: single_visit_star_reprocessed_unstandardized
       connections.sources_footprints: single_visit_star_reprocessed_footprints
       connections.background: preliminary_visit_image_reprocessed_background
+      id_generator.release_id: parameters.release_id
   associateSolarSystemDirectSource:
     class: lsst.ap.association.SsSingleFrameAssociationTask
     config:
