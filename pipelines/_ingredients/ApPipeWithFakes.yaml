@@ -18,6 +18,8 @@ parameters:
   fakesType: 'fakes_'
   injected_prefix: 'fakes_'
   injection_prefix: 'injection_'
+  # Use release_id=0 for development, 1 for production, and 2 or 3 for reprocessing production data
+  release_id: 0
 
 tasks:
   inject_visit:

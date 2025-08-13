@@ -19,6 +19,8 @@ parameters:
   coaddName: goodSeeing
   # APDB config file must be user-specified
   apdb_config:
+  # Use release_id=0 for development, 1 for production, and 2 or 3 for reprocessing production data
+  release_id: 0
 tasks:
   loadDiaCatalogs:
     class: lsst.ap.association.LoadDiaCatalogsTask
@@ -47,6 +49,7 @@ tasks:
       connections.psf_stars: single_visit_psf_star
       connections.astrometry_matches: initial_astrometry_match_detector
       connections.photometry_matches: initial_photometry_match_detector
+      id_generator.release_id: parameters.release_id
       # Downsample footprints prior to deblending to optimize speed
       do_downsample_footprints: True
       downsample_max_footprints: 1000
@@ -85,6 +88,7 @@ tasks:
       connections.diaSources: "{fakesType}dia_source_unfiltered"
       connections.subtractedMeasuredExposure: "{fakesType}difference_image"
       connections.maskedStreaks: "{fakesType}goodSeeingDiff_streaks"
+      idGenerator.release_id: parameters.release_id
       doSkySources: True
   filterDiaSource:
     class: lsst.ap.association.FilterDiaSourceCatalogTask
@@ -158,6 +162,7 @@ tasks:
       connections.diaObjects: "{fakesType}dia_object_apdb"
       connections.newDiaSources: "{fakesType}new_dia_source"
       connections.marginalDiaSources: "{fakesType}marginal_new_dia_source"
+      idGenerator.release_id: parameters.release_id
       maxNewDiaObjects: 1000
       apdb_config_url: parameters.apdb_config
       doPackageAlerts: True  # Test alert generation, but don't output
