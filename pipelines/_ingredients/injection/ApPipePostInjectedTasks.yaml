@@ -1,0 +1,47 @@
+description: AP Pipeline with synthetic/fake sources. Templates are inputs.
+# This pipeline is imported by camera-specific pipelines.
+# You almost certainly want to run one of those, and not this one.
+
+# Per RFC-997, all variants of ApPipe must define three mutually exclusive subsets:
+# - preload is tasks that can be run before raw images arrive
+# - prompt is everything done by Prompt Processing starting from raws
+# - afterburner is metrics and other non-essential tasks that are skipped by Prompt Processing
+
+imports:
+  - location: $ANALYSIS_TOOLS_DIR/pipelines/apDetectorVisitFakesCore.yaml
+
+parameters:
+  apdb_config: apdb_conf.py
+
+tasks:
+  injectedMatchDiaSrc:
+    class: lsst.pipe.tasks.matchDiffimSourceInjected.MatchInjectedToDiaSourceTask
+    config:
+      connections.coaddName: parameters.coaddName
+      connections.matchDiaSources: "fakes_{coaddName}Diff_matchDiaSrc"
+      connections.injectedCat: fakes_preliminary_visit_image_catalog
+      connections.diffIm: fakes_difference_image
+      connections.diaSources: fakes_dia_source_unfiltered
+      matchDistanceArcseconds: 0.5
+      trimBuffer: 50
+  injectedMatchAssocDiaSrc:
+    class: lsst.pipe.tasks.matchDiffimSourceInjected.MatchInjectedToAssocDiaSourceTask
+    config:
+      connections.coaddName: parameters.coaddName
+      connections.assocDiaSources: fakes_dia_source_apdb
+      connections.matchDiaSources: "fakes_{coaddName}Diff_matchDiaSrc"
+      connections.matchAssocDiaSources: "fakes_{coaddName}Diff_matchAssocDiaSrc"
+  consolidateMatchDiaSrc:
+    class: lsst.pipe.tasks.postprocess.ConsolidateSourceTableTask
+    config:
+      # Task doesn't support coaddName, so coopt catalogType instead.
+      connections.catalogType: parameters.coaddName
+      connections.inputCatalogs: "fakes_{catalogType}Diff_matchDiaSrc"
+      connections.outputCatalog: "fakes_{catalogType}Diff_matchDiaSourceTable"
+  consolidateMatchAssocDiaSrc:
+    class: lsst.pipe.tasks.postprocess.ConsolidateSourceTableTask
+    config:
+      # Task doesn't support coaddName, so coopt catalogType instead.
+      connections.catalogType: parameters.coaddName
+      connections.inputCatalogs: "fakes_{catalogType}Diff_matchAssocDiaSrc"
+      connections.outputCatalog: "fakes_{catalogType}Diff_matchAssocDiaSourceTable"

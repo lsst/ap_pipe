@@ -1,0 +1,18 @@
+description: |
+  AP pipeline specialized for LSST ComCam Prompt Processing. This file is specific
+  to tests that involve fake catalog injection and for metric estimation purposes,
+  and it is not part of Prompt Processing production.
+# Remember:
+# (0) Ensure a fake catalog is available for the data being processed ingested
+#    already into butler and that the collection is listed as input.
+# (1) Execute `apdb-cli create-sql`.
+# (2) Run this pipeline, setting the apdb_config parameter to point to the new file
+
+instrument: lsst.obs.lsst.LsstComCam
+imports:
+  - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithFakes.yaml
+
+parameters:
+  coaddName: goodSeeing
+  # APDB config file must be user-specified
+  apdb_config:
