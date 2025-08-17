@@ -57,8 +57,8 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
         """
         files = glob.glob(os.path.join(self.path, "**", "*.yaml"))
         for file in files:
-            if "ApTemplate" in file:
-                # Our ApTemplate definition cannot be tested here because it
+            if "QuickTemplate" in file:
+                # Our QuickTemplate definition cannot be tested here because it
                 # depends on drp_tasks, which we cannot make a dependency here.
                 continue
             with self.subTest(file):
@@ -70,8 +70,8 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
     def test_datasets(self):
         files = glob.glob(os.path.join(self.path, "_ingredients", "*.yaml"))
         for file in files:
-            if "ApTemplate" in file:
-                # Our ApTemplate definition cannot be tested here because it
+            if "QuickTemplate" in file:
+                # Our QuickTemplate definition cannot be tested here because it
                 # depends on drp_tasks, which we cannot make a dependency here.
                 continue
             with self.subTest(file):
@@ -113,6 +113,10 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
         """
         files = glob.glob(os.path.join(self.path, "**", "*.yaml"))
         for file in files:
+            if "QuickTemplate" in file:
+                # Our QuickTemplate definition cannot be tested here because it
+                # depends on drp_tasks, which we cannot make a dependency here.
+                continue
             with self.subTest(file):
                 pipeline = lsst.pipe.base.Pipeline.from_uri(file)
                 subset = self.synonyms[os.path.basename(file)]
