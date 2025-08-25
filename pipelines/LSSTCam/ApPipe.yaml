@@ -3,6 +3,12 @@ description: >-
 instrument: lsst.obs.lsst.LsstCam
 imports:
   - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithIsrTaskLSST.yaml
+tasks:
+  filterDiaSourcePostReliability:
+    class: lsst.ap.association.FilterDiaSourceReliabilityTask
+    config:
+      # During broker commissioning, remove low reliability sources.
+      minReliability: 0.1
 contracts:
   # Add contracts for calibrateImage here since they are not valid for the Fakes pipeline
   - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
