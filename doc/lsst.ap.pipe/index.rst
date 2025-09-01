@@ -37,6 +37,7 @@ Using lsst.ap.pipe in Gen 3
 
    getting-started
    pipeline-tutorial
+   ap-pipe-pipeline-with-fakes
    apdb
    pipeline-bps
 
