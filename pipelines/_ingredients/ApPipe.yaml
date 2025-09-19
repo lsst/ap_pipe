@@ -222,6 +222,7 @@ subsets:
       - analyzeSampledImageSubtractionMetrics
       - analyzePreliminarySummaryStats
       - consolidateVisitSummary
+      - analyzeVisitSampledImageSubtractionMetrics
     description: >
       An alias of ApPipe to use in higher-level pipelines.
   preload:
@@ -257,6 +258,7 @@ subsets:
       - consolidateVisitSummary
       - makeSampledImageSubtractionMetrics
       - analyzeSampledImageSubtractionMetrics
+      - analyzeVisitSampledImageSubtractionMetrics
     description: >
       Tasks for QA and other non-real-time processing.
       Requires prompt subset to be run first.
