@@ -59,6 +59,7 @@ subsets:
       - consolidateMatchDiaSrc
       - consolidateMatchAssocDiaSrc
       - makeSampledImageSubtractionMetrics
+      - consolidateVisitSummary
       - analyzeAssociatedDiaSourceTable
       - analyzeTrailedDiaSourceTable
       - analyzeDiaFakesDetectorVisitCore
@@ -72,6 +73,7 @@ subsets:
       - analyzeAssociateDiaSourceTiming
       - analyzeSampledImageSubtractionMetrics
       - analyzePreliminarySummaryStats
+      - analyzeVisitSampledImageSubtractionMetrics
     description: >
       An alias of ApPipe to use in higher-level pipelines.
   prompt:
@@ -106,9 +108,11 @@ subsets:
     - consolidateMatchAssocDiaSrc
     - injectedMatchAssocDiaSrc
     - analyzeAssocDiaFakesVisitCore
+    - consolidateVisitSummary
     - makeSampledImageSubtractionMetrics
     - analyzeSampledImageSubtractionMetrics
     - analyzeDiaFakesVisitCore
+    - analyzeVisitSampledImageSubtractionMetrics
     description: >
       Tasks for QA and other non-real-time processing.
       Requires prompt subset to be run first.

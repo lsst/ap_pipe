@@ -53,6 +53,12 @@ tasks:
       # Downsample footprints prior to deblending to optimize speed
       do_downsample_footprints: True
       downsample_max_footprints: 1000
+  consolidateVisitSummary:
+    class: lsst.pipe.tasks.postprocess.ConsolidateVisitSummaryTask
+    config:
+      connections.calexp: preliminary_visit_image
+      connections.visitSummary: preliminary_visit_summary
+      connections.visitSummarySchema: preliminary_visit_summary_schema
   rewarpTemplate:
     class: lsst.ip.diffim.getTemplate.GetTemplateTask
     config:
@@ -215,6 +221,8 @@ subsets:
       - analyzeAssociateDiaSourceTiming
       - analyzeSampledImageSubtractionMetrics
       - analyzePreliminarySummaryStats
+      - consolidateVisitSummary
+      - analyzeVisitSampledImageSubtractionMetrics
     description: >
       An alias of ApPipe to use in higher-level pipelines.
   preload:
@@ -247,8 +255,10 @@ subsets:
       Requires preload subset to be run first.
   afterburner:
     subset:
+      - consolidateVisitSummary
       - makeSampledImageSubtractionMetrics
       - analyzeSampledImageSubtractionMetrics
+      - analyzeVisitSampledImageSubtractionMetrics
     description: >
       Tasks for QA and other non-real-time processing.
       Requires prompt subset to be run first.
