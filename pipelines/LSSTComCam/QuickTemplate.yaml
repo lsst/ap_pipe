@@ -1,0 +1,62 @@
+description: The AP template building pipeline specialized for ComCam
+
+instrument: lsst.obs.lsst.LsstComCam
+
+imports:
+- location: $DRP_PIPE_DIR/pipelines/_ingredients/base-v2.yaml
+  include:
+  - isr
+  - calibrateImage
+  - consolidateVisitSummary
+  - selectDeepCoaddVisits
+  - makeDirectWarp
+  - makePsfMatchedWarp
+  - assembleTemplateCoadd
+
+tasks:
+  selectDeepCoaddVisits:
+    class: lsst.pipe.tasks.selectImages.BestSeeingSelectVisitsTask
+    config:
+      connections.visitSummaries: preliminary_visit_summary
+  makeDirectWarp:
+    class: lsst.drp.tasks.make_direct_warp.MakeDirectWarpTask
+    config:
+      connections.visit_summary: preliminary_visit_summary
+      useVisitSummaryPsf: False
+  assembleTemplateCoadd:
+    class: lsst.drp.tasks.assemble_coadd.CompareWarpAssembleCoaddTask
+    config:
+      connections.selectedVisits: deep_coadd_visit_selection
+
+subsets:
+  makeTemplate:
+    subset:
+      - isr
+      - calibrateImage
+      - consolidateVisitSummary
+      - selectDeepCoaddVisits
+      - makeDirectWarp
+      - makePsfMatchedWarp
+      - assembleTemplateCoadd
+    description: >
+      Tasks to run to build good seeing coadds for use as templates.
+
+contracts:
+  # Inputs and outputs must match. For consistency, contracts are written in execution order:
+  #     first task == second task, then sorted by (first, second)
+  # Use of ConnectionsClass for templated fields is a workaround for DM-30210
+  - contract: calibrateImage.connections.exposure ==
+              consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).calexp.name
+    msg: "calibrateImage.exposure != consolidateVisitSummary.calexp"
+  - contract: calibrateImage.connections.exposure ==
+              makeDirectWarp.connections.ConnectionsClass(config=makeDirectWarp).calexp_list.name
+    msg: "calibrateImage.exposure != makeWarp.calexp_list"
+  - contract: consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).visitSummary.name ==
+              selectDeepCoaddVisits.connections.ConnectionsClass(config=selectDeepCoaddVisits).visitSummaries.name
+    msg: "consolidateVisitSummary.visitSummary != selectDeepCoaddVisits.visitSummaries"
+  - contract: consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).visitSummary.name ==
+              makeDirectWarp.connections.ConnectionsClass(config=makeDirectWarp).visit_summary.name
+    msg: "consolidateVisitSummary.visitSummary != makeDirectWarp.visit_summary"
+  - contract: selectDeepCoaddVisits.connections.ConnectionsClass(config=selectDeepCoaddVisits).goodVisits.name ==
+              assembleTemplateCoadd.connections.ConnectionsClass(config=assembleTemplateCoadd).selectedVisits.name
+    msg: "selectDeepCoaddVisits.goodVisits != assembleTemplateCoadd.selectedVisits"

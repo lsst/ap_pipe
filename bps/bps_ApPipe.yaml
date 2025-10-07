@@ -44,7 +44,7 @@ pipetask:
 
 # Set the appropriate wms service class for the batch system
 # you're using (HTCondor, Parsl, Slurm, triple Slurm, etc.)
-# See https://developer.lsst.io/usdf/batch.html for details of doing this at S3DF. 
+# See https://developer.lsst.io/usdf/batch.html for details of doing this at S3DF.
 wmsServiceClass: lsst.ctrl.bps.htcondor.HTCondorService
 
 # Extra options for qgraph generation; will skip existing quanta in the output collection
