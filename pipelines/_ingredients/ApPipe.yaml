@@ -131,7 +131,6 @@ tasks:
 
       connections.diaSourceTable: dia_source_detector
       doRemoveSkySources: True
-      doIncludeReliability: True  # Output from computeReliability
       doUseApdbSchema: True  # Force the table columns to match the APDB definition in sdm_schemas
   getRegionTimeFromVisit:
     class: lsst.pipe.tasks.getRegionTimeFromVisit.GetRegionTimeFromVisitTask
