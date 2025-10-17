@@ -59,7 +59,7 @@ tasks:
       connections.calexp: preliminary_visit_image
       connections.visitSummary: preliminary_visit_summary
       connections.visitSummarySchema: preliminary_visit_summary_schema
-  rewarpTemplate:
+  buildTemplate:
     class: lsst.ip.diffim.getTemplate.GetTemplateTask
     config:
       connections.coaddName: parameters.coaddName
@@ -200,7 +200,7 @@ subsets:
       - loadDiaCatalogs
       - isr
       - calibrateImage
-      - rewarpTemplate
+      - buildTemplate
       - subtractImages
       - detectAndMeasureDiaSource
       - filterDiaSource
@@ -234,7 +234,7 @@ subsets:
     subset:
       - isr
       - calibrateImage
-      - rewarpTemplate
+      - buildTemplate
       - subtractImages
       - detectAndMeasureDiaSource
       - filterDiaSource
@@ -279,12 +279,12 @@ contracts:
   - contract: loadDiaCatalogs.connections.ConnectionsClass(config=loadDiaCatalogs).diaForcedSources.name ==
               associateApdb.connections.ConnectionsClass(config=associateApdb).preloadedDiaForcedSources.name
     msg: "loadDiaCatalogs.diaForcedSources != associateApdb.preloadedDiaForcedSources"
-  - contract: rewarpTemplate.connections.ConnectionsClass(config=rewarpTemplate).template.name ==
+  - contract: buildTemplate.connections.ConnectionsClass(config=buildTemplate).template.name ==
               subtractImages.connections.ConnectionsClass(config=subtractImages).template.name
-    msg: "rewarpTemplate.template != subtractImages.template"
-  - contract: rewarpTemplate.connections.ConnectionsClass(config=rewarpTemplate).template.name ==
+    msg: "buildTemplate.template != subtractImages.template"
+  - contract: buildTemplate.connections.ConnectionsClass(config=buildTemplate).template.name ==
               makeSampledImageSubtractionMetrics.connections.ConnectionsClass(config=makeSampledImageSubtractionMetrics).template.name
-    msg: "rewarpTemplate.template != makeSampledImageSubtractionMetrics.template"
+    msg: "buildTemplate.template != makeSampledImageSubtractionMetrics.template"
   - contract: subtractImages.connections.ConnectionsClass(config=subtractImages).difference.name ==
               detectAndMeasureDiaSource.connections.ConnectionsClass(config=detectAndMeasureDiaSource).difference.name
     msg: "subtractImages.difference != detectAndMeasureDiaSource.difference"
