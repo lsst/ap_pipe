@@ -23,7 +23,7 @@ cluster:
     dimensions: visit,detector
     equalDimensions: visit:exposure
   diffim:
-    pipetasks: rewarpTemplate,inject_visit,subtractImages,detectAndMeasureDiaSource,analyzeImageDifferenceMetrics,analyzeDiaSourceDetectionMetrics,filterDiaSource,makeSampledImageSubtractionMetrics,analyzeSampledImageSubtractionMetrics,computeReliability,filterDiaSourcePostReliability,standardizeDiaSource
+    pipetasks: buildTemplate,inject_visit,subtractImages,detectAndMeasureDiaSource,analyzeImageDifferenceMetrics,analyzeDiaSourceDetectionMetrics,filterDiaSource,makeSampledImageSubtractionMetrics,analyzeSampledImageSubtractionMetrics,computeReliability,filterDiaSourcePostReliability,standardizeDiaSource
     dimensions: visit,detector
   association:
     pipetasks: getRegionTimeFromVisit,mpSkyEphemerisQuery,loadDiaCatalogs,associateApdb,analyzeLoadDiaCatalogsMetrics,analyzeDiaSourceAssociationMetrics,analyzeAssociateDiaSourceTiming
