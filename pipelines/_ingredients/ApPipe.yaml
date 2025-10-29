@@ -49,6 +49,7 @@ tasks:
       connections.psf_stars: single_visit_psf_star
       connections.astrometry_matches: initial_astrometry_match_detector
       connections.photometry_matches: initial_photometry_match_detector
+      optional_outputs: ["psf_stars", "psf_stars_footprints", "astrometry_matches", "photometry_matches"]
       id_generator.release_id: parameters.release_id
       # Downsample footprints prior to deblending to optimize speed
       do_downsample_footprints: True
