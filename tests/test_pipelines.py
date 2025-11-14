@@ -82,7 +82,7 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                     "opticsTransmission", "filterTransmission", "atmosphereTransmission",
                     "illumMaskedImage", "deferredChargeCalib",
                     # ISR-LSST
-                    "bfk", "cti", "dnlLUT",
+                    "bfk", "cti", "dnlLUT", "gain_correction",
                     # Everything else
                     "skyMap", "gaia_dr3_20230707", "gaia_dr2_20200414", "ps1_pv3_3pi_20170110",
                     "template_coadd", "pretrainedModelPackage",
