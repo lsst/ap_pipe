@@ -133,6 +133,7 @@ tasks:
       connections.diaSourceTable: dia_source_detector
       doRemoveSkySources: True
       doUseApdbSchema: True  # Force the table columns to match the APDB definition in sdm_schemas
+      schemaFile: "apdb.yaml"
   getRegionTimeFromVisit:
     class: lsst.pipe.tasks.getRegionTimeFromVisit.GetRegionTimeFromVisitTask
     config:
