@@ -1,0 +1,27 @@
+description: >-
+  AP pipeline to export catalogs from the APDB and re-run association.
+parameters:
+  # Pipeline configurable to run on both goodSeeing and deep templates, depending on dataset.
+  coaddName: goodSeeing
+  # APDB config file must be user-specified
+  apdb_config:
+  # Use release_id=0 for development, 1 for production, and 2 or 3 for reprocessing production data
+  release_id: 1
+
+tasks:
+  exportDiaCatalogs:
+    class: lsst.ap.association.ExportDiaCatalogsTask
+    config:
+      connections.coaddExposures: template_coadd
+      connections.diaSources: apdb_export_diaSources_patch
+      connections.diaForcedSources: apdb_export_diaForcedSources_patch
+      connections.diaObjects: apdb_export_diaObjects_patch
+      apdb_config_url: parameters.apdb_config
+  reassociateApdb:
+    class: lsst.pipe.tasks.drpAssociationPipe.DrpAssociationPipeTask
+    config:
+      connections.diaSourceTables: dia_source_apdb
+      connections.assocDiaSourceTable: reassociated_dia_source_patch
+      connections.diaObjectTable: reassociated_dia_object_patch
+      idGenerator.release_id: parameters.release_id
+      doSolarSystemAssociation: False

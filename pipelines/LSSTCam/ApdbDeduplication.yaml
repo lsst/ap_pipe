@@ -1,0 +1,5 @@
+description: >-
+  AP pipeline to export catalogs from the APDB and re-run association.
+instrument: lsst.obs.lsst.LsstCam
+imports:
+  - location: $AP_PIPE_DIR/pipelines/_ingredients/ApdbDeduplication.yaml
