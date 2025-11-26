@@ -85,7 +85,7 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                     "bfk", "cti", "dnlLUT", "gain_correction",
                     # Everything else
                     "skyMap", "gaia_dr3_20230707", "gaia_dr2_20200414", "ps1_pv3_3pi_20170110",
-                    "template_coadd", "pretrainedModelPackage",
+                    "template_coadd", "pretrainedModelPackage", "dia_source_apdb"
                 }
                 if "WithFakes" in file:
                     expected_inputs.add("injection_catalog")
@@ -116,6 +116,10 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
             if "QuickTemplate" in file:
                 # Our QuickTemplate definition cannot be tested here because it
                 # depends on drp_tasks, which we cannot make a dependency here.
+                continue
+            elif "ApdbDeduplication" in file:
+                # The task to export catalogs from the APDB and re-run
+                # association is not intended to be part of
                 continue
             with self.subTest(file):
                 pipeline = lsst.pipe.base.Pipeline.from_uri(file)
