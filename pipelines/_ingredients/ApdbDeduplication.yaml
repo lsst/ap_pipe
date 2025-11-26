@@ -6,7 +6,7 @@ parameters:
   # APDB config file must be user-specified
   apdb_config:
   # Use release_id=0 for development, 1 for production, and 2 or 3 for reprocessing production data
-  release_id: 0
+  release_id: 1
 
 tasks:
   exportDiaCatalogs:
