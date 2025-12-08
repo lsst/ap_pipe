@@ -123,7 +123,8 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                 continue
             elif "ApdbDeduplication" in file:
                 # The task to export catalogs from the APDB and re-run
-                # association is not intended to be part of
+                # association is not intended to be part of Prompt Processing
+                # or batch AP pipeline runs.
                 continue
             elif "PromptTemplate" in file:
                 # Our PromptTemplate definition cannot be tested here because it
