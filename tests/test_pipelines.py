@@ -61,6 +61,10 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                 # Our QuickTemplate definition cannot be tested here because it
                 # depends on drp_tasks, which we cannot make a dependency here.
                 continue
+            if "PromptTemplate" in file:
+                # Our PromptTemplate definition cannot be tested here because it
+                # depends on drp_tasks, which we cannot make a dependency here.
+                continue
             with self.subTest(file):
                 pipeline = lsst.pipe.base.Pipeline.from_uri(file)
                 pipeline.addConfigOverride("parameters", "apdb_config", "some/file/path.yaml")
@@ -119,7 +123,12 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                 continue
             elif "ApdbDeduplication" in file:
                 # The task to export catalogs from the APDB and re-run
-                # association is not intended to be part of
+                # association is not intended to be part of Prompt Processing
+                # or batch AP pipeline runs.
+                continue
+            elif "PromptTemplate" in file:
+                # Our PromptTemplate definition cannot be tested here because it
+                # depends on drp_tasks, which we cannot make a dependency here.
                 continue
             with self.subTest(file):
                 pipeline = lsst.pipe.base.Pipeline.from_uri(file)

@@ -1,0 +1,56 @@
+description: The LSSTCam AP template building pipeline with preliminary_visit_images as inputs.
+# Important Note: Use corresponding BPS clustering file when running with BPS.
+
+instrument: lsst.obs.lsst.LsstCam
+
+imports:
+- location: $DRP_PIPE_DIR/pipelines/_ingredients/base-v2.yaml
+  include:
+  - consolidateVisitSummary
+  - selectTemplateCoaddVisits
+  - makeDirectWarp
+  - makePsfMatchedWarp
+  - assembleTemplateCoadd
+  - makeBinnedTemplateNImage
+  - makeWholeTractTemplateNImage
+- location: $ANALYSIS_TOOLS_DIR/pipelines/coaddDepthMetrics.yaml
+  include:
+  - analyzeCoaddDepthCore
+  - coaddDepthMetricTract
+
+tasks:
+  consolidateVisitSummary:
+    class: lsst.pipe.tasks.postprocess.ConsolidateVisitSummaryTask
+    config:
+      full: True
+  makeDirectWarp:
+    class: lsst.drp.tasks.make_direct_warp.MakeDirectWarpTask
+    config:
+      connections.visit_summary: preliminary_visit_summary
+      useVisitSummaryPsf: False
+  selectTemplateCoaddVisits:
+    class: lsst.pipe.tasks.selectImages.BestSeeingSelectVisitsTask
+    config:
+      connections.visitSummaries: preliminary_visit_summary
+      connections.goodVisits: template_coadd_visit_selection
+      maxPsfFwhm: 1.4
+      python: |
+        config.visitSummaryMinValues = {'effTimeZeroPointScale': 0.75}
+
+subsets:
+  makeTemplate:
+    subset:
+      - selectTemplateCoaddVisits
+      - makeDirectWarp
+      - makePsfMatchedWarp
+      - assembleTemplateCoadd
+    description: >
+      Tasks to run to build template_coadds.
+  makeMetrics:
+    subset:
+      - makeBinnedTemplateNImage
+      - makeWholeTractTemplateNImage
+      - analyzeCoaddDepthCore
+      - coaddDepthMetricTract
+    description: >
+      Metrics and plots to run on the template_coadds.

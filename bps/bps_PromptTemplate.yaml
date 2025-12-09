@@ -1,0 +1,55 @@
+# UPDATE THIS to the path to the pipeline to run
+pipelineYaml: '${AP_PIPE_DIR}/pipelines/PromptTemplate.yaml'
+
+# Format for job names and job output filenames
+templateDataId: '{tract}_{patch}_{band}_{visit}_{exposure}_{detector}'
+
+# Just names, but UPDATE THIS AND KEEP THEM SHORT
+project: PromptTemplate
+campaign: DM-xxxxx
+
+computeSite:
+# The default BPS walltime is on the order of 3 days.
+# That's much more than the vast majority of jobs need,
+# and it can cause your jobs not to run if you're too close to a maintenance window.
+# Set the default walltime as appropriate for what you are running (12 hours below).
+site:
+  s3df:
+    profile:
+      condor:
+        +Walltime: 43200
+includeConfigs:
+  - ${AP_PIPE_DIR}/bps/clustering/clustering_PromptTemplate.yaml
+
+# Memory allocated for each quantum, in MBs; can be overridden on a per-task basis.
+# The bps default is 2048 MB, the same as this example, but it's kept here as a reminder.
+requestMemory: 2048
+
+# Example arguments, like the ones you would send to pipetask run from the command line
+payload:
+  # UPDATE THIS to also set the output collection name
+  payloadName: templates/{campaign}
+  # UPDATE THIS to point to the correct repository
+  butlerConfig: main
+  # UPDATE THIS and be sure it includes collections with preliminary_visit_images and skymaps
+  inCollection: LSSTCam/prompt/output-YYYY-MM-DD,LSSTCam/defaults
+  # UPDATE THIS output location
+  # The operator variable is used at facilities beyond bps and it defaults to the value of USER.
+  output : 'u/{operator}/{payloadName}'
+  # UPDATE THIS to specify what data to process
+  dataQuery: "instrument='LSSTCam' AND skymap='lsst_cells_v1 AND band='g'"
+
+# Various things for bps to customize about each pipeline task
+pipetask:
+  # Option to list other pipeline tasks being run here with default overrides
+  makeWarp:
+    requestMemory: 8192
+
+# Set the appropriate wms service class for the batch system
+# you're using (HTCondor, Parsl, Slurm, triple Slurm, etc.)
+# See https://developer.lsst.io/usdf/batch.html for details of doing this at S3DF.
+wmsServiceClass: lsst.ctrl.bps.htcondor.HTCondorService
+
+# Extra options for qgraph generation; will skip existing quanta in the output collection
+# Note that --skip-existing-in will not work the first time you run a workflow.
+# extraQgraphOptions: "--skip-existing-in {output}"
