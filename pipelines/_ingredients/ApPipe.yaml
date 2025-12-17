@@ -176,7 +176,7 @@ tasks:
       connections.science: preliminary_visit_image
       connections.template: template_detector
       connections.difference: difference_image
-      connections.diaSources: dia_source_unstandardized
+      connections.diaSources: dia_source_detector
       connections.psfMatchingKernel: difference_kernel
       connections.spatiallySampledMetrics: difference_image_metrics
 
@@ -319,9 +319,9 @@ contracts:
   - contract: filterDiaSource.connections.ConnectionsClass(config=filterDiaSource).filteredDiaSourceCat.name ==
               filterDiaSourcePostReliability.connections.ConnectionsClass(config=filterDiaSourcePostReliability).diaSourceCat.name
     msg: "filterDiaSource.filteredDiaSourceCat != filterDiaSourcePostReliability.diaSourceCat"
-  - contract: filterDiaSource.connections.ConnectionsClass(config=filterDiaSource).filteredDiaSourceCat.name ==
+  - contract: standardizeDiaSource.connections.ConnectionsClass(config=standardizeDiaSource).diaSourceTable.name ==
               makeSampledImageSubtractionMetrics.connections.ConnectionsClass(config=makeSampledImageSubtractionMetrics).diaSources.name
-    msg: "filterDiaSource.filteredDiaSourceCat != makeSampledImageSubtractionMetrics.diaSources"
+    msg: "standardizeDiaSource.diaSourceTable != makeSampledImageSubtractionMetrics.diaSources"
   - contract: filterDiaSource.connections.ConnectionsClass(config=filterDiaSource).longTrailedSources.name ==
       analyzeTrailedDiaSourceTable.connections.ConnectionsClass(config=analyzeTrailedDiaSourceTable).data.name
     msg: "filterDiaSource.longTrailedSources != analyzeTrailedDiaSourceTable.data"
