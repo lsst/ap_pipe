@@ -1,0 +1,51 @@
+# This is a prescription for quantum clustering with BPS, suitable for any
+# concrete pipeline based on the AP pipeline. Note that there are separate
+# example files for pipelines with and without fakes.
+#
+# Use it by adding:
+#
+#   includeConfigs:
+#     - ${AP_PIPE_DIR}/bps/clustering/clustering_ApPipe-daytime.yaml
+#
+# (with no outer indentation) to your BPS config file. If you are running
+# fakes, use instead:
+#
+#   includeConfigs:
+#     - ${AP_PIPE_DIR}/bps/clustering/clustering_ApPipeWithFakes-daytime.yaml
+#
+# again with no outer indentation.
+#
+
+clusterAlgorithm: lsst.ctrl.bps.quantum_clustering_funcs.dimension_clustering
+cluster:
+  preload:
+    pipetasks: loadDiaCatalogs,analyzeLoadDiaCatalogsMetrics,mpSkyEphemerisQuery,getRegionTimeFromVisit
+    dimensions: visit,detector
+    equalDimensions: visit:group
+  singleFrame:
+    pipetasks: isr,calibrateImage,analyzePreliminarySummaryStats
+    dimensions: visit,detector
+    equalDimensions: visit:exposure
+  diffim:
+    pipetasks: buildTemplate,subtractImages,detectAndMeasureDiaSource,analyzeImageDifferenceMetrics,analyzeDiaSourceDetectionMetrics,filterDiaSource,computeReliability,filterDiaSourcePostReliability,standardizeDiaSource
+    dimensions: visit,detector
+  association:
+    pipetasks: associateApdb,analyzeDiaSourceAssociationMetrics,analyzeAssociateDiaSourceTiming
+    dimensions: visit,detector
+  diaSrcDetectorAnalysis:
+    pipetasks: analyzeAssociatedDiaSourceTable,analyzeTrailedDiaSourceTable
+    dimensions: visit,detector
+  diffimMetrics:
+    pipetasks: makeSampledImageSubtractionMetrics,analyzeSampledImageSubtractionMetrics
+    dimensions: visit,detector
+  consolidateVisit:
+    pipetasks: consolidateVisitSummary,analyzeVisitSampledImageSubtractionMetrics
+    dimensions: visit
+
+ordering:
+  associationCluster:
+    ordering_type: sort
+    findDependencyMethod: sink
+    labels: association
+    dimensions: visit
+    blocking: False

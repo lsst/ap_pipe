@@ -1,0 +1,15 @@
+pipelineYaml: $AP_PIPE_DIR/pipelines/LSSTCam/ApPipe.yaml
+
+project: ApPipe
+campaign: AP-daytime
+
+payload:
+  # Use the prompt processing configuration for the embargo repo, which turns on compression.
+  # This can be changed to 'embargo' once compression is turned on by default
+  butlerConfig: "s3://embargo@rubin-summit-users/butler-prompt-processing.yaml"
+  # payloadName: Do not set here, must pass in from command line or script
+  # inCollection: Do not set here, must pass in from command line or script
+  # dataQuery: Do not set here, must pass in from command line or script
+  
+includeConfigs:
+  - ${AP_PIPE_DIR}/bps/clustering/clustering_Daytime.yaml
