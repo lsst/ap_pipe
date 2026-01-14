@@ -13,3 +13,9 @@ payload:
   
 includeConfigs:
   - ${AP_PIPE_DIR}/bps/clustering/clustering_Daytime.yaml
+
+# Once consolidateVisitSummary has been run, we can also update the butler records for the region of each image
+# The initial region is just the predicted value from the nextVisit event,
+# so this will replace that with the updated region after calibration.
+finalJob:
+  command2: "${DAF_BUTLER_DIR}/bin/butler {finalPreCmdOpts} update-dimension-regions {butlerConfig} LSSTCam {outputRun} --batch-size 2000"

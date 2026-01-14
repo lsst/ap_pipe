@@ -52,6 +52,8 @@ BLOCKS="BLOCK-407 BLOCK-408 BLOCK-416 BLOCK-417 BLOCK-419 BLOCK-421 BLOCK-T637"
 
 OUTPUT_COLLECTION="LSSTCam/prompt/output-${DATE}/daytime"
 
+LOG_FILE="output-${DATE}.out"
+
 # Convert lists to SQL IN() form
 BAD_DETECTORS_SQL="($(printf '%s,' $BAD_DETECTORS | sed 's/,$//'))"
 BLOCKS_SQL="($(printf "'%s'," $BLOCKS | sed 's/,$//'))"
@@ -66,8 +68,8 @@ nohup bps submit "${AP_PIPE_DIR}/bps/LSSTCam/bps_Daytime.yaml" \
       AND detector NOT IN $BAD_DETECTORS_SQL \
       AND day_obs=$DAY_OBS \
       AND exposure.science_program IN $BLOCKS_SQL" \
-  > "output-${DATE}-step1.out" 2>&1 &
+  > "${LOG_FILE}" 2>&1 &
 
 echo "Submission started for date ${DATE}"
 echo "Temporary APDB config: ${TMP_APDB}"
-echo "Submission output log written to output-${DATE}.out"
+echo "Submission output log written to ${LOG_FILE}"
