@@ -174,10 +174,9 @@ tasks:
     config:
       connections.coaddName: parameters.coaddName
       connections.science: preliminary_visit_image
-      connections.matchedTemplate: template_matched
       connections.template: template_detector
       connections.difference: difference_image
-      connections.diaSources: dia_source_unstandardized
+      connections.diaSources: dia_source_detector
       connections.psfMatchingKernel: difference_kernel
       connections.spatiallySampledMetrics: difference_image_metrics
 
@@ -299,9 +298,6 @@ contracts:
   - contract: subtractImages.connections.ConnectionsClass(config=subtractImages).science.name ==
               associateApdb.connections.ConnectionsClass(config=associateApdb).exposure.name
     msg: "subtractImages.science != associateApdb.exposure"
-  - contract: subtractImages.connections.ConnectionsClass(config=subtractImages).matchedTemplate.name ==
-              makeSampledImageSubtractionMetrics.connections.ConnectionsClass(config=makeSampledImageSubtractionMetrics).matchedTemplate.name
-    msg: "subtractImages.matchedTemplate != makeSampledImageSubtractionMetrics.matchedTemplate"
   - contract: detectAndMeasureDiaSource.connections.ConnectionsClass(config=detectAndMeasureDiaSource).diaSources.name ==
               filterDiaSource.connections.ConnectionsClass(config=filterDiaSource).diaSourceCat.name
     msg: "detectAndMeasureDiaSource.diaSources != filterDiaSource.diaSourceCat"
@@ -323,9 +319,9 @@ contracts:
   - contract: filterDiaSource.connections.ConnectionsClass(config=filterDiaSource).filteredDiaSourceCat.name ==
               filterDiaSourcePostReliability.connections.ConnectionsClass(config=filterDiaSourcePostReliability).diaSourceCat.name
     msg: "filterDiaSource.filteredDiaSourceCat != filterDiaSourcePostReliability.diaSourceCat"
-  - contract: filterDiaSource.connections.ConnectionsClass(config=filterDiaSource).filteredDiaSourceCat.name ==
+  - contract: standardizeDiaSource.connections.ConnectionsClass(config=standardizeDiaSource).diaSourceTable.name ==
               makeSampledImageSubtractionMetrics.connections.ConnectionsClass(config=makeSampledImageSubtractionMetrics).diaSources.name
-    msg: "filterDiaSource.filteredDiaSourceCat != makeSampledImageSubtractionMetrics.diaSources"
+    msg: "standardizeDiaSource.diaSourceTable != makeSampledImageSubtractionMetrics.diaSources"
   - contract: filterDiaSource.connections.ConnectionsClass(config=filterDiaSource).longTrailedSources.name ==
       analyzeTrailedDiaSourceTable.connections.ConnectionsClass(config=analyzeTrailedDiaSourceTable).data.name
     msg: "filterDiaSource.longTrailedSources != analyzeTrailedDiaSourceTable.data"
