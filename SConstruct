@@ -36,9 +36,9 @@ ingredients_ap_pipe_with_fakes = env.Command(
             f"make_injection_pipeline  -t preliminary_visit_image -r $SOURCE -f $TARGET "
             f"-a {additional_fakes_tasks} ",
             " ".join(f"-s {subset_name}" for subset_name in subset_names),
-            f"--config inject_visit:external_psf=False ",
-            f"--config inject_visit:external_photo_calib=False ",
-            f"--config inject_visit:external_wcs=False ",
+            f"--config injectVisit:external_psf=False ",
+            f"--config injectVisit:external_photo_calib=False ",
+            f"--config injectVisit:external_wcs=False ",
             f"--prefix 'fakes_' -c parameters:apdb_config='-' --overwrite ",
         ]
     ),
