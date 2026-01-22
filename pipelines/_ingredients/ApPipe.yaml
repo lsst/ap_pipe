@@ -179,6 +179,23 @@ tasks:
       connections.diaSources: dia_source_detector
       connections.psfMatchingKernel: difference_kernel
       connections.spatiallySampledMetrics: difference_image_metrics
+  singleFrameDetectAndMeasure:
+    class: lsst.drp.tasks.single_frame_detect_and_measure.SingleFrameDetectAndMeasureTask
+    config:
+      connections.exposure: preliminary_visit_image
+      connections.input_background: preliminary_visit_image_background
+      connections.sources: single_visit_star_reprocessed_unstandardized
+      connections.sources_footprints: single_visit_star_reprocessed_footprints
+      connections.background: preliminary_visit_image_reprocessed_background
+      id_generator.release_id: parameters.release_id
+  associateSolarSystemDirectSource:
+    class: lsst.ap.association.SsSingleFrameAssociationTask
+    config:
+      connections.exposure: preliminary_visit_image
+      connections.sourceTable: single_visit_star_reprocessed_footprints
+      connections.solarSystemObjectTable: preloaded_ss_object
+      connections.associatedSsSources: ss_source_direct_detector
+      connections.unassociatedSsObjects: ss_object_direct_unassociated
 
 subsets:
   apPipeSingleFrame:
@@ -217,6 +234,8 @@ subsets:
       - analyzePreliminarySummaryStats
       - consolidateVisitSummary
       - analyzeVisitSampledImageSubtractionMetrics
+      - singleFrameDetectAndMeasure
+      - associateSolarSystemDirectSource
     description: >
       An alias of ApPipe to use in higher-level pipelines.
   preload:
@@ -253,6 +272,8 @@ subsets:
       - makeSampledImageSubtractionMetrics
       - analyzeSampledImageSubtractionMetrics
       - analyzeVisitSampledImageSubtractionMetrics
+      - singleFrameDetectAndMeasure
+      - associateSolarSystemDirectSource
     description: >
       Tasks for QA and other non-real-time processing.
       Requires prompt subset to be run first.
