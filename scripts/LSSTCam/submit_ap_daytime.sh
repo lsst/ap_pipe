@@ -23,11 +23,15 @@ case "$TMP_APDB_REL" in
 esac
 
 # Copy APDB config from S3 using Singularity AWS CLI
-singularity exec /sdf/sw/s3/aws-cli_latest.sif \
-  aws --endpoint-url https://sdfembs3.sdf.slac.stanford.edu s3 \
-  --profile embargo-s3 \
-  cp s3://rubin-summit-users/apdb_config/cassandra/pp_apdb_lsstcam.yaml \
-  "$TMP_APDB"
+#singularity exec /sdf/sw/s3/aws-cli_latest.sif \
+#  aws --endpoint-url https://sdfembs3.sdf.slac.stanford.edu s3 \
+#  --profile embargo-s3 \
+#  cp s3://rubin-summit-users/apdb_config/cassandra/pp_apdb_lsstcam.yaml \
+#  "$TMP_APDB"
+
+echo "TMP_APDB = "$TMP_APDB
+mc cp embargo/rubin-summit-users/apdb_config/cassandra/pp_apdb_lsstcam.yaml "$TMP_APDB"
+
 
 # NOTE:
 # No cleanup of TMP_APDB here since the job is launched with nohup
