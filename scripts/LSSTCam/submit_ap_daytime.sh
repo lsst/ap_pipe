@@ -63,7 +63,7 @@ BAD_DETECTORS_SQL="($(printf '%s,' $BAD_DETECTORS | sed 's/,$//'))"
 BLOCKS_SQL="($(printf "'%s'," $BLOCKS | sed 's/,$//'))"
 
 nohup bps submit "${AP_PIPE_DIR}/bps/LSSTCam/bps_Daytime.yaml" \
-  --extra-qgraph-options "--skip-existing-in LSSTCam/prompt/output-${DATE} -c parameters:release_id=1 -c parameters:apdb_config=${TMP_APDB} --dataset-query-constraint template_coadd" \
+  --extra-qgraph-options "--skip-existing-in LSSTCam/prompt/output-${DATE} -c parameters:release_id=1 -c parameters:apdb_config=${TMP_APDB} --dataset-query-constraint template_coadd -c associateApdb:doRunForcedMeasurement=False" \
   --extra-run-quantum-options "--no-raise-on-partial-outputs" \
   --input "LSSTCam/defaults,LSSTCam/templates,LSSTCam/prompt/output-${DATE}" \
   --output "$OUTPUT_COLLECTION" \
