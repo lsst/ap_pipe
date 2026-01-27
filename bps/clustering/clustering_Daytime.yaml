@@ -32,6 +32,9 @@ cluster:
   association:
     pipetasks: associateApdb,analyzeDiaSourceAssociationMetrics,analyzeAssociateDiaSourceTiming
     dimensions: visit,detector
+  singleFrameMeasurement:
+    pipetasks: singleFrameDetectAndMeasure,associateSolarSystemDirectSource
+    dimensions: visit,detector
   diaSrcDetectorAnalysis:
     pipetasks: analyzeAssociatedDiaSourceTable,analyzeTrailedDiaSourceTable
     dimensions: visit,detector
