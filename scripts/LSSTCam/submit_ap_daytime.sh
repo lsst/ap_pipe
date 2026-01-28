@@ -61,7 +61,7 @@ nohup bps submit "${AP_PIPE_DIR}/bps/LSSTCam/bps_Daytime.yaml" \
   --input "LSSTCam/defaults,LSSTCam/templates,LSSTCam/prompt/output-${DATE}" \
   --output "$OUTPUT_COLLECTION" \
   -d "instrument='$INSTRUMENT' \
-      AND skymap='lsst_cells_v1' \
+      AND skymap='lsst_cells_v2' \
       AND detector NOT IN $BAD_DETECTORS_SQL \
       AND day_obs=$DAY_OBS \
       AND exposure.science_program IN $BLOCKS_SQL" \
