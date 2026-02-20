@@ -29,6 +29,9 @@ cluster:
     pipetasks: getRegionTimeFromVisit,mpSkyEphemerisQuery,loadDiaCatalogs,associateApdb,analyzeLoadDiaCatalogsMetrics,analyzeDiaSourceAssociationMetrics,analyzeAssociateDiaSourceTiming
     dimensions: visit,detector
     equalDimensions: visit:group
+  singleFrameMeasurement:
+    pipetasks: singleFrameDetectAndMeasure,associateSolarSystemDirectSource
+    dimensions: visit,detector
   diaSrcDetectorAnalysis:
     pipetasks: analyzeAssociatedDiaSourceTable,injectedMatch,analyzeDiaFakesDetectorVisitCore,analyzeTrailedDiaSourceTable
     dimensions: visit,detector
