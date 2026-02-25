@@ -122,6 +122,8 @@ tasks:
       connections.reliability: dia_source_reliability
       connections.filteredDiaSources: dia_source_high_reliability
       connections.rejectedDiaSources: dia_source_low_reliability
+      # During broker commissioning, remove low reliability sources.
+      minReliability: 0.5
   standardizeDiaSource:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
     config:
