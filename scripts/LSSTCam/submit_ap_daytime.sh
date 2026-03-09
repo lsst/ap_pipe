@@ -64,7 +64,8 @@ nohup bps submit "${AP_PIPE_DIR}/bps/LSSTCam/bps_Daytime.yaml" \
       AND skymap='lsst_cells_v2' \
       AND detector NOT IN $BAD_DETECTORS_SQL \
       AND day_obs=$DAY_OBS \
-      AND exposure.science_program IN $BLOCKS_SQL" \
+      AND exposure.science_program IN $BLOCKS_SQL \
+      AND tract NOT IN (9327, 9328, 9569, 9570, 9571, 9572, 9811, 9812, 9813, 9814, 10053, 10054, 10055, 10056)" \
   > "${LOG_FILE}" 2>&1 &
 
 echo "Submission started for date ${DATE}"
