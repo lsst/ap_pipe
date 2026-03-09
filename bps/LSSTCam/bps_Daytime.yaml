@@ -3,6 +3,8 @@ pipelineYaml: $AP_PIPE_DIR/pipelines/LSSTCam/ApPipe.yaml
 project: ApPipe
 campaign: AP-daytime
 
+nodeset: daily
+
 payload:
   # Use the prompt processing configuration for the embargo repo, which turns on compression.
   # This can be changed to 'embargo' once compression is turned on by default
