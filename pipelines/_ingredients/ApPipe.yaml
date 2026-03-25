@@ -54,6 +54,12 @@ tasks:
       # Downsample footprints prior to deblending to optimize speed
       do_downsample_footprints: True
       downsample_max_footprints: 1000
+      # Use adaptive thresholds for matching to the reference catalog
+      # This narrows and brightens the magnitude range of reference sources
+      do_adaptive_threshold_detection: True
+      # Disable refining the background level after star detection, which can
+      # take many 10s of seconds in crowded fields
+      do_remeasure_star_background: False
   consolidateVisitSummary:
     class: lsst.pipe.tasks.postprocess.ConsolidateVisitSummaryTask
     config:
