@@ -23,11 +23,8 @@ case "$TMP_APDB_REL" in
 esac
 
 # Copy APDB config from S3 using Singularity AWS CLI
-singularity exec /sdf/sw/s3/aws-cli_latest.sif \
-  aws --endpoint-url https://sdfembs3.sdf.slac.stanford.edu s3 \
-  --profile embargo-s3 \
-  cp s3://rubin-summit-users/apdb_config/cassandra/pp_apdb_lsstcam.yaml \
-  "$TMP_APDB"
+mc cp embargo/rubin-summit-users/apdb_config/cassandra/pp_apdb_lsstcam.yaml "$TMP_APDB"
+
 
 # NOTE:
 # No cleanup of TMP_APDB here since the job is launched with nohup
@@ -66,10 +63,11 @@ nohup bps submit "${AP_PIPE_DIR}/bps/LSSTCam/bps_Daytime.yaml" \
   --input "LSSTCam/defaults,LSSTCam/templates,LSSTCam/prompt/output-${DATE}" \
   --output "$OUTPUT_COLLECTION" \
   -d "instrument='$INSTRUMENT' \
-      AND skymap='lsst_cells_v1' \
+      AND skymap='lsst_cells_v2' \
       AND detector NOT IN $BAD_DETECTORS_SQL \
       AND day_obs=$DAY_OBS \
-      AND exposure.science_program IN $BLOCKS_SQL" \
+      AND exposure.science_program IN $BLOCKS_SQL \
+      AND tract NOT IN (9327, 9328, 9569, 9570, 9571, 9572, 9811, 9812, 9813, 9814, 10053, 10054, 10055, 10056)" \
   > "${LOG_FILE}" 2>&1 &
 
 echo "Submission started for date ${DATE}"
