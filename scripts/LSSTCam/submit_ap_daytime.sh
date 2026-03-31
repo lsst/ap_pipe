@@ -4,7 +4,7 @@ set -eu
 # An executable script that will prepare and submit the daytime Alert Production pipeline
 
 if [ "$#" -ne 1 ]; then
-    echo "Usage: $0 YYYY-MM-DD" >&2
+    echo "Usage: $0 YYYYMMDD" >&2
     exit 1
 fi
 
@@ -65,9 +65,9 @@ BAD_DETECTORS_SQL="($(printf '%s,' $BAD_DETECTORS | sed 's/,$//'))"
 BLOCKS_SQL="($(printf "'%s'," $BLOCKS | sed 's/,$//'))"
 
 nohup bps submit "${AP_PIPE_DIR}/bps/LSSTCam/bps_Daytime.yaml" \
-  --extra-qgraph-options "--skip-existing-in LSSTCam/prompt/output-${DATE} -c parameters:release_id=1 -c parameters:apdb_config=${TMP_APDB} -c associateApdb:doRunForcedMeasurement=False --dataset-query-constraint off" \
+  --extra-qgraph-options "--skip-existing-in LSSTCam/runs/prompt-${DATE} -c parameters:release_id=1 -c parameters:apdb_config=${TMP_APDB} -c associateApdb:doRunForcedMeasurement=False --dataset-query-constraint off" \
   --extra-run-quantum-options "--no-raise-on-partial-outputs" \
-  --input "LSSTCam/defaults,LSSTCam/templates,LSSTCam/prompt/output-${DATE}" \
+  --input "LSSTCam/defaults,LSSTCam/templates,LSSTCam/runs/prompt-${DATE}" \
   --output "$OUTPUT_COLLECTION" \
   -d "instrument='$INSTRUMENT' \
       AND skymap='lsst_cells_v2' \
