@@ -23,11 +23,15 @@ case "$TMP_APDB_REL" in
 esac
 
 # Copy APDB config from S3 using Singularity AWS CLI
-singularity exec /sdf/sw/s3/aws-cli_latest.sif \
-  aws --endpoint-url https://sdfembs3.sdf.slac.stanford.edu s3 \
-  --profile embargo-s3 \
-  cp s3://rubin-summit-users/apdb_config/cassandra/pp_apdb_lsstcam.yaml \
-  "$TMP_APDB"
+#singularity exec /sdf/sw/s3/aws-cli_latest.sif \
+#  aws --endpoint-url https://sdfembs3.sdf.slac.stanford.edu s3 \
+#  --profile embargo-s3 \
+#  cp s3://rubin-summit-users/apdb_config/cassandra/pp_apdb_lsstcam.yaml \
+#  "$TMP_APDB"
+
+echo "TMP_APDB = "$TMP_APDB
+mc cp embargo/rubin-summit-users/apdb_config/cassandra/pp_apdb_lsstcam.yaml "$TMP_APDB"
+
 
 # NOTE:
 # No cleanup of TMP_APDB here since the job is launched with nohup
@@ -66,7 +70,7 @@ nohup bps submit "${AP_PIPE_DIR}/bps/LSSTCam/bps_Daytime.yaml" \
   --input "LSSTCam/defaults,LSSTCam/templates,LSSTCam/prompt/output-${DATE}" \
   --output "$OUTPUT_COLLECTION" \
   -d "instrument='$INSTRUMENT' \
-      AND skymap='lsst_cells_v1' \
+      AND skymap='lsst_cells_v2' \
       AND detector NOT IN $BAD_DETECTORS_SQL \
       AND day_obs=$DAY_OBS \
       AND exposure.science_program IN $BLOCKS_SQL" \

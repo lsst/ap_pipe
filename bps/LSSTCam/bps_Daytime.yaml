@@ -3,6 +3,8 @@ pipelineYaml: $AP_PIPE_DIR/pipelines/LSSTCam/ApPipe.yaml
 project: ApPipe
 campaign: AP-daytime
 
+nodeset: daily
+
 payload:
   butlerConfig: "embargo"
   # payloadName: Do not set here, must pass in from command line or script
