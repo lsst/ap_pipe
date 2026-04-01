@@ -75,7 +75,6 @@ subsets:
       - analyzePreliminarySummaryStats
       - analyzeVisitSampledImageSubtractionMetrics
       - singleFrameDetectAndMeasure
-      - associateSolarSystemDirectSource
     description: >
       An alias of ApPipe to use in higher-level pipelines.
   prompt:
@@ -116,7 +115,6 @@ subsets:
     - analyzeDiaFakesVisitCore
     - analyzeVisitSampledImageSubtractionMetrics
     - singleFrameDetectAndMeasure
-    - associateSolarSystemDirectSource
     description: >
       Tasks for QA and other non-real-time processing.
       Requires prompt subset to be run first.
