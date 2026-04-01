@@ -14,6 +14,10 @@ imports:
   - assembleTemplateCoadd
 
 tasks:
+  isr:
+    class: lsst.ip.isr.IsrTask
+    config:
+      file: $AP_PIPE_DIR/config/DECam/runIsrWithCrosstalk.py
   selectDeepCoaddVisits:
     class: lsst.pipe.tasks.selectImages.BestSeeingSelectVisitsTask
     config:
