@@ -17,7 +17,13 @@ tasks:
   isr:
     class: lsst.ip.isr.IsrTask
     config:
+      connections.outputExposure: post_isr_image
       file: $AP_PIPE_DIR/config/DECam/runIsrWithCrosstalk.py
+  calibrateImage:
+    class: lsst.pipe.tasks.calibrateImage.CalibrateImageTask
+    config:
+      photometry.match.referenceSelection.magLimit.fluxField: i_flux
+      photometry.match.referenceSelection.magLimit.maximum: 22.0
   selectDeepCoaddVisits:
     class: lsst.pipe.tasks.selectImages.BestSeeingSelectVisitsTask
     config:
