@@ -54,7 +54,7 @@ BAD_DETECTORS="120 122 0 20 27 65 123 161 168 188 1 19 30 68 158 169 187 \
 # Space-delimited list of observing blocks that generate science images
 # See https://github.com/lsst-sqre/phalanx/blob/main/applications/prompt-keda-lsstcam/values-usdfprod-prompt-processing.yaml#L21-L45
 BLOCKS="BLOCK-365 BLOCK-407 BLOCK-408 BLOCK-416 BLOCK-417 BLOCK-419 BLOCK-421 \
-BLOCK-T698, BLOCK-T703, BLOCK-T704, BLOCK-T706"
+BLOCK-T698 BLOCK-T703 BLOCK-T704 BLOCK-T706"
 
 OUTPUT_COLLECTION="LSSTCam/prompt/output-${DATE}/daytime"
 
