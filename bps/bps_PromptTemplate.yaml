@@ -32,7 +32,7 @@ payload:
   # UPDATE THIS to point to the correct repository
   butlerConfig: main
   # UPDATE THIS and be sure it includes collections with preliminary_visit_images and skymaps
-  inCollection: LSSTCam/prompt/output-YYYY-MM-DD,LSSTCam/defaults
+  inCollection: LSSTCam/runs/prompt-YYYYMMDD,LSSTCam/defaults
   # UPDATE THIS output location
   # The operator variable is used at facilities beyond bps and it defaults to the value of USER.
   output : 'u/{operator}/{payloadName}'
