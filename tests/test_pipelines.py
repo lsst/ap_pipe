@@ -24,7 +24,11 @@ import tempfile
 import unittest
 
 # need to import pyproj to prevent file handle leakage
-import pyproj  # noqa: F401
+# TODO: Remove import after completing DM-54643. Use DM-54656
+try:
+    import pyproj  # noqa: F401
+except ImportError:
+    pass
 
 import lsst.daf.butler.tests as butlerTests
 import lsst.pipe.base
