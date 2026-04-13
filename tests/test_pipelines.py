@@ -103,7 +103,7 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                 temp_pipeline.addConfigOverride("parameters", "apdb_config", "some/file/path.yaml")
                 if "injectVisit" in temp_pipeline.task_labels:
                     expected_inputs.add("injection_catalog")
-                    expected_inputs.add("fakes_VisitDetectorFakeSourceCat")
+                    expected_inputs.add("VisitDetectorFakeSourceCat")
                 tester = PipelineStepTester(
                     filename=file,
                     step_suffixes=[""],  # Test full pipeline

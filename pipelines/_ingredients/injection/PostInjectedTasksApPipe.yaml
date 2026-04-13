@@ -13,9 +13,9 @@ tasks:
   injectedMatchDiaSrc:
     class: lsst.pipe.tasks.matchDiffimSourceInjected.MatchInjectedToDiaSourceTask
     config:
-    - connections.coaddName: parameters.coaddName
+      connections.coaddName: parameters.coaddName
       connections.matchDiaSources: fakes_{coaddName}Diff_matchDiaSrc
-      connections.injectionCat: fakes_VisitDetectorFakeSourceCat
+      connections.injectionCat: VisitDetectorFakeSourceCat
       connections.diffIm: difference_image
       connections.diaSources: dia_source_unfiltered
       matchDistanceArcseconds: 0.5
@@ -23,7 +23,7 @@ tasks:
   injectedMatchAssocDiaSrc:
     class: lsst.pipe.tasks.matchDiffimSourceInjected.MatchInjectedToAssocDiaSourceTask
     config:
-    - connections.coaddName: parameters.coaddName
+      connections.coaddName: parameters.coaddName
       connections.assocDiaSources: dia_source_apdb
       connections.matchDiaSources: fakes_{coaddName}Diff_matchDiaSrc
       connections.matchAssocDiaSources: fakes_{coaddName}Diff_matchAssocDiaSrc
