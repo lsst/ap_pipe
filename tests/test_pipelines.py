@@ -197,6 +197,10 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
             if "_ingredients" not in f.path
         ]
         for file in files:
+            if "QuickTemplate" in file.path:
+                # Our QuickTemplate definition cannot be tested here because it
+                # depends on drp_tasks, which we cannot make a dependency here.
+                continue
             with self.subTest(file=str(file)):
                 generic = self.path.join("_ingredients/", forceDirectory=True).join(file.basename())
                 if not generic.exists():
