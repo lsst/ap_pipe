@@ -1,0 +1,88 @@
+description: Alert Production pipeline specialized for LSSTCam.
+
+imports:
+  - location: $AP_PIPE_DIR/pipelines/LSSTCam/ApPipe.yaml
+    include:
+      - isr
+      - calibrateImage
+      - analyzePreliminarySummaryStats
+      - buildTemplate
+      - subtractImages
+      - detectAndMeasureDiaSource
+      - analyzeImageDifferenceMetrics
+      - analyzeDiaSourceDetectionMetrics
+      - filterDiaSource
+      - computeReliability
+      - filterDiaSourcePostReliability
+      - standardizeDiaSource
+      - singleFrameDetectAndMeasure
+      - analyzeAssociatedDiaSourceTable
+      - analyzeTrailedDiaSourceTable
+      - makeSampledImageSubtractionMetrics
+      - analyzeSampledImageSubtractionMetrics
+      - consolidateVisitSummary
+      - analyzeVisitSampledImageSubtractionMetrics
+
+contracts:
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
+              subtractImages.connections.ConnectionsClass(config=subtractImages).science.name
+    msg: "calibrateImage.exposure != subtractImages.science"
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).stars_footprints.name ==
+              subtractImages.connections.ConnectionsClass(config=subtractImages).sources.name
+    msg: "calibrateImage.footprints_stars != subtractImages.sources"
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
+              computeReliability.connections.ConnectionsClass(config=computeReliability).science.name
+    msg: "calibrateImage.exposure != computeReliability.science"
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
+              makeSampledImageSubtractionMetrics.connections.ConnectionsClass(config=makeSampledImageSubtractionMetrics).science.name
+    msg: "calibrateImage.exposure != makeSampledImageSubtractionMetrics.science"
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name + ".summaryStats" ==
+              analyzePreliminarySummaryStats.connections.ConnectionsClass(config=analyzePreliminarySummaryStats).data.name
+    msg: "calibrateImage.exposure != analyzePreliminarySummaryStats.data"
+  - detectAndMeasureDiaSource.doSkySources == filterDiaSource.doRemoveSkySources
+  # to reduce latency, we need two calls to the sattle service when active
+  - calibrateImage.run_sattle == detectAndMeasureDiaSource.run_sattle
+  # Inputs and outputs must match. For consistency, contracts are written in execution order:
+  #     first task == second task, then sorted by (first, second)
+  - contract: buildTemplate.connections.ConnectionsClass(config=buildTemplate).template.name ==
+              subtractImages.connections.ConnectionsClass(config=subtractImages).template.name
+    msg: "buildTemplate.template != subtractImages.template"
+  - contract: buildTemplate.connections.ConnectionsClass(config=buildTemplate).template.name ==
+              makeSampledImageSubtractionMetrics.connections.ConnectionsClass(config=makeSampledImageSubtractionMetrics).template.name
+    msg: "buildTemplate.template != makeSampledImageSubtractionMetrics.template"
+  - contract: subtractImages.connections.ConnectionsClass(config=subtractImages).difference.name ==
+              detectAndMeasureDiaSource.connections.ConnectionsClass(config=detectAndMeasureDiaSource).difference.name
+    msg: "subtractImages.difference != detectAndMeasureDiaSource.difference"
+  - contract: subtractImages.connections.ConnectionsClass(config=subtractImages).science.name ==
+              detectAndMeasureDiaSource.connections.ConnectionsClass(config=detectAndMeasureDiaSource).science.name
+    msg: "subtractImages.science != detectAndMeasureDiaSource.science"
+  - contract: detectAndMeasureDiaSource.connections.ConnectionsClass(config=detectAndMeasureDiaSource).diaSources.name ==
+              filterDiaSource.connections.ConnectionsClass(config=filterDiaSource).diaSourceCat.name
+    msg: "detectAndMeasureDiaSource.diaSources != filterDiaSource.diaSourceCat"
+  - contract: detectAndMeasureDiaSource.connections.ConnectionsClass(config=detectAndMeasureDiaSource).subtractedMeasuredExposure.name ==
+              computeReliability.connections.ConnectionsClass(config=computeReliability).difference.name
+    msg: "detectAndMeasureDiaSource.subtractedMeasuredExposure != computeReliability.difference"
+  - contract: detectAndMeasureDiaSource.connections.ConnectionsClass(config=detectAndMeasureDiaSource).subtractedMeasuredExposure.name ==
+              standardizeDiaSource.connections.ConnectionsClass(config=standardizeDiaSource).diffIm.name
+    msg: "detectAndMeasureDiaSource.subtractedMeasuredExposure != standardizeDiaSource.diffIm"
+  - contract: detectAndMeasureDiaSource.connections.ConnectionsClass(config=detectAndMeasureDiaSource).subtractedMeasuredExposure.name ==
+              makeSampledImageSubtractionMetrics.connections.ConnectionsClass(config=makeSampledImageSubtractionMetrics).difference.name
+    msg: "detectAndMeasureDiaSource.subtractedMeasuredExposure != makeSampledImageSubtractionMetrics.difference"
+  - contract: filterDiaSource.connections.ConnectionsClass(config=filterDiaSource).filteredDiaSourceCat.name ==
+              computeReliability.connections.ConnectionsClass(config=computeReliability).diaSources.name
+    msg: "filterDiaSource.filteredDiaSourceCat != computeReliability.diaSources"
+  - contract: filterDiaSource.connections.ConnectionsClass(config=filterDiaSource).filteredDiaSourceCat.name ==
+              filterDiaSourcePostReliability.connections.ConnectionsClass(config=filterDiaSourcePostReliability).diaSourceCat.name
+    msg: "filterDiaSource.filteredDiaSourceCat != filterDiaSourcePostReliability.diaSourceCat"
+  - contract: standardizeDiaSource.connections.ConnectionsClass(config=standardizeDiaSource).diaSourceTable.name ==
+              makeSampledImageSubtractionMetrics.connections.ConnectionsClass(config=makeSampledImageSubtractionMetrics).diaSources.name
+    msg: "standardizeDiaSource.diaSourceTable != makeSampledImageSubtractionMetrics.diaSources"
+  - contract: filterDiaSource.connections.ConnectionsClass(config=filterDiaSource).longTrailedSources.name ==
+      analyzeTrailedDiaSourceTable.connections.ConnectionsClass(config=analyzeTrailedDiaSourceTable).data.name
+    msg: "filterDiaSource.longTrailedSources != analyzeTrailedDiaSourceTable.data"
+  - contract: computeReliability.connections.ConnectionsClass(config=computeReliability).classifications.name ==
+               filterDiaSourcePostReliability.connections.ConnectionsClass(config=filterDiaSourcePostReliability).reliability.name
+    msg: "computeReliability.classifications != filterDiaSourcePostReliability.reliability"
+  - contract: makeSampledImageSubtractionMetrics.connections.ConnectionsClass(config=makeSampledImageSubtractionMetrics).spatiallySampledMetrics.name ==
+              analyzeSampledImageSubtractionMetrics.connections.ConnectionsClass(config=analyzeSampledImageSubtractionMetrics).data.name
+    msg: "makeSampledImageSubtractionMetrics.spatiallySampledMetrics != analyzeSampledImageSubtractionMetrics.data"

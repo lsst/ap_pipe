@@ -13,33 +13,6 @@ DATE="$1"
 # POSIX-safe date normalization
 DAY_OBS=$(printf '%s\n' "$DATE" | tr -d '-')
 
-# Create a temp file with the date in the name
-TMP_APDB_REL=$(mktemp "apdb_config_${DATE}.XXXXXX.yaml")
-
-# Resolve to absolute path without readlink -f
-case "$TMP_APDB_REL" in
-    /*) TMP_APDB="$TMP_APDB_REL" ;;
-    *)  TMP_APDB="$(pwd)/$TMP_APDB_REL" ;;
-esac
-
-# Copy APDB config from S3 using Singularity AWS CLI
-#singularity exec /sdf/sw/s3/aws-cli_latest.sif \
-#  aws --endpoint-url https://sdfembs3.sdf.slac.stanford.edu s3 \
-#  --profile embargo-s3 \
-#  cp s3://rubin-summit-users/apdb_config/cassandra/pp_apdb_lsstcam.yaml \
-#  "$TMP_APDB"
-
-echo "TMP_APDB = "$TMP_APDB
-mc cp embargo/rubin-summit-users/apdb_config/cassandra/pp_apdb_lsstcam.yaml "$TMP_APDB"
-
-
-# NOTE:
-# No cleanup of TMP_APDB here since the job is launched with nohup
-# and runtime duration is unknown.
-
-# Redirect Cassandra logs
-export DAX_APDB_MONITOR_CONFIG="logging:lsst.dax.apdb.monitor"
-
 # Configure the filesystem to allow many open files
 ulimit -n 65536
 
@@ -65,7 +38,7 @@ BAD_DETECTORS_SQL="($(printf '%s,' $BAD_DETECTORS | sed 's/,$//'))"
 BLOCKS_SQL="($(printf "'%s'," $BLOCKS | sed 's/,$//'))"
 
 nohup bps submit "${AP_PIPE_DIR}/bps/LSSTCam/bps_Daytime_noAssociation.yaml" \
-  --extra-qgraph-options "--skip-existing-in LSSTCam/prompt/output-${DATE} -c parameters:release_id=1 -c parameters:apdb_config=${TMP_APDB} -c associateApdb:doRunForcedMeasurement=False --dataset-query-constraint off" \
+  --extra-qgraph-options "--skip-existing-in LSSTCam/prompt/output-${DATE} -c parameters:release_id=1 --dataset-query-constraint off" \
   --extra-run-quantum-options "--no-raise-on-partial-outputs" \
   --input "LSSTCam/defaults,LSSTCam/templates,LSSTCam/prompt/output-${DATE}" \
   --output "$OUTPUT_COLLECTION" \
@@ -77,5 +50,4 @@ nohup bps submit "${AP_PIPE_DIR}/bps/LSSTCam/bps_Daytime_noAssociation.yaml" \
   > "${LOG_FILE}" 2>&1 &
 
 echo "Submission started for date ${DATE}"
-echo "Temporary APDB config: ${TMP_APDB}"
 echo "Submission output log written to ${LOG_FILE}"
