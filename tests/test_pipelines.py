@@ -23,13 +23,6 @@ import itertools
 import tempfile
 import unittest
 
-# need to import pyproj to prevent file handle leakage
-# TODO: Remove import after completing DM-54643. Use DM-54656
-try:
-    import pyproj  # noqa: F401
-except ImportError:
-    pass
-
 import lsst.daf.butler.tests as butlerTests
 import lsst.pipe.base
 from lsst.pipe.base.tests.pipelineStepTester import PipelineStepTester  # Can't use fully-qualified name
