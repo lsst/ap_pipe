@@ -25,28 +25,28 @@ import unittest
 
 import lsst.daf.butler.tests as butlerTests
 import lsst.pipe.base
+from lsst.pipe.base.tests.pipelineStepTester import PipelineStepTester  # Can't use fully-qualified name
 import lsst.utils
 import lsst.utils.tests
-from lsst.pipe.base.tests.pipelineStepTester import PipelineStepTester  # Can't use fully-qualified name
+
 from lsst.resources import ResourcePath
 
 
-class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
-    """Tests of the self-consistency of our pipeline definitions."""
-
+class PipelineDefinitionsTestSuite(lsst.utils.tests.TestCase):
+    """Tests of the self-consistency of our pipeline definitions.
+    """
     def setUp(self):
         self.path = ResourcePath("eups://ap_pipe/pipelines/", forceDirectory=True)
         # Each pipeline file should have a subset that represents it in
         # higher-level pipelines.
-        self.synonyms = {
-            "ApPipe.yaml": "apPipe",
-            "ApPipeWithIsrTaskLSST.yaml": "apPipe",
-            "ApPipeWithFakes.yaml": "apPipe",
-            "SingleFrame.yaml": "singleFrame",
-            "SingleFrameWithIsrTaskLSST.yaml": "singleFrame",
-            "RunIsrWithoutInterChipCrosstalk.yaml": "runIsr",
-            "RunIsrForCrosstalkSources.yaml": "runOverscan",
-        }
+        self.synonyms = {"ApPipe.yaml": "apPipe",
+                         "ApPipeWithIsrTaskLSST.yaml": "apPipe",
+                         "ApPipeWithFakes.yaml": "apPipe",
+                         "SingleFrame.yaml": "singleFrame",
+                         "SingleFrameWithIsrTaskLSST.yaml": "singleFrame",
+                         "RunIsrWithoutInterChipCrosstalk.yaml": "runIsr",
+                         "RunIsrForCrosstalkSources.yaml": "runOverscan",
+                         }
 
     def test_graph_build(self):
         """Test that each pipeline definition file can be
@@ -70,8 +70,7 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
 
     def test_datasets(self):
         files = [
-            f
-            for f in ResourcePath.findFileResources(
+            f for f in ResourcePath.findFileResources(
                 [self.path.join("_ingredients", forceDirectory=True)], file_filter=r".*\.yaml$"
             )
             # Validation currently broken for injection pipelines.
@@ -86,55 +85,30 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
             with self.subTest(file=str(file)):
                 expected_inputs = {
                     # ISR
-                    "raw",
-                    "camera",
-                    "crosstalk",
-                    "crosstalkSources",
-                    "bias",
-                    "dark",
-                    "flat",
-                    "ptc",
-                    "fringe",
-                    "straylightData",
-                    "bfKernel",
-                    "newBFKernel",
-                    "defects",
-                    "linearizer",
-                    "opticsTransmission",
-                    "filterTransmission",
-                    "atmosphereTransmission",
-                    "illumMaskedImage",
-                    "deferredChargeCalib",
+                    "raw", "camera", "crosstalk", "crosstalkSources", "bias", "dark", "flat", "ptc",
+                    "fringe", "straylightData", "bfKernel", "newBFKernel", "defects", "linearizer",
+                    "opticsTransmission", "filterTransmission", "atmosphereTransmission",
+                    "illumMaskedImage", "deferredChargeCalib",
                     # ISR-LSST
-                    "bfk",
-                    "cti",
-                    "dnlLUT",
-                    "gain_correction",
+                    "bfk", "cti", "dnlLUT", "gain_correction",
                     # Everything else
-                    "skyMap",
-                    "gaia_dr3_20230707",
-                    "gaia_dr2_20200414",
-                    "ps1_pv3_3pi_20170110",
-                    "template_coadd",
-                    "pretrainedModelPackage",
-                    "dia_source_apdb",
+                    "skyMap", "gaia_dr3_20230707", "gaia_dr2_20200414", "ps1_pv3_3pi_20170110",
+                    "template_coadd", "pretrainedModelPackage", "dia_source_apdb"
                 }
                 if "WithFakes" in file.path:
                     expected_inputs.add("injection_catalog")
                 tester = PipelineStepTester(
                     filename=file,
                     step_suffixes=[""],  # Test full pipeline
-                    initial_dataset_types=[
-                        ("ps1_pv3_3pi_20170110", {"htm7"}, "SimpleCatalog", False),
-                        ("gaia_dr2_20200414", {"htm7"}, "SimpleCatalog", False),
-                        ("gaia_dr3_20230707", {"htm7"}, "SimpleCatalog", False),
-                    ],
+                    initial_dataset_types=[("ps1_pv3_3pi_20170110", {"htm7"}, "SimpleCatalog", False),
+                                           ("gaia_dr2_20200414", {"htm7"}, "SimpleCatalog", False),
+                                           ("gaia_dr3_20230707", {"htm7"}, "SimpleCatalog", False),
+                                           ],
                     expected_inputs=expected_inputs,
                     # Pipeline outputs highly in flux, don't test
                     expected_outputs=set(),
-                    pipeline_patches={
-                        "parameters:apdb_config": "some/file/path.yaml",
-                    },
+                    pipeline_patches={"parameters:apdb_config": "some/file/path.yaml",
+                                      },
                 )
                 # Tester modifies Butler registry, so need a fresh repo every time
                 with tempfile.TemporaryDirectory() as tempRepo:
@@ -146,8 +120,7 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
         including those imported from other files.
         """
         files = [
-            f
-            for f in ResourcePath.findFileResources([self.path], file_filter=r".*\.yaml$")
+            f for f in ResourcePath.findFileResources([self.path], file_filter=r".*\.yaml$")
             # Validation currently broken for injection pipelines.
             # TODO: DM-54077
             if "injection/" not in f.path
@@ -169,17 +142,14 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
             with self.subTest(file=str(file)):
                 pipeline = lsst.pipe.base.Pipeline.from_uri(file)
                 subset = self.synonyms.get(file.basename(), "<unknown_synonym>")
-                self.assertEqual(
-                    pipeline.subsets.get(subset, "<missing>"),
-                    set(pipeline.task_labels),
-                    msg=f"These tasks are missing from subset '{subset}'",
-                )
+                self.assertEqual(pipeline.subsets.get(subset, "<missing>"), set(pipeline.task_labels),
+                                 msg=f"These tasks are missing from subset '{subset}'")
 
     def test_ap_pipe_subsets(self):
-        """Test the unique subsets of ApPipe."""
+        """Test the unique subsets of ApPipe.
+        """
         files = [
-            f
-            for f in ResourcePath.findFileResources([self.path], file_filter=r"^ApPipe.*\.yaml$")
+            f for f in ResourcePath.findFileResources([self.path], file_filter=r"^ApPipe.*\.yaml$")
             # Validation currently broken for injection pipelines.
             # TODO: DM-54077
             if "injection/" not in f.path
@@ -193,27 +163,21 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
             with self.subTest(file=str(file)):
                 pipeline = lsst.pipe.base.Pipeline.from_uri(file)
                 # Do all steps exist?
-                self.assertGreaterEqual(
-                    pipeline.subsets.keys(),
-                    required_subsets,
-                    msg=f"An AP pipeline is missing subsets {required_subsets - pipeline.subsets.keys()}.",
-                )
+                self.assertGreaterEqual(pipeline.subsets.keys(), required_subsets,
+                                        msg="An AP pipeline is missing subsets "
+                                            f"{required_subsets - pipeline.subsets.keys()}.")
                 # Is each task part of exactly one step?
                 for set1, set2 in itertools.product(required_subsets, required_subsets):
                     if set1 == set2:
                         continue
                     tasks1 = pipeline.subsets[set1]
                     tasks2 = pipeline.subsets[set2]
-                    self.assertTrue(
-                        tasks1.isdisjoint(tasks2),
-                        msg=f"Subsets '{set1}' and '{set2}' share tasks {tasks1.intersection(tasks2)}.",
-                    )
+                    self.assertTrue(tasks1.isdisjoint(tasks2),
+                                    msg=f"Subsets '{set1}' and '{set2}' share tasks "
+                                        f"{tasks1.intersection(tasks2)}.")
                 subsetted = set().union(*[pipeline.subsets[s] for s in required_subsets])
-                self.assertEqual(
-                    subsetted,
-                    set(pipeline.task_labels) - no_subset_wanted,
-                    msg=f"These tasks are not in any of the subsets {required_subsets}.",
-                )
+                self.assertEqual(subsetted, set(pipeline.task_labels) - no_subset_wanted,
+                                 msg=f"These tasks are not in any of the subsets {required_subsets}.")
 
     def test_inherited_subsets(self):
         """Test that instrument-specific pipelines have all the subsets of their
@@ -222,8 +186,7 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
         Note that this does not check inheritance *within* `_ingredients`!
         """
         files = [
-            f
-            for f in ResourcePath.findFileResources([self.path], file_filter=r".*\.yaml$")
+            f for f in ResourcePath.findFileResources([self.path], file_filter=r".*\.yaml$")
             if "_ingredients" not in f.path
         ]
         for file in files:
@@ -237,12 +200,9 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                     continue
                 special_subsets = lsst.pipe.base.Pipeline.from_uri(file).subsets.keys()
                 generic_subsets = lsst.pipe.base.Pipeline.from_uri(generic).subsets.keys()
-                self.assertGreaterEqual(
-                    special_subsets,
-                    generic_subsets,
-                    msg="The instrument-specific pipeline is missing subsets "
-                    f"{generic_subsets - special_subsets}.",
-                )
+                self.assertGreaterEqual(special_subsets, generic_subsets,
+                                        msg="The instrument-specific pipeline is missing subsets "
+                                            f"{generic_subsets - special_subsets}.")
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
