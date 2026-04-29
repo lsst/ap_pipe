@@ -32,7 +32,7 @@ import lsst.utils.tests
 from lsst.resources import ResourcePath
 
 
-class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
+class PipelineDefinitionsTestSuite(lsst.utils.tests.TestCase):
     """Tests of the self-consistency of our pipeline definitions.
     """
     def setUp(self):
