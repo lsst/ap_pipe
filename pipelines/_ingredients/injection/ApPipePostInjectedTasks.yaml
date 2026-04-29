@@ -20,15 +20,15 @@ tasks:
       connections.coaddName: parameters.coaddName
       connections.matchDiaSources: "fakes_{coaddName}Diff_matchDiaSrc"
       connections.injectedCat: fakes_preliminary_visit_image_catalog
-      connections.diffIm: fakes_difference_image
-      connections.diaSources: fakes_dia_source_unfiltered
+      connections.diffIm: difference_image
+      connections.diaSources: dia_source_unfiltered
       matchDistanceArcseconds: 0.5
       trimBuffer: 50
   injectedMatchAssocDiaSrc:
     class: lsst.pipe.tasks.matchDiffimSourceInjected.MatchInjectedToAssocDiaSourceTask
     config:
       connections.coaddName: parameters.coaddName
-      connections.assocDiaSources: fakes_dia_source_apdb
+      connections.assocDiaSources: dia_source_apdb
       connections.matchDiaSources: "fakes_{coaddName}Diff_matchDiaSrc"
       connections.matchAssocDiaSources: "fakes_{coaddName}Diff_matchAssocDiaSrc"
   consolidateMatchDiaSrc:
