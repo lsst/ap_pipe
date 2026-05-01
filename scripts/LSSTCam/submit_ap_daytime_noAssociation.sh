@@ -29,7 +29,7 @@ BAD_DETECTORS="120 122 0 20 27 65 123 161 168 188 1 19 30 68 158 169 187 \
 BLOCKS="BLOCK-365 BLOCK-407 BLOCK-408 BLOCK-416 BLOCK-417 BLOCK-419 BLOCK-421 \
 BLOCK-T698 BLOCK-T703 BLOCK-T704 BLOCK-T706"
 
-OUTPUT_COLLECTION="LSSTCam/prompt/output-${DATE}/daytime"
+OUTPUT_COLLECTION="LSSTCam/runs/daytimeAP/${DATE}"
 
 LOG_FILE="output-${DATE}.out"
 
@@ -38,9 +38,9 @@ BAD_DETECTORS_SQL="($(printf '%s,' $BAD_DETECTORS | sed 's/,$//'))"
 BLOCKS_SQL="($(printf "'%s'," $BLOCKS | sed 's/,$//'))"
 
 nohup bps submit "${AP_PIPE_DIR}/bps/LSSTCam/bps_Daytime_noAssociation.yaml" \
-  --extra-qgraph-options "--skip-existing-in LSSTCam/prompt/output-${DATE} -c parameters:release_id=1 --dataset-query-constraint off" \
+  --extra-qgraph-options "--skip-existing-in LSSTCam/runs/prompt-${DATE} -c parameters:release_id=1 --dataset-query-constraint off" \
   --extra-run-quantum-options "--no-raise-on-partial-outputs" \
-  --input "LSSTCam/defaults,LSSTCam/templates,LSSTCam/prompt/output-${DATE}" \
+  --input "LSSTCam/defaults,LSSTCam/templates,LSSTCam/runs/prompt-${DATE}" \
   --output "$OUTPUT_COLLECTION" \
   -d "instrument='$INSTRUMENT' \
       AND skymap='lsst_cells_v2' \
