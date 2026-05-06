@@ -41,6 +41,7 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
         # higher-level pipelines.
         self.synonyms = {"ApPipe.yaml": "apPipe",
                          "ApPipeWithIsrTaskLSST.yaml": "apPipe",
+                         "ApPipeWithPreconvolution.yaml": "apPipe",
                          "ApPipeWithFakes.yaml": "apPipe",
                          "SingleFrame.yaml": "singleFrame",
                          "SingleFrameWithIsrTaskLSST.yaml": "singleFrame",
@@ -178,6 +179,50 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                 subsetted = set().union(*[pipeline.subsets[s] for s in required_subsets])
                 self.assertEqual(subsetted, set(pipeline.task_labels) - no_subset_wanted,
                                  msg=f"These tasks are not in any of the subsets {required_subsets}.")
+
+    def test_preconvolution_isr_matches_ap_pipe(self):
+        """Test that, for each instrument, ApPipeWithPreconvolution defines
+        the same isr task (class and config) as the corresponding ApPipe.
+
+        Preconvolution changes only image subtraction and DIA-source
+        detection; instrument signature removal must be unaffected.
+        """
+        files = [
+            f for f in ResourcePath.findFileResources(
+                [self.path], file_filter=r"^ApPipeWithPreconvolution\.yaml$"
+            )
+            if "_ingredients" not in f.path
+        ]
+        # Sanity-check that this test actually has cameras to compare.
+        self.assertGreater(len(files), 0,
+                           msg="No camera-specific ApPipeWithPreconvolution.yaml files found.")
+
+        for precon_file in files:
+            with self.subTest(file=str(precon_file)):
+                base_file = precon_file.dirname().join("ApPipe.yaml")
+                self.assertTrue(base_file.exists(),
+                                msg=f"Expected sibling ApPipe.yaml next to {precon_file}: "
+                                    f"{base_file} does not exist.")
+
+                precon = lsst.pipe.base.Pipeline.from_uri(precon_file)
+                base = lsst.pipe.base.Pipeline.from_uri(base_file)
+                # apdb_config has no default and must be set before to_graph().
+                precon.addConfigOverride("parameters", "apdb_config", "some/file/path.yaml")
+                base.addConfigOverride("parameters", "apdb_config", "some/file/path.yaml")
+
+                precon_isr = precon.to_graph().tasks["isr"]
+                base_isr = base.to_graph().tasks["isr"]
+
+                self.assertEqual(precon_isr.task_class_name, base_isr.task_class_name,
+                                 msg=f"isr task class differs between ApPipe.yaml and "
+                                     f"ApPipeWithPreconvolution.yaml in {precon_file.dirname()}.")
+                # Can't just do `assertEqual(precon_isr, base_isr)` since
+                # Task nodes are intentionally not equality comparable.
+                self.assertTrue(
+                    base_isr.config.compare(precon_isr.config, shortcut=False),
+                    msg=f"isr task config differs between ApPipe.yaml and "
+                        f"ApPipeWithPreconvolution.yaml in {precon_file.dirname()}."
+                )
 
     def test_inherited_subsets(self):
         """Test that instrument-specific pipelines have all the subsets of their

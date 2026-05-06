@@ -1,0 +1,124 @@
+description: End to end Alert Production pipeline with preconvolution.
+
+# Per RFC-997, all variants of ApPipe must define three mutually exclusive subsets:
+# - preload is tasks that can be run before raw images arrive
+# - prompt is everything done by Prompt Processing starting from raws
+# - afterburner is metrics and other non-essential tasks that are skipped by Prompt Processing
+
+imports:
+  - $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithIsrTaskLSST.yaml
+
+tasks:
+  subtractImagesScore:
+    class: lsst.ip.diffim.subtractImages.AlardLuptonPreconvolveSubtractTask
+    config:
+      connections.coaddName: parameters.coaddName
+      connections.science: preliminary_visit_image
+      connections.sources: single_visit_star_footprints
+      connections.template: template_detector
+      connections.psfMatchingKernel: score_kernel
+      connections.kernelSources: score_kernel_sources
+      connections.scoreExposure: score_image_predetection
+      doApplyExternalCalibrations: False
+  detectAndMeasureDiaSource:
+    class: lsst.ip.diffim.detectAndMeasure.DetectAndMeasureScoreTask
+    config:
+      connections.coaddName: parameters.coaddName
+      connections.science: preliminary_visit_image
+      connections.matchedTemplate: template_matched
+      connections.scoreExposure: score_image_predetection
+      connections.difference:  difference_image_predetection
+      connections.kernelSources: difference_kernel_sources
+      connections.outputSchema: dia_source_schema
+      connections.diaSources: dia_source_unfiltered
+      connections.scoreMeasuredExposure: score_image
+      connections.subtractedMeasuredExposure: difference_image
+      connections.maskedStreaks: goodSeeingDiff_streaks
+      idGenerator.release_id: parameters.release_id
+      doSkySources: True
+
+subsets:
+  # apPipeSingleFrame, preload, and afterburner subsets are inherited unchanged 
+  apPipe:
+    subset:
+      - loadDiaCatalogs
+      - isr
+      - calibrateImage
+      - buildTemplate
+      - subtractImages
+      - subtractImagesScore
+      - detectAndMeasureDiaSource
+      - filterDiaSource
+      - computeReliability
+      - filterDiaSourcePostReliability
+      - standardizeDiaSource
+      - getRegionTimeFromVisit
+      - mpSkyEphemerisQuery
+      - associateApdb
+      - analyzeAssociatedDiaSourceTable
+      - analyzeTrailedDiaSourceTable
+      - makeSampledImageSubtractionMetrics
+      - analyzeImageDifferenceMetrics
+      - analyzeDiaSourceDetectionMetrics
+      - analyzeLoadDiaCatalogsMetrics
+      - analyzeDiaSourceAssociationMetrics
+      - analyzeAssociateDiaSourceTiming
+      - analyzeSampledImageSubtractionMetrics
+      - analyzePreliminarySummaryStats
+      - consolidateVisitSummary
+      - analyzeVisitSampledImageSubtractionMetrics
+      - singleFrameDetectAndMeasure
+    description: >
+      An alias of ApPipe to use in higher-level pipelines.
+  prompt:
+    subset:
+      - isr
+      - calibrateImage
+      - buildTemplate
+      - subtractImages
+      - subtractImagesScore
+      - detectAndMeasureDiaSource
+      - filterDiaSource
+      - computeReliability
+      - filterDiaSourcePostReliability
+      - standardizeDiaSource
+      - associateApdb
+      - analyzeAssociatedDiaSourceTable
+      - analyzeTrailedDiaSourceTable
+      - analyzeImageDifferenceMetrics
+      - analyzeDiaSourceDetectionMetrics
+      - analyzeDiaSourceAssociationMetrics
+      - analyzeAssociateDiaSourceTiming
+      - analyzePreliminarySummaryStats
+    description: >
+      Tasks necessary to turn raw images into APDB rows and alerts.
+      Requires preload subset to be run first.
+
+contracts:
+  # Inputs and outputs must match. For consistency, contracts are written in execution order:
+  #     first task == second task, then sorted by (first, second)
+  # Use of ConnectionsClass for templated fields is a workaround for DM-30210
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
+              subtractImagesScore.connections.ConnectionsClass(config=subtractImagesScore).science.name
+    msg: "calibrateImage.exposure != subtractImagesScore.science"
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).stars_footprints.name ==
+              subtractImagesScore.connections.ConnectionsClass(config=subtractImagesScore).sources.name
+    msg: "calibrateImage.stars_footprints != subtractImagesScore.sources"
+  - contract: buildTemplate.connections.ConnectionsClass(config=buildTemplate).template.name ==
+              subtractImagesScore.connections.ConnectionsClass(config=subtractImagesScore).template.name
+    msg: "buildTemplate.template != subtractImagesScore.template"
+  - contract: subtractImages.connections.ConnectionsClass(config=subtractImages).science.name ==
+              subtractImagesScore.connections.ConnectionsClass(config=subtractImagesScore).science.name
+    msg: "subtractImages.science != subtractImagesScore.science"
+  - contract: subtractImages.connections.ConnectionsClass(config=subtractImages).sources.name ==
+              subtractImagesScore.connections.ConnectionsClass(config=subtractImagesScore).sources.name
+    msg: "subtractImages.sources != subtractImagesScore.sources"
+  - contract: subtractImages.connections.ConnectionsClass(config=subtractImages).template.name ==
+              subtractImagesScore.connections.ConnectionsClass(config=subtractImagesScore).template.name
+    msg: "subtractImages.template != subtractImagesScore.template"
+  - contract: subtractImages.connections.ConnectionsClass(config=subtractImages).matchedTemplate.name ==
+              detectAndMeasureDiaSource.connections.ConnectionsClass(config=detectAndMeasureDiaSource).matchedTemplate.name
+    msg: "subtractImages.matchedTemplate != detectAndMeasureDiaSource.matchedTemplate"
+  - contract: subtractImagesScore.connections.ConnectionsClass(config=subtractImagesScore).scoreExposure.name ==
+              detectAndMeasureDiaSource.connections.ConnectionsClass(config=detectAndMeasureDiaSource).scoreExposure.name
+    msg: "subtractImagesScore.scoreExposure != detectAndMeasureDiaSource.scoreExposure"
