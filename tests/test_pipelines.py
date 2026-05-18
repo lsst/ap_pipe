@@ -180,6 +180,54 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                 self.assertEqual(subsetted, set(pipeline.task_labels) - no_subset_wanted,
                                  msg=f"These tasks are not in any of the subsets {required_subsets}.")
 
+    def test_injection_ingredient(self):
+        """Test the source-injection post-processing ingredient pipeline.
+
+        PostInjectedTasksApPipe is a partial pipeline merged into full AP
+        pipelines at build time by make_injection_pipeline. This test
+        validates that it can build a graph and contains the expected tasks.
+        """
+        ingredient = self.path.join("_ingredients").join("injection").join("ApPipePostInjectedTasks.yaml")
+        with self.subTest(file=str(ingredient)):
+            pipeline = lsst.pipe.base.Pipeline.from_uri(ingredient)
+            expected_tasks = {
+                "injectedMatchDiaSrc",
+                "injectedMatchAssocDiaSrc",
+                "consolidateMatchDiaSrc",
+                "consolidateMatchAssocDiaSrc",
+            }
+            self.assertGreaterEqual(
+                set(pipeline.task_labels),
+                expected_tasks,
+                msg="Source-injection post-processing ingredient is missing expected tasks.",
+            )
+
+    def test_generated_pipeline_readiness(self):
+        """Test that the generated ApPipeWithFakes ingredient exists and is valid.
+
+        pipelines/_ingredients/ApPipeWithFakes.yaml is generated at build time
+        by make_injection_pipeline (invoked via scons). This test verifies that
+        generation occurred before pipeline tests run, and that the generated
+        pipeline includes the source-injection task. If this test is skipped,
+        run 'scons' in the ap_pipe root directory first.
+        """
+        generated = self.path.join("_ingredients/ApPipeWithFakes.yaml")
+        if not generated.exists():
+            # fail the test with a message that explains how to fix the problem,
+            # rather than silently skipping it
+            self.fail(
+                f"{generated} has not been generated yet. "
+                "Run 'scons' in the ap_pipe root directory to generate it."
+            )
+        with self.subTest(file=str(generated)):
+            pipeline = lsst.pipe.base.Pipeline.from_uri(generated)
+            pipeline.addConfigOverride("parameters", "apdb_config", "some/file/path.yaml")
+            self.assertIn(
+                "injectVisit",
+                pipeline.task_labels,
+                msg="Generated ApPipeWithFakes.yaml is missing the 'injectVisit' task.",
+            )
+
     def test_preconvolution_isr_matches_ap_pipe(self):
         """Test that, for each instrument, ApPipeWithPreconvolution defines
         the same isr task (class and config) as the corresponding ApPipe.
