@@ -16,7 +16,7 @@ additional_fakes_tasks = os.path.join(
     "pipelines",
     "_ingredients",
     "injection",
-    "ApPipePostInjectedTasks.yaml",
+    "PostInjectedTasksApPipe.yaml",
 )
 ap_pipe_with_fakes_path = os.path.join(
     PKG_ROOT,
