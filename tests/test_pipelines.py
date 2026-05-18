@@ -70,18 +70,18 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                 pipeline.to_graph()
 
     def test_datasets(self):
-        files = [
-            f for f in ResourcePath.findFileResources(
-                [self.path.join("_ingredients", forceDirectory=True)], file_filter=r".*\.yaml$"
-            )
-            # Validation currently broken for injection pipelines.
-            # TODO: DM-54077
-            if "injection/" not in f.path
-        ]
+        files = ResourcePath.findFileResources(
+            [self.path.join("_ingredients", forceDirectory=True)], file_filter=r".*\.yaml$"
+        )
         for file in files:
             if "QuickTemplate" in file.path:
                 # Our QuickTemplate definition cannot be tested here because it
                 # depends on drp_tasks, which we cannot make a dependency here.
+                continue
+            if "injection/" in file.path:
+                # The source-injection post-processing ingredient is a partial
+                # pipeline merged into full AP pipelines at build time;
+                # it is validated separately by test_injection_ingredient.
                 continue
             with self.subTest(file=str(file)):
                 expected_inputs = {
@@ -96,7 +96,11 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                     "skyMap", "gaia_dr3_20230707", "gaia_dr2_20200414", "ps1_pv3_3pi_20170110",
                     "template_coadd", "pretrainedModelPackage", "dia_source_apdb"
                 }
-                if "WithFakes" in file.path:
+                # Detect source-injection pipelines by task label rather than
+                # relying on filename conventions.
+                temp_pipeline = lsst.pipe.base.Pipeline.from_uri(file)
+                temp_pipeline.addConfigOverride("parameters", "apdb_config", "some/file/path.yaml")
+                if "injectVisit" in temp_pipeline.task_labels:
                     expected_inputs.add("injection_catalog")
                 tester = PipelineStepTester(
                     filename=file,
@@ -120,16 +124,14 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
         """Test that each pipeline's synonymous subset includes all tasks,
         including those imported from other files.
         """
-        files = [
-            f for f in ResourcePath.findFileResources([self.path], file_filter=r".*\.yaml$")
-            # Validation currently broken for injection pipelines.
-            # TODO: DM-54077
-            if "injection/" not in f.path
-        ]
+        files = ResourcePath.findFileResources([self.path], file_filter=r".*\.yaml$")
         for file in files:
             if "QuickTemplate" in file.path:
                 # Our QuickTemplate definition cannot be tested here because it
                 # depends on drp_tasks, which we cannot make a dependency here.
+                continue
+            elif "injection/" in file.path:
+                # PostInjectedTasksApPipe is not actually an AP pipeline
                 continue
             elif "ApdbDeduplication" in file.path:
                 # The task to export catalogs from the APDB and re-run
@@ -149,18 +151,16 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
     def test_ap_pipe_subsets(self):
         """Test the unique subsets of ApPipe.
         """
-        files = [
-            f for f in ResourcePath.findFileResources([self.path], file_filter=r"^ApPipe.*\.yaml$")
-            # Validation currently broken for injection pipelines.
-            # TODO: DM-54077
-            if "injection/" not in f.path
-        ]
+        files = ResourcePath.findFileResources([self.path], file_filter=r"^ApPipe.*\.yaml$")
         required_subsets = {"preload", "prompt", "afterburner"}
         # getRegionTimeFromVisit is part of no subset besides apPipe. This is a
         # very deliberate exception; see RFC-997.
         no_subset_wanted = {"getRegionTimeFromVisit"}
 
         for file in files:
+            if "injection/" in file.path:
+                # PostInjectedTasksApPipe is not actually an AP pipeline
+                continue
             with self.subTest(file=str(file)):
                 pipeline = lsst.pipe.base.Pipeline.from_uri(file)
                 # Do all steps exist?
