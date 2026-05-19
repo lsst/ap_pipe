@@ -20,8 +20,7 @@ clusterAlgorithm: lsst.ctrl.bps.quantum_clustering_funcs.dimension_clustering
 cluster:
   preload:
     pipetasks: loadDiaCatalogs,analyzeLoadDiaCatalogsMetrics,mpSkyEphemerisQuery,getRegionTimeFromVisit
-    dimensions: visit,detector
-    equalDimensions: visit:group
+    dimensions: group,detector
   singleFrame:
     pipetasks: isr,calibrateImage,analyzePreliminarySummaryStats
     dimensions: visit,detector
@@ -45,10 +44,11 @@ cluster:
     pipetasks: consolidateVisitSummary,analyzeVisitSampledImageSubtractionMetrics
     dimensions: visit
 
+
 ordering:
-  associationCluster:
+  associationOrder:
     ordering_type: sort
     findDependencyMethod: sink
-    labels: association
+    labels: preload,association
     dimensions: visit
     blocking: False
