@@ -31,12 +31,12 @@ Build-Time Pipeline Generation
 
 The ``_ingredients/ApPipeWithFakes.yaml`` file is **automatically generated** during package compilation, not manually maintained. This process is controlled by the ``SConstruct`` file at the package root.
 
-The ``SConstruct`` file defines the build process for generating the ``ApPipeWithFakes`` pipeline, where the base ``_ingredients/ApPipe.yaml`` is taken as input and by using the  ``source_injection`` `~lsst.source.injection.bin.make_injection_pipeline` command to automatically add injection tasks as well as including the post injection specific tasks from ``_ingredients/injection/ApPipePostInjectedTasks.yaml``.
+The ``SConstruct`` file defines the build process for generating the ``ApPipeWithFakes`` pipeline, where the base ``_ingredients/ApPipe.yaml`` is taken as input and by using the  ``source_injection`` `~lsst.source.injection.bin.make_injection_pipeline` command to automatically add injection tasks as well as including the post injection specific tasks from ``_ingredients/injection/PostInjectedTasksApPipe.yaml``.
 
 The generated ``ApPipeWithFakes.yaml`` file should **not** be manually edited, instead, modifications should be made to:
 
 * The base ``_ingredients/ApPipe.yaml`` pipeline
-* The ``_ingredients/injection/ApPipePostInjectedTasks.yaml`` injection-specific and metrics tasks
+* The ``_ingredients/injection/PostInjectedTasksApPipe.yaml`` injection-specific and metrics tasks
 * The ``SConstruct`` build configuration
 
 Running the Pipeline
