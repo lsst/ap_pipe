@@ -187,7 +187,7 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
         pipelines at build time by make_injection_pipeline. This test
         validates that it can build a graph and contains the expected tasks.
         """
-        ingredient = self.path.join("_ingredients").join("injection").join("ApPipePostInjectedTasks.yaml")
+        ingredient = self.path.join("_ingredients").join("injection").join("PostInjectedTasksApPipe.yaml")
         with self.subTest(file=str(ingredient)):
             pipeline = lsst.pipe.base.Pipeline.from_uri(ingredient)
             expected_tasks = {
