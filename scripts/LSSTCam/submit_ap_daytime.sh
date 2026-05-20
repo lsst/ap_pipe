@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -eu
 
 # An executable script that will prepare and submit the daytime Alert Production pipeline
@@ -34,7 +34,7 @@ mc cp embargo/rubin-summit-users/apdb_config/cassandra/pp_apdb_lsstcam.yaml "$TM
 
 
 # NOTE:
-# No cleanup of TMP_APDB here since the job is launched with nohup
+# No cleanup of TMP_APDB here since the job is launched in the background
 # and runtime duration is unknown.
 
 # Redirect Cassandra logs
@@ -64,18 +64,62 @@ LOG_FILE="output-${DATE}.out"
 BAD_DETECTORS_SQL="($(printf '%s,' $BAD_DETECTORS | sed 's/,$//'))"
 BLOCKS_SQL="($(printf "'%s'," $BLOCKS | sed 's/,$//'))"
 
-nohup bps submit "${AP_PIPE_DIR}/bps/LSSTCam/bps_Daytime.yaml" \
-  --extra-qgraph-options "--skip-existing-in LSSTCam/runs/prompt-${DATE} -c parameters:release_id=1 -c parameters:apdb_config=${TMP_APDB} -c associateApdb:doRunForcedMeasurement=False --dataset-query-constraint off" \
-  --extra-run-quantum-options "--no-raise-on-partial-outputs" \
-  --input "LSSTCam/defaults,LSSTCam/templates,LSSTCam/runs/prompt-${DATE}" \
-  --output "$OUTPUT_COLLECTION" \
-  -d "instrument='$INSTRUMENT' \
-      AND skymap='lsst_cells_v2' \
-      AND detector NOT IN $BAD_DETECTORS_SQL \
-      AND day_obs=$DAY_OBS \
-      AND exposure.science_program IN $BLOCKS_SQL" \
-  > "${LOG_FILE}" 2>&1 &
+# Pipeline and butler config must mirror bps_Daytime.yaml — we replicate them
+# here because we build the quantum graph ourselves before calling BPS.
+PIPELINE_YAML="${AP_PIPE_DIR}/pipelines/LSSTCam/ApPipe.yaml"
+BUTLER_CONFIG="embargo"
+INPUT_COLLECTIONS="LSSTCam/defaults,LSSTCam/templates,LSSTCam/runs/prompt-${DATE}"
+
+# Generate an explicit output run so the pre-built and pruned quantum graphs
+# share a single name with the eventual BPS submission.
+TIMESTAMP=$(date -u +"%Y%m%dT%H%M%SZ")
+OUTPUT_RUN="${OUTPUT_COLLECTION}/${TIMESTAMP}"
+
+QGRAPH_DIR="$(pwd)/qgraphs/${DATE}/${TIMESTAMP}"
+mkdir -p "$QGRAPH_DIR"
+FULL_QGRAPH="${QGRAPH_DIR}/full.qg"
+PRUNED_QGRAPH="${QGRAPH_DIR}/pruned.qg"
+
+DATA_QUERY="instrument='$INSTRUMENT' \
+    AND skymap='lsst_cells_v2' \
+    AND detector NOT IN $BAD_DETECTORS_SQL \
+    AND day_obs=$DAY_OBS \
+    AND exposure.science_program IN $BLOCKS_SQL"
+
+{
+    set -e
+
+    echo "[$(date)] Step 1/3: building full quantum graph"
+    pipetask qgraph \
+        -p "$PIPELINE_YAML" \
+        -b "$BUTLER_CONFIG" \
+        -i "$INPUT_COLLECTIONS" \
+        --output "$OUTPUT_COLLECTION" \
+        --output-run "$OUTPUT_RUN" \
+        -d "$DATA_QUERY" \
+        --skip-existing-in "LSSTCam/runs/prompt-${DATE}" \
+        -c "parameters:release_id=1" \
+        -c "parameters:apdb_config=${TMP_APDB}" \
+        -c "associateApdb:doRunForcedMeasurement=False" \
+        --dataset-query-constraint off \
+        -q "$FULL_QGRAPH"
+
+    echo "[$(date)] Step 2/3: pruning orphan loadDiaCatalogs quanta"
+    python -m lsst.ap.pipe.prune_orphan_preloads \
+        "$FULL_QGRAPH" "$PRUNED_QGRAPH"
+
+    echo "[$(date)] Step 3/3: submitting BPS workflow with pruned graph"
+    bps submit "${AP_PIPE_DIR}/bps/LSSTCam/bps_Daytime.yaml" \
+        --qgraph "$PRUNED_QGRAPH" \
+        --extra-run-quantum-options "--no-raise-on-partial-outputs" \
+        --input "$INPUT_COLLECTIONS" \
+        --output "$OUTPUT_COLLECTION" \
+        --output-run "$OUTPUT_RUN"
+} > "${LOG_FILE}" 2>&1 &
+disown
 
 echo "Submission started for date ${DATE}"
 echo "Temporary APDB config: ${TMP_APDB}"
+echo "Full quantum graph: ${FULL_QGRAPH}"
+echo "Pruned quantum graph: ${PRUNED_QGRAPH}"
 echo "Submission output log written to ${LOG_FILE}"
