@@ -47,6 +47,7 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                          "SingleFrameWithIsrTaskLSST.yaml": "singleFrame",
                          "RunIsrWithoutInterChipCrosstalk.yaml": "runIsr",
                          "RunIsrForCrosstalkSources.yaml": "runOverscan",
+                         "CreateInjectionCatalogs.yaml": "fakeCreation",
                          }
 
     def test_graph_build(self):
@@ -102,6 +103,7 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                 temp_pipeline.addConfigOverride("parameters", "apdb_config", "some/file/path.yaml")
                 if "injectVisit" in temp_pipeline.task_labels:
                     expected_inputs.add("injection_catalog")
+                    expected_inputs.add("fakes_VisitDetectorFakeSourceCat")
                 tester = PipelineStepTester(
                     filename=file,
                     step_suffixes=[""],  # Test full pipeline

@@ -1,0 +1,8 @@
+description: Single-frame-level source injection into template dataset types.
+tasks:
+  injectTemplate:
+    class: lsst.source.injection.inject_exposure.VisitInjectTask
+    config:
+      external_psf: false
+      external_photo_calib: false
+      external_wcs: false

@@ -25,14 +25,21 @@ import numpy as np
 import shutil
 import tempfile
 import unittest
+from unittest.mock import MagicMock
 
 import lsst.daf.butler.tests as butlerTests
 import lsst.geom as geom
+from astropy.table import Table
 from lsst.pipe.base import testUtils
 import lsst.skymap as skyMap
 import lsst.utils.tests
 
-from lsst.ap.pipe.createApFakes import CreateRandomApFakesTask, CreateRandomApFakesConfig
+from lsst.ap.pipe.createApFakes import (
+    CreateRandomApFakesTask,
+    CreateRandomApFakesConfig,
+    CreateVisitDetectorFakesTask,
+    CreateVisitDetectorFakesConfig,
+)
 
 
 class TestCreateApFakes(lsst.utils.tests.TestCase):
@@ -109,6 +116,12 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
         result = fakesTask.run(self.tractId, self.simpleMap)
         fakeCat = result.fakeCat
         self.assertEqual(len(fakeCat), self.nSources)
+        self.assertIn("injection_id", fakeCat.columns)
+        self.assertIn("source_type", fakeCat.columns)
+        self.assertIn("mag", fakeCat.columns)
+        self.assertTrue(np.issubdtype(fakeCat["injection_id"].dtype, np.integer))
+        self.assertEqual(fakeCat["injection_id"].nunique(), len(fakeCat))
+        self.assertTrue(np.all(fakeCat["source_type"] == "Star"))
 
         for idx, row in fakeCat.iterrows():
             self.assertTrue(
@@ -127,6 +140,7 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
                 np.all(fakesConfig.magMin <= filterMags))
             self.assertTrue(
                 np.all(fakesConfig.magMax > filterMags))
+            self.assertTrue(np.allclose(filterMags, fakeCat["mag"]))
 
     def testVisitCoaddSubdivision(self):
         """Test that the number of assigned visit to template objects is
@@ -170,6 +184,237 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
                 np.all(fakesConfig.magMin <= filterMags))
             self.assertTrue(
                 np.all(fakesConfig.magMax > filterMags))
+
+
+def _make_mock_visit_image(visitId=2024111100094, detId=3,
+                           xmin=0, xmax=4096, ymin=0, ymax=4096,
+                           magLim=25.0, ra_center=10.0, dec_center=-1.0):
+    """Build a minimal MagicMock that satisfies CreateVisitDetectorFakesTask.run."""
+    img = MagicMock()
+
+    # visit / detector IDs
+    img.getInfo().getVisitInfo().id = visitId
+    img.detector.getId.return_value = detId
+
+    # bounding box
+    bbox = MagicMock()
+    bbox.getMinX.return_value = xmin
+    bbox.getMaxX.return_value = xmax
+    bbox.getMinY.return_value = ymin
+    bbox.getMaxY.return_value = ymax
+    img.getBBox.return_value = bbox
+
+    # summary stats — magLim drives max_mag
+    stats = MagicMock()
+    stats.magLim = magLim
+    img.getInfo().getSummaryStats.return_value = stats
+
+    # convex polygon for density calculation (returns a bbox in steradians)
+    poly_bbox = MagicMock()
+    # ~1e-5 sr ≈ small patch, dense enough to yield O(10) fakes at density=1000
+    poly_bbox.getArea.return_value = 1e-5
+    img.getConvexPolygon().getBoundingBox.return_value = poly_bbox
+
+    # WCS: pixelToSkyArray returns ra/dec arrays of the right length
+    wcs = MagicMock()
+
+    def _pix_to_sky(xs, ys, degrees=True):
+        ra = ra_center + xs * 1e-4
+        dec = dec_center + ys * 1e-4
+        return np.asarray(ra), np.asarray(dec)
+    wcs.pixelToSkyArray.side_effect = _pix_to_sky
+    img.getWcs.return_value = wcs
+
+    # photoCalib — not used in non-hosted paths, but must exist
+    img.getPhotoCalib.return_value = MagicMock()
+
+    return img
+
+
+class TestCreateVisitDetectorFakesTask(lsst.utils.tests.TestCase):
+
+    def setUp(self):
+        self.visit_image = _make_mock_visit_image()
+        self.source_cat = MagicMock()  # not used unless doAddHostedFakes
+
+    def _make_task(self, **config_overrides):
+        cfg = CreateVisitDetectorFakesConfig()
+        cfg.doAddRandomVisitFakes = True
+        cfg.doAddRandomTemplateFakes = False
+        cfg.doAddHostedFakes = False
+        cfg.doAddVariableFakes = False
+        cfg.doAddModelFakes = False
+        cfg.nRandomFakes = 50
+        for k, v in config_overrides.items():
+            setattr(cfg, k, v)
+        return CreateVisitDetectorFakesTask(config=cfg)
+
+    # ------------------------------------------------------------------
+    # Basic smoke test: random-only path
+    # ------------------------------------------------------------------
+    def testRunRandomOnly(self):
+        task = self._make_task()
+        result = task.run(self.source_cat, self.visit_image)
+        cat = result.outputCat
+
+        self.assertIsInstance(cat, Table)
+        self.assertEqual(len(cat), 50)
+        # Required columns
+        for col in ("ra", "dec", "mag", "x", "y", "source_type",
+                    "injection_id", "visit", "detector"):
+            self.assertIn(col, cat.colnames)
+        # All sources are stars
+        self.assertTrue(np.all(cat["source_type"] == "Star"))
+        # IDs are unique
+        self.assertEqual(len(np.unique(cat["injection_id"])), len(cat))
+        # visit/detector are set correctly
+        self.assertTrue(np.all(cat["visit"] == 2024111100094))
+        self.assertTrue(np.all(cat["detector"] == 3))
+
+    # ------------------------------------------------------------------
+    # Template-fraction split
+    # ------------------------------------------------------------------
+    def testTemplateFakeFraction(self):
+        task = self._make_task(
+            doAddRandomTemplateFakes=True,
+            templateFakeFraction=0.25,
+            nRandomFakes=200,
+        )
+        result = task.run(self.source_cat, self.visit_image)
+        cat = result.outputCat
+
+        n_template = int(np.sum(cat["isTemplateSource"]))
+        # No source should be both visit AND template (mutually exclusive after split)
+        self.assertFalse(np.any(cat["isVisitSource"] & cat["isTemplateSource"]))
+        # template fraction should be roughly 25 %
+        frac = n_template / len(cat)
+        self.assertAlmostEqual(frac, 0.25, delta=0.10)
+
+    # ------------------------------------------------------------------
+    # Variable fakes: twin_id bookkeeping
+    # ------------------------------------------------------------------
+    def testVariableFakesTwinTracking(self):
+        task = self._make_task(
+            doAddVariableFakes=True,
+            variableFakeFraction=0.2,
+            nRandomFakes=100,
+        )
+        result = task.run(self.source_cat, self.visit_image)
+        cat = result.outputCat
+
+        # Catalog is larger than the base 100 fakes
+        self.assertGreater(len(cat), 100)
+        # twin_id column exists
+        self.assertIn("twin_id", cat.colnames)
+        # Every injection_id is unique
+        self.assertEqual(len(np.unique(cat["injection_id"])), len(cat))
+        # mag_offset column is present on variable rows
+        self.assertIn("mag_offset", cat.colnames)
+
+    # ------------------------------------------------------------------
+    # Empty-mode guard raises RuntimeError
+    # ------------------------------------------------------------------
+    def testEmptyCatalogRaises(self):
+        task = self._make_task(
+            doAddRandomVisitFakes=False,
+            doAddHostedFakes=False,
+            doAddModelFakes=False,
+        )
+        with self.assertRaises(RuntimeError):
+            task.run(self.source_cat, self.visit_image)
+
+    # ------------------------------------------------------------------
+    # Hosted fakes: sparse-host cap (fewer hosts than minHostedFakes)
+    # ------------------------------------------------------------------
+    def testHostedFakesSparseHostCap(self):
+        """When n_hosts < minHostedFakes the task should clamp, not crash."""
+        cfg = CreateVisitDetectorFakesConfig()
+        cfg.doAddRandomVisitFakes = False
+        cfg.doAddHostedFakes = True
+        cfg.doAddRandomTemplateFakes = False
+        cfg.doAddVariableFakes = False
+        cfg.doAddModelFakes = False
+        cfg.fracHostedFakes = 0.99  # near-100 % but within [0, 1) range
+        cfg.minHostedFakes = 50  # request 50 but we'll only supply 5 hosts
+        task = CreateVisitDetectorFakesTask(config=cfg)
+
+        n_hosts = 5
+        host_table = Table({
+            "slot_Centroid_x": np.full(n_hosts, 2048.0),
+            "slot_Centroid_y": np.full(n_hosts, 2048.0),
+            "slot_ModelFlux_mag": np.full(n_hosts, 20.0),
+            "slot_ModelFlux_flux": np.full(n_hosts, 1e4),
+            "slot_ModelFlux_fluxErr": np.full(n_hosts, 100.0),
+            "slot_Shape_xx": np.full(n_hosts, 4.0),
+            "slot_Shape_xy": np.zeros(n_hosts),
+            "slot_Shape_yy": np.full(n_hosts, 4.0),
+            "id": np.arange(n_hosts, dtype=np.int64),
+            "coord_ra": np.deg2rad(np.full(n_hosts, 10.0)),
+            "coord_dec": np.deg2rad(np.full(n_hosts, -1.0)),
+            "sky_source": np.zeros(n_hosts, dtype=bool),
+            "base_ClassificationSizeExtendedness_flag": np.zeros(n_hosts, dtype=bool),
+            "base_ClassificationExtendedness_flag": np.zeros(n_hosts, dtype=bool),
+            "slot_Shape_flag": np.zeros(n_hosts, dtype=bool),
+            "slot_Centroid_flag": np.zeros(n_hosts, dtype=bool),
+            "base_PixelFlags_flag": np.zeros(n_hosts, dtype=bool),
+            "base_ClassificationSizeExtendedness_value": np.ones(n_hosts),
+            "base_ClassificationExtendedness_value": np.ones(n_hosts, dtype=int),
+        })
+
+        # Patch photoCalib so calibrateCatalog().asAstropy() returns our table
+        img = _make_mock_visit_image()
+        img.getPhotoCalib().calibrateCatalog.return_value.asAstropy.return_value = host_table
+
+        result = task.run(self.source_cat, img)
+        cat = result.outputCat
+
+        # Number of hosted fakes should be clamped to n_hosts, not minHostedFakes
+        self.assertEqual(len(cat), n_hosts)
+        self.assertIn("hosted_fake", cat.colnames)
+        self.assertTrue(np.all(cat["hosted_fake"]))
+        self.assertEqual(len(np.unique(cat["injection_id"])), n_hosts)
+
+    # ------------------------------------------------------------------
+    # Hosted fakes: zero valid hosts — warning issued, no crash when
+    # random fakes are also enabled as fallback
+    # ------------------------------------------------------------------
+    def testHostedFakesNoHostsWarning(self):
+        task = self._make_task(
+            doAddRandomVisitFakes=True,
+            nRandomFakes=10,
+            doAddHostedFakes=True,
+        )
+        empty_table = Table({
+            "slot_Centroid_x": np.array([]),
+            "slot_Centroid_y": np.array([]),
+            "slot_ModelFlux_mag": np.array([]),
+            "slot_ModelFlux_flux": np.array([]),
+            "slot_ModelFlux_fluxErr": np.array([]),
+            "slot_Shape_xx": np.array([]),
+            "slot_Shape_xy": np.array([]),
+            "slot_Shape_yy": np.array([]),
+            "id": np.array([], dtype=np.int64),
+            "coord_ra": np.array([]),
+            "coord_dec": np.array([]),
+            "sky_source": np.array([], dtype=bool),
+            "base_ClassificationSizeExtendedness_flag": np.array([], dtype=bool),
+            "base_ClassificationExtendedness_flag": np.array([], dtype=bool),
+            "slot_Shape_flag": np.array([], dtype=bool),
+            "slot_Centroid_flag": np.array([], dtype=bool),
+            "base_PixelFlags_flag": np.array([], dtype=bool),
+            "base_ClassificationSizeExtendedness_value": np.array([]),
+            "base_ClassificationExtendedness_value": np.array([], dtype=int),
+        })
+        self.visit_image.getPhotoCalib().calibrateCatalog.return_value.asAstropy.return_value = (
+            empty_table
+        )
+
+        with self.assertLogs("lsst.ap.pipe.createApFakes", level="WARNING") as cm:
+            result = task.run(self.source_cat, self.visit_image)
+
+        self.assertTrue(any("no valid hosts" in msg.lower() for msg in cm.output))
+        # Random fakes still produced
+        self.assertEqual(len(result.outputCat), 10)
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):

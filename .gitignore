@@ -29,4 +29,5 @@ version.py
 
 # Dynamically generated source injection pipelines
 pipelines/_ingredients/ApPipeWithFakes.yaml
+pipelines/_ingredients/intermediate_ApPipeWithFakes.yaml
 python/*.dist-info/
