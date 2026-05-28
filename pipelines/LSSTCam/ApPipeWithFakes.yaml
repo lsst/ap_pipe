@@ -43,6 +43,7 @@ subsets:
       - isr
       - calibrateImage
       - injectVisit
+      - injectTemplate
       - loadDiaCatalogs
       - buildTemplate
       - subtractImages
@@ -83,6 +84,7 @@ subsets:
       - isr
       - calibrateImage
       - injectVisit
+      - injectTemplate
       - buildTemplate
       - subtractImages
       - detectAndMeasureDiaSource

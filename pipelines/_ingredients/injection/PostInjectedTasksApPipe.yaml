@@ -1,11 +1,7 @@
-description: AP Pipeline with synthetic/fake sources. Templates are inputs.
-# This pipeline is imported by camera-specific pipelines.
-# You almost certainly want to run one of those, and not this one.
-
-# Per RFC-997, all variants of ApPipe must define three mutually exclusive subsets:
-# - preload is tasks that can be run before raw images arrive
-# - prompt is everything done by Prompt Processing starting from raws
-# - afterburner is metrics and other non-essential tasks that are skipped by Prompt Processing
+description: Auxiliar Pipeline file with synthetic/fake sources tasks.
+# This pipeline is used by source injection pipeline generation tools.
+# This is not a functional pipeline on its own, and is not intended to be run
+# directly.
 
 imports:
   - location: $ANALYSIS_TOOLS_DIR/pipelines/apDetectorVisitFakesCore.yaml
@@ -17,9 +13,9 @@ tasks:
   injectedMatchDiaSrc:
     class: lsst.pipe.tasks.matchDiffimSourceInjected.MatchInjectedToDiaSourceTask
     config:
-      connections.coaddName: parameters.coaddName
-      connections.matchDiaSources: "fakes_{coaddName}Diff_matchDiaSrc"
-      connections.injectedCat: fakes_preliminary_visit_image_catalog
+    - connections.coaddName: parameters.coaddName
+      connections.matchDiaSources: fakes_{coaddName}Diff_matchDiaSrc
+      connections.injectionCat: fakes_VisitDetectorFakeSourceCat
       connections.diffIm: difference_image
       connections.diaSources: dia_source_unfiltered
       matchDistanceArcseconds: 0.5
@@ -27,10 +23,10 @@ tasks:
   injectedMatchAssocDiaSrc:
     class: lsst.pipe.tasks.matchDiffimSourceInjected.MatchInjectedToAssocDiaSourceTask
     config:
-      connections.coaddName: parameters.coaddName
+    - connections.coaddName: parameters.coaddName
       connections.assocDiaSources: dia_source_apdb
-      connections.matchDiaSources: "fakes_{coaddName}Diff_matchDiaSrc"
-      connections.matchAssocDiaSources: "fakes_{coaddName}Diff_matchAssocDiaSrc"
+      connections.matchDiaSources: fakes_{coaddName}Diff_matchDiaSrc
+      connections.matchAssocDiaSources: fakes_{coaddName}Diff_matchAssocDiaSrc
   consolidateMatchDiaSrc:
     class: lsst.pipe.tasks.postprocess.ConsolidateSourceTableTask
     config:
