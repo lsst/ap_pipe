@@ -60,6 +60,7 @@ subsets:
       - consolidateMatchAssocDiaSrc
       - makeSampledImageSubtractionMetrics
       - consolidateVisitSummary
+      - consolidateDiaSourceTable
       - analyzeAssociatedDiaSourceTable
       - analyzeTrailedDiaSourceTable
       - analyzeDiaFakesDetectorVisitCore
@@ -110,6 +111,7 @@ subsets:
     - injectedMatchAssocDiaSrc
     - analyzeAssocDiaFakesVisitCore
     - consolidateVisitSummary
+    - consolidateDiaSourceTable
     - makeSampledImageSubtractionMetrics
     - analyzeSampledImageSubtractionMetrics
     - analyzeDiaFakesVisitCore

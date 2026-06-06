@@ -142,6 +142,11 @@ tasks:
       doRemoveSkySources: True
       doUseSchema: True  # Force the table columns to match the APDB definition in sdm_schemas
       schemaFile: "apdb.yaml"
+  consolidateDiaSourceTable:
+    class: lsst.pipe.tasks.postprocess.ConsolidateSourceTableTask
+    config:
+      connections.inputCatalogs: dia_source_detector
+      connections.outputCatalog: dia_source_visit
   getRegionTimeFromVisit:
     class: lsst.pipe.tasks.getRegionTimeFromVisit.GetRegionTimeFromVisitTask
     config:
@@ -233,6 +238,7 @@ subsets:
       - analyzeSampledImageSubtractionMetrics
       - analyzePreliminarySummaryStats
       - consolidateVisitSummary
+      - consolidateDiaSourceTable
       - analyzeVisitSampledImageSubtractionMetrics
       - singleFrameDetectAndMeasure
     description: >
@@ -268,6 +274,7 @@ subsets:
   afterburner:
     subset:
       - consolidateVisitSummary
+      - consolidateDiaSourceTable
       - makeSampledImageSubtractionMetrics
       - analyzeSampledImageSubtractionMetrics
       - analyzeVisitSampledImageSubtractionMetrics
@@ -357,3 +364,6 @@ contracts:
   - contract: makeSampledImageSubtractionMetrics.connections.ConnectionsClass(config=makeSampledImageSubtractionMetrics).spatiallySampledMetrics.name ==
               analyzeSampledImageSubtractionMetrics.connections.ConnectionsClass(config=analyzeSampledImageSubtractionMetrics).data.name
     msg: "makeSampledImageSubtractionMetrics.spatiallySampledMetrics != analyzeSampledImageSubtractionMetrics.data"
+  - contract: consolidateDiaSourceTable.connections.ConnectionsClass(config=consolidateDiaSourceTable).inputCatalogs.name ==
+        standardizeDiaSource.connections.ConnectionsClass(config=standardizeDiaSource).diaSourceTable.name
+    msg: "consolidateDiaSourceTable.inputCatalogs != standardizeDiaSource.diaSourceTable"

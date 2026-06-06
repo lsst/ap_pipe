@@ -44,7 +44,7 @@ cluster:
     pipetasks: makeSampledImageSubtractionMetrics,analyzeSampledImageSubtractionMetrics
     dimensions: visit,detector
   consolidateVisit:
-    pipetasks: consolidateVisitSummary,analyzeVisitSampledImageSubtractionMetrics
+    pipetasks: consolidateVisitSummary,consolidateDiaSourceTable,analyzeVisitSampledImageSubtractionMetrics
     dimensions: visit
 
 
