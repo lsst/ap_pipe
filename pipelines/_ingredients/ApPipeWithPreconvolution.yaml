@@ -66,6 +66,7 @@ subsets:
       - analyzeSampledImageSubtractionMetrics
       - analyzePreliminarySummaryStats
       - consolidateVisitSummary
+      - consolidateDiaSourceTable
       - analyzeVisitSampledImageSubtractionMetrics
       - singleFrameDetectAndMeasure
     description: >
