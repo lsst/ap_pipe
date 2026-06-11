@@ -1,0 +1,32 @@
+description: Standard catalog creation pipeline for generating fake source catalogs
+
+parameters:
+  # Template for fake source types
+  fakesType: ""
+  # Sky map parameters
+  skymap: "lsst_cells_v2"  # Adjust based on your survey's sky map
+
+tasks:
+  createFakesVisitDetector:
+    class: lsst.ap.pipe.createApFakes.CreateVisitDetectorFakesTask
+    config:
+      randomFakeDensity: 2000
+      doAddRandomVisitFakes: true
+      doAddRandomTemplateFakes: true
+      templateFakeFraction: 0.20
+      doAddHostedFakes: True
+      fracHostedFakes: 0.1
+      minHostedFakes: 20
+      doAddVariableFakes: True
+      variableFakeFraction: 0.1
+      variableFakeMean: 0.0
+      variableFakeStd: 0.5
+      magMin: 20
+      magMax: 25
+subsets:
+  fakeCreation:
+    subset:
+      - createFakesVisitDetector
+    description: >-
+      Tasks related to the creation of fake source catalogs,
+      including random, hosted, and variable fake sources.
