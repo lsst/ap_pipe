@@ -7,20 +7,20 @@ if [ "$#" -ne 1 ]; then
     echo "Usage: $0 YYYYMMDD" >&2
     exit 1
 fi
-
 DATE="$1"
+
+# delegate potentially dynamic environment variable definition to a separate script
+source ./ap_daytime_env.sh
+
+# Configure the filesystem to allow many open files
+ulimit -n 65536
 
 # POSIX-safe date normalization
 DAY_OBS=$(printf '%s\n' "$DATE" | tr -d '-')
 
 # Create a temp file with the date in the name
-TMP_APDB_REL=$(mktemp "apdb_config_${DATE}.XXXXXX.yaml")
-
-# Resolve to absolute path without readlink -f
-case "$TMP_APDB_REL" in
-    /*) TMP_APDB="$TMP_APDB_REL" ;;
-    *)  TMP_APDB="$(pwd)/$TMP_APDB_REL" ;;
-esac
+TMP_APDB_REL=$(mktemp -u "apdb_config_${DATE}.XXXXXX.yaml")
+TMP_APDB=$(realpath "${TMP_APDB_REL}")
 
 # Copy APDB config from S3 using Singularity AWS CLI
 #singularity exec /sdf/sw/s3/aws-cli_latest.sif \
@@ -29,9 +29,16 @@ esac
 #  cp s3://rubin-summit-users/apdb_config/cassandra/pp_apdb_lsstcam.yaml \
 #  "$TMP_APDB"
 
-echo "TMP_APDB = "$TMP_APDB
-mc cp embargo/rubin-summit-users/apdb_config/cassandra/pp_apdb_lsstcam.yaml "$TMP_APDB"
+# mc cp embargo/rubin-summit-users/apdb_config/cassandra/pp_apdb_lsstcam.yaml "$TMP_APDB"
 
+# Copy APDB config from S3 using python "one-liner"
+export LSST_RESOURCES_S3_PROFILE_embargo=https://sdfembs3.sdf.slac.stanford.edu
+APDB_OBJ_KEY_URL="s3://embargo@rubin-summit-users/apdb_config/cassandra/pp_apdb_lsstcam.yaml"
+python3 -c \
+"from lsst.resources import ResourcePath; \
+apdb_obj = ResourcePath('${APDB_OBJ_KEY_URL}'); \
+ResourcePath('${TMP_APDB}').transfer_from(src=apdb_obj, transfer='copy'); \
+"
 
 # NOTE:
 # No cleanup of TMP_APDB here since the job is launched in the background
@@ -40,29 +47,11 @@ mc cp embargo/rubin-summit-users/apdb_config/cassandra/pp_apdb_lsstcam.yaml "$TM
 # Redirect Cassandra logs
 export DAX_APDB_MONITOR_CONFIG="logging:lsst.dax.apdb.monitor"
 
-# Configure the filesystem to allow many open files
-ulimit -n 65536
-
 INSTRUMENT="LSSTCam"
-
-# List of detectors currently excluded from Prompt Processing
-# These include the non-imaging wavefront sensors as well as some that are disabled in fan-out.
-# See https://github.com/lsst-sqre/phalanx/blob/main/applications/next-visit-fan-out/values-usdfprod-prompt-processing.yaml
-BAD_DETECTORS="120 122 0 20 27 65 123 161 168 188 1 19 30 68 158 169 187 \
-189 190 191 192 193 194 195 196 197 198 199 200 201 202 203 204"
-
-# Space-delimited list of observing blocks that generate science images
-# See https://github.com/lsst-sqre/phalanx/blob/main/applications/prompt-keda-lsstcam/values-usdfprod-prompt-processing.yaml#L21-L45
-BLOCKS="BLOCK-365 BLOCK-407 BLOCK-408 BLOCK-416 BLOCK-417 BLOCK-419 BLOCK-421 \
-BLOCK-T698 BLOCK-T703 BLOCK-T704 BLOCK-T706"
 
 OUTPUT_COLLECTION="LSSTCam/runs/daytimeAP/${DATE}"
 
 LOG_FILE="output-${DATE}.out"
-
-# Convert lists to SQL IN() form
-BAD_DETECTORS_SQL="($(printf '%s,' $BAD_DETECTORS | sed 's/,$//'))"
-BLOCKS_SQL="($(printf "'%s'," $BLOCKS | sed 's/,$//'))"
 
 # Pipeline and butler config must mirror bps_Daytime.yaml — we replicate them
 # here because we build the quantum graph ourselves before calling BPS.
@@ -105,7 +94,7 @@ DATA_QUERY="instrument='$INSTRUMENT' \
         -q "$FULL_QGRAPH"
 
     echo "[$(date)] Step 2/3: pruning orphan loadDiaCatalogs quanta"
-    python -m lsst.ap.pipe.prune_orphan_preloads \
+    python3 -m lsst.ap.pipe.prune_orphan_preloads \
         "$FULL_QGRAPH" "$PRUNED_QGRAPH"
 
     echo "[$(date)] Step 3/3: submitting BPS workflow with pruned graph"
