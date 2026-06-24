@@ -66,6 +66,7 @@ BLOCKS_SQL="($(printf "'%s'," $BLOCKS | sed 's/,$//'))"
 PIPELINE_YAML="${AP_PIPE_DIR}/pipelines/LSSTCam/ApPipe.yaml"
 BUTLER_CONFIG="embargo"
 INPUT_COLLECTIONS="LSSTCam/defaults,LSSTCam/templates,LSSTCam/runs/prompt-${DAY_OBS}"
+RETAINED_TYPES="${AP_PIPE_DIR}/scripts/LSSTCam/retained_types.yaml"
 
 # Generate an explicit output run so the pre-built and pruned quantum graphs
 # share a single name with the eventual BPS submission.
@@ -95,6 +96,7 @@ DATA_QUERY="instrument='$INSTRUMENT' \
         --output-run "$OUTPUT_RUN" \
         -d "$DATA_QUERY" \
         --skip-existing-in "LSSTCam/runs/prompt-${DAY_OBS}" \
+        --retained-dataset-types "$RETAINED_TYPES" \
         -c "parameters:release_id=1" \
         -c "parameters:apdb_config=${TMP_APDB}" \
         -c "associateApdb:doRunForcedMeasurement=False" \
