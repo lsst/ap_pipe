@@ -201,6 +201,24 @@ tasks:
       connections.sources_footprints: single_visit_star_reprocessed_footprints
       connections.background: preliminary_visit_image_reprocessed_background
       id_generator.release_id: parameters.release_id
+  standardizePromptSource:
+    class: lsst.pipe.tasks.postprocess.TransformSourceTableTask
+    config:
+      connections.inputCatalog: single_visit_star_reprocessed_unstandardized
+      connections.outputCatalog: prompt_source_detector
+      functorFile: $PIPE_TASKS_DIR/schemas/prompt_source.yaml
+  consolidatePromptSource:
+    class: lsst.pipe.tasks.postprocess.ConsolidateSourceTableTask
+    config:
+      connections.inputCatalogs: prompt_source_detector
+      connections.outputCatalog: prompt_source_all
+  splitPromptSource:
+    class: lsst.pipe.tasks.split_primary.SplitPrimaryTask
+    config:
+      dimensions: ["visit"]
+      connections.full: prompt_source_all
+      connections.primary: prompt_source
+      connections.nonprimary: prompt_source_nonprimary
 
 subsets:
   apPipeSingleFrame:
@@ -241,6 +259,9 @@ subsets:
       - consolidateDiaSourceTable
       - analyzeVisitSampledImageSubtractionMetrics
       - singleFrameDetectAndMeasure
+      - standardizePromptSource
+      - consolidatePromptSource
+      - splitPromptSource
     description: >
       An alias of ApPipe to use in higher-level pipelines.
   preload:
@@ -279,6 +300,9 @@ subsets:
       - analyzeSampledImageSubtractionMetrics
       - analyzeVisitSampledImageSubtractionMetrics
       - singleFrameDetectAndMeasure
+      - standardizePromptSource
+      - consolidatePromptSource
+      - splitPromptSource
     description: >
       Tasks for QA and other non-real-time processing.
       Requires prompt subset to be run first.

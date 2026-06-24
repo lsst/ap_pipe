@@ -30,7 +30,7 @@ cluster:
     dimensions: visit,detector
     equalDimensions: visit:group
   singleFrameMeasurement:
-    pipetasks: singleFrameDetectAndMeasure
+    pipetasks: singleFrameDetectAndMeasure,standardizePromptSource
     dimensions: visit,detector
   diaSrcDetectorAnalysis:
     pipetasks: analyzeAssociatedDiaSourceTable,analyzeTrailedDiaSourceTable

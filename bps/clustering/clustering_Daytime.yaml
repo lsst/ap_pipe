@@ -35,7 +35,7 @@ cluster:
     pipetasks: associateApdb,analyzeDiaSourceAssociationMetrics,analyzeAssociateDiaSourceTiming
     dimensions: visit,detector
   singleFrameMeasurement:
-    pipetasks: singleFrameDetectAndMeasure
+    pipetasks: singleFrameDetectAndMeasure,standardizePromptSource
     dimensions: visit,detector
   diaSrcDetectorAnalysis:
     pipetasks: analyzeAssociatedDiaSourceTable,analyzeTrailedDiaSourceTable
@@ -44,7 +44,7 @@ cluster:
     pipetasks: makeSampledImageSubtractionMetrics,analyzeSampledImageSubtractionMetrics
     dimensions: visit,detector
   consolidateVisit:
-    pipetasks: consolidateVisitSummary,consolidateDiaSourceTable,analyzeVisitSampledImageSubtractionMetrics
+    pipetasks: consolidateVisitSummary,consolidateDiaSourceTable,analyzeVisitSampledImageSubtractionMetrics,consolidatePromptSource,splitPromptSource
     dimensions: visit
 
 
