@@ -219,6 +219,8 @@ tasks:
       connections.full: prompt_source_all
       connections.primary: prompt_source
       connections.nonprimary: prompt_source_nonprimary
+      discard_primary_columns: ["sky_source"]
+      discard_nonprimary_columns: ["sky_source"]
 
 subsets:
   apPipeSingleFrame:
