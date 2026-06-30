@@ -20,29 +20,45 @@ clusterAlgorithm: lsst.ctrl.bps.quantum_clustering_funcs.dimension_clustering
 cluster:
   preload:
     pipetasks: mpSkyEphemerisQuery,getRegionTimeFromVisit
-    dimensions: group,detector
+    dimensions: group
+    partitionDimensions: detector
+    partitionMaxSize: 30
   preloadApdb:
     pipetasks: loadDiaCatalogs,analyzeLoadDiaCatalogsMetrics
-    dimensions: group,detector
+    dimensions: group
+    partitionDimensions: detector
+    partitionMaxSize: 30
   singleFrame:
     pipetasks: isr,calibrateImage,analyzePreliminarySummaryStats
-    dimensions: visit,detector
+    dimensions: visit
     equalDimensions: visit:exposure
+    partitionDimensions: detector
+    partitionMaxSize: 30
   diffim:
     pipetasks: buildTemplate,subtractImages,detectAndMeasureDiaSource,analyzeImageDifferenceMetrics,analyzeDiaSourceDetectionMetrics,filterDiaSource,computeReliability,filterDiaSourcePostReliability,standardizeDiaSource
-    dimensions: visit,detector
+    dimensions: visit
+    partitionDimensions: detector
+    partitionMaxSize: 10
   association:
     pipetasks: associateApdb,analyzeDiaSourceAssociationMetrics,analyzeAssociateDiaSourceTiming
-    dimensions: visit,detector
+    dimensions: visit
+    partitionDimensions: detector
+    partitionMaxSize: 10
   singleFrameMeasurement:
     pipetasks: singleFrameDetectAndMeasure
-    dimensions: visit,detector
+    dimensions: visit
+    partitionDimensions: detector
+    partitionMaxSize: 10
   diaSrcDetectorAnalysis:
     pipetasks: analyzeAssociatedDiaSourceTable,analyzeTrailedDiaSourceTable
-    dimensions: visit,detector
+    dimensions: visit
+    partitionDimensions: detector
+    partitionMaxSize: 10
   diffimMetrics:
     pipetasks: makeSampledImageSubtractionMetrics,analyzeSampledImageSubtractionMetrics
-    dimensions: visit,detector
+    dimensions: visit
+    partitionDimensions: detector
+    partitionMaxSize: 10
   consolidateVisit:
     pipetasks: consolidateVisitSummary,consolidateDiaSourceTable,analyzeVisitSampledImageSubtractionMetrics
     dimensions: visit
