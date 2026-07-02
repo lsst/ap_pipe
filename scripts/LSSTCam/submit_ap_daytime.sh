@@ -8,13 +8,10 @@ if [ "$#" -ne 1 ]; then
     exit 1
 fi
 
-DATE="$1"
+DAY_OBS="$1"
 
-# POSIX-safe date normalization
-DAY_OBS=$(printf '%s\n' "$DATE" | tr -d '-')
-
-# Create a temp file with the date in the name
-TMP_APDB_REL=$(mktemp "apdb_config_${DATE}.XXXXXX.yaml")
+# Create a temp file with the day_obs in the name
+TMP_APDB_REL=$(mktemp "apdb_config_${DAY_OBS}.XXXXXX.yaml")
 
 # Resolve to absolute path without readlink -f
 case "$TMP_APDB_REL" in
@@ -56,9 +53,9 @@ BAD_DETECTORS="120 122 0 20 27 65 123 161 168 188 1 19 30 68 158 169 187 \
 BLOCKS="BLOCK-365 BLOCK-407 BLOCK-408 BLOCK-416 BLOCK-417 BLOCK-419 BLOCK-421 \
 BLOCK-T698 BLOCK-T703 BLOCK-T704 BLOCK-T706"
 
-OUTPUT_COLLECTION="LSSTCam/runs/daytimeAP/${DATE}"
+OUTPUT_COLLECTION="LSSTCam/runs/daytimeAP/${DAY_OBS}"
 
-LOG_FILE="output-${DATE}.out"
+LOG_FILE="output-${DAY_OBS}.out"
 
 # Convert lists to SQL IN() form
 BAD_DETECTORS_SQL="($(printf '%s,' $BAD_DETECTORS | sed 's/,$//'))"
@@ -68,14 +65,15 @@ BLOCKS_SQL="($(printf "'%s'," $BLOCKS | sed 's/,$//'))"
 # here because we build the quantum graph ourselves before calling BPS.
 PIPELINE_YAML="${AP_PIPE_DIR}/pipelines/LSSTCam/ApPipe.yaml"
 BUTLER_CONFIG="embargo"
-INPUT_COLLECTIONS="LSSTCam/defaults,LSSTCam/templates,LSSTCam/runs/prompt-${DATE}"
+INPUT_COLLECTIONS="LSSTCam/defaults,LSSTCam/templates,LSSTCam/runs/prompt-${DAY_OBS}"
+RETAINED_TYPES="${AP_PIPE_DIR}/scripts/LSSTCam/retained_types.yaml"
 
 # Generate an explicit output run so the pre-built and pruned quantum graphs
 # share a single name with the eventual BPS submission.
 TIMESTAMP=$(date -u +"%Y%m%dT%H%M%SZ")
 OUTPUT_RUN="${OUTPUT_COLLECTION}/${TIMESTAMP}"
 
-QGRAPH_DIR="$(pwd)/qgraphs/${DATE}/${TIMESTAMP}"
+QGRAPH_DIR="$(pwd)/qgraphs/${DAY_OBS}/${TIMESTAMP}"
 mkdir -p "$QGRAPH_DIR"
 FULL_QGRAPH="${QGRAPH_DIR}/full.qg"
 PRUNED_QGRAPH="${QGRAPH_DIR}/pruned.qg"
@@ -97,7 +95,8 @@ DATA_QUERY="instrument='$INSTRUMENT' \
         --output "$OUTPUT_COLLECTION" \
         --output-run "$OUTPUT_RUN" \
         -d "$DATA_QUERY" \
-        --skip-existing-in "LSSTCam/runs/prompt-${DATE}" \
+        --skip-existing-in "LSSTCam/runs/prompt-${DAY_OBS}" \
+        --retained-dataset-types "$RETAINED_TYPES" \
         -c "parameters:release_id=1" \
         -c "parameters:apdb_config=${TMP_APDB}" \
         -c "associateApdb:doRunForcedMeasurement=False" \
@@ -118,7 +117,7 @@ DATA_QUERY="instrument='$INSTRUMENT' \
 } > "${LOG_FILE}" 2>&1 &
 disown
 
-echo "Submission started for date ${DATE}"
+echo "Submission started for day_obs ${DAY_OBS}"
 echo "Temporary APDB config: ${TMP_APDB}"
 echo "Full quantum graph: ${FULL_QGRAPH}"
 echo "Pruned quantum graph: ${PRUNED_QGRAPH}"
