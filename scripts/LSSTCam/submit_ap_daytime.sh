@@ -101,6 +101,7 @@ DATA_QUERY="instrument='$INSTRUMENT' \
         -c "parameters:apdb_config=${TMP_APDB}" \
         -c "associateApdb:doRunForcedMeasurement=False" \
         --dataset-query-constraint off \
+        --qgraph-datastore-records \
         -q "$FULL_QGRAPH"
 
     echo "[$(date)] Step 2/3: pruning orphan loadDiaCatalogs quanta"
