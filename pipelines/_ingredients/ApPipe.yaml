@@ -208,6 +208,7 @@ subsets:
       - isr
       - calibrateImage
       - analyzePreliminarySummaryStats
+      - singleFrameDetectAndMeasure
     description: >-
       The prompt ApPipe tasks that make up single-frame processing. Not to be confused with the
       SingleFrame.yaml pipeline, which does more than just ApPipe single frame processing, and
