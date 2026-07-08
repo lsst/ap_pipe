@@ -10,30 +10,6 @@ fi
 
 DAY_OBS="$1"
 
-# Create a temp file with the day_obs in the name
-TMP_APDB_REL=$(mktemp "apdb_config_${DAY_OBS}.XXXXXX.yaml")
-
-# Resolve to absolute path without readlink -f
-case "$TMP_APDB_REL" in
-    /*) TMP_APDB="$TMP_APDB_REL" ;;
-    *)  TMP_APDB="$(pwd)/$TMP_APDB_REL" ;;
-esac
-
-# Copy APDB config from S3 using Singularity AWS CLI
-#singularity exec /sdf/sw/s3/aws-cli_latest.sif \
-#  aws --endpoint-url https://sdfembs3.sdf.slac.stanford.edu s3 \
-#  --profile embargo-s3 \
-#  cp s3://rubin-summit-users/apdb_config/cassandra/pp_apdb_lsstcam.yaml \
-#  "$TMP_APDB"
-
-echo "TMP_APDB = "$TMP_APDB
-mc cp embargo/rubin-summit-users/apdb_config/cassandra/pp_apdb_lsstcam.yaml "$TMP_APDB"
-
-
-# NOTE:
-# No cleanup of TMP_APDB here since the job is launched in the background
-# and runtime duration is unknown.
-
 # Redirect Cassandra logs
 export DAX_APDB_MONITOR_CONFIG="logging:lsst.dax.apdb.monitor"
 
@@ -64,6 +40,7 @@ BLOCKS_SQL="($(printf "'%s'," $BLOCKS | sed 's/,$//'))"
 # Pipeline and butler config must mirror bps_Daytime.yaml — we replicate them
 # here because we build the quantum graph ourselves before calling BPS.
 PIPELINE_YAML="${AP_PIPE_DIR}/pipelines/LSSTCam/ApPipe.yaml"
+APDB_CONFIG="s3://embargo@rubin-summit-users/apdb_config/cassandra/pp_apdb_lsstcam.yaml"
 BUTLER_CONFIG="embargo"
 INPUT_COLLECTIONS="LSSTCam/defaults,LSSTCam/templates,LSSTCam/runs/prompt-${DAY_OBS}"
 RETAINED_TYPES="${AP_PIPE_DIR}/scripts/LSSTCam/retained_types.yaml"
@@ -98,7 +75,7 @@ DATA_QUERY="instrument='$INSTRUMENT' \
         --retained-dataset-types "$RETAINED_TYPES" \
         --prune-unanchored-quanta getRegionTimeFromVisit:associateApdb \
         -c "parameters:release_id=1" \
-        -c "parameters:apdb_config=${TMP_APDB}" \
+        -c "parameters:apdb_config=${APDB_CONFIG}" \
         -c "associateApdb:doRunForcedMeasurement=False" \
         --dataset-query-constraint off \
         --qgraph-datastore-records \
@@ -115,6 +92,6 @@ DATA_QUERY="instrument='$INSTRUMENT' \
 disown
 
 echo "Submission started for day_obs ${DAY_OBS}"
-echo "Temporary APDB config: ${TMP_APDB}"
+echo "APDB config: ${APDB_CONFIG}"
 echo "Quantum graph: ${QGRAPH}"
 echo "Submission output log written to ${LOG_FILE}"
