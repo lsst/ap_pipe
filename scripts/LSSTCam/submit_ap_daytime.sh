@@ -96,7 +96,7 @@ DATA_QUERY="instrument='$INSTRUMENT' \
         -d "$DATA_QUERY" \
         --skip-existing-in "LSSTCam/runs/prompt-${DAY_OBS}" \
         --retained-dataset-types "$RETAINED_TYPES" \
-        --prune-unanchored-quanta loadDiaCatalogs:associateApdb \
+        --prune-unanchored-quanta getRegionTimeFromVisit:associateApdb \
         -c "parameters:release_id=1" \
         -c "parameters:apdb_config=${TMP_APDB}" \
         -c "associateApdb:doRunForcedMeasurement=False" \
