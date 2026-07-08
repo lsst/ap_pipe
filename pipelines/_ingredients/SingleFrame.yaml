@@ -9,6 +9,5 @@ subsets:
       - isr
       - calibrateImage
       - analyzePreliminarySummaryStats
-      - singleFrameDetectAndMeasure
     description: >
       An alias of SingleFrame to use in higher-level pipelines.
