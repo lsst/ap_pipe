@@ -68,15 +68,14 @@ BUTLER_CONFIG="embargo"
 INPUT_COLLECTIONS="LSSTCam/defaults,LSSTCam/templates,LSSTCam/runs/prompt-${DAY_OBS}"
 RETAINED_TYPES="${AP_PIPE_DIR}/scripts/LSSTCam/retained_types.yaml"
 
-# Generate an explicit output run so the pre-built and pruned quantum graphs
-# share a single name with the eventual BPS submission.
+# Generate an explicit output run so the pre-built quantum graph
+# shares a single name with the eventual BPS submission.
 TIMESTAMP=$(date -u +"%Y%m%dT%H%M%SZ")
 OUTPUT_RUN="${OUTPUT_COLLECTION}/${TIMESTAMP}"
 
 QGRAPH_DIR="$(pwd)/qgraphs/${DAY_OBS}/${TIMESTAMP}"
 mkdir -p "$QGRAPH_DIR"
-FULL_QGRAPH="${QGRAPH_DIR}/full.qg"
-PRUNED_QGRAPH="${QGRAPH_DIR}/pruned.qg"
+QGRAPH="${QGRAPH_DIR}/daytime.qg"
 
 DATA_QUERY="instrument='$INSTRUMENT' \
     AND skymap='lsst_cells_v2' \
@@ -87,7 +86,7 @@ DATA_QUERY="instrument='$INSTRUMENT' \
 {
     set -e
 
-    echo "[$(date)] Step 1/3: building full quantum graph"
+    echo "[$(date)] Step 1/2: building quantum graph"
     pipetask qgraph \
         -p "$PIPELINE_YAML" \
         -b "$BUTLER_CONFIG" \
@@ -97,20 +96,17 @@ DATA_QUERY="instrument='$INSTRUMENT' \
         -d "$DATA_QUERY" \
         --skip-existing-in "LSSTCam/runs/prompt-${DAY_OBS}" \
         --retained-dataset-types "$RETAINED_TYPES" \
+        --prune-unanchored-quanta loadDiaCatalogs:associateApdb \
         -c "parameters:release_id=1" \
         -c "parameters:apdb_config=${TMP_APDB}" \
         -c "associateApdb:doRunForcedMeasurement=False" \
         --dataset-query-constraint off \
         --qgraph-datastore-records \
-        -q "$FULL_QGRAPH"
+        -q "$QGRAPH"
 
-    echo "[$(date)] Step 2/3: pruning orphan loadDiaCatalogs quanta"
-    python -m lsst.ap.pipe.prune_orphan_preloads \
-        "$FULL_QGRAPH" "$PRUNED_QGRAPH"
-
-    echo "[$(date)] Step 3/3: submitting BPS workflow with pruned graph"
+    echo "[$(date)] Step 2/2: submitting BPS workflow"
     bps submit "${AP_PIPE_DIR}/bps/LSSTCam/bps_Daytime.yaml" \
-        --qgraph "$PRUNED_QGRAPH" \
+        --qgraph "$QGRAPH" \
         --extra-run-quantum-options "--no-raise-on-partial-outputs" \
         --input "$INPUT_COLLECTIONS" \
         --output "$OUTPUT_COLLECTION" \
@@ -120,6 +116,5 @@ disown
 
 echo "Submission started for day_obs ${DAY_OBS}"
 echo "Temporary APDB config: ${TMP_APDB}"
-echo "Full quantum graph: ${FULL_QGRAPH}"
-echo "Pruned quantum graph: ${PRUNED_QGRAPH}"
+echo "Quantum graph: ${QGRAPH}"
 echo "Submission output log written to ${LOG_FILE}"
