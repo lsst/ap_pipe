@@ -104,9 +104,10 @@ DATA_QUERY="instrument='$INSTRUMENT' \
         --qgraph-datastore-records \
         -q "$FULL_QGRAPH"
 
-    echo "[$(date)] Step 2/3: pruning orphan loadDiaCatalogs quanta"
+    echo "[$(date)] Step 2/3: pruning orphan quanta"
     python -m lsst.ap.pipe.prune_orphan_preloads \
-        "$FULL_QGRAPH" "$PRUNED_QGRAPH"
+        "$FULL_QGRAPH" "$PRUNED_QGRAPH" \
+        --preload-label getRegionTimeFromVisit --anchor-label associateApdb
 
     echo "[$(date)] Step 3/3: submitting BPS workflow with pruned graph"
     bps submit "${AP_PIPE_DIR}/bps/LSSTCam/bps_Daytime.yaml" \
