@@ -390,7 +390,40 @@ class CreateVisitDetectorFakesConfig(
         dtype=float,
         default=26,
     )
-
+    doAddBlendedFakes = pexConfig.Field(
+        doc="Whether to add blended fakes to the visit detector.",
+        dtype=bool,
+        default=False,
+    )
+    fracBlendedFakes = pexConfig.RangeField(
+        doc="Fraction of blended fakes to add to the visit detector.",
+        dtype=float,
+        default=0.5,
+        min=0,
+        max=1,
+    )
+    fracHostedBlendedFakes = pexConfig.RangeField(
+        doc="Fraction of blended fakes that are hosted by stars.",
+        dtype=float,
+        default=0.5,
+        min=0,
+        max=1,
+    )
+    blendedFakeMagOffset = pexConfig.Field(
+        doc="Standard deviation of magnitude offset for blended fakes.",
+        dtype=float,
+        default=0.5,
+    )
+    blendedFakeMaxOffset = pexConfig.Field(
+        doc="Maximum positional offset for blended fakes in arcseconds.",
+        dtype=float,
+        default=5.0,
+    )
+    blendedFakeMinOffset = pexConfig.Field(
+        doc="Minimum positional offset for blended fakes in arcseconds.",
+        dtype=float,
+        default=0.2,
+    )
 
 class CreateVisitDetectorFakesTask(PipelineTask):
     """Create and store a set of visit detector fakes for use in AP processing.
@@ -623,6 +656,119 @@ class CreateVisitDetectorFakesTask(PipelineTask):
             variable_fakes["isVariable"] = True
 
             catalog = vstack([catalog, variable_fakes])
+            catalog["isBlended"] = False
+
+        if self.config.doAddBlendedFakes:
+            self.log.info("Generating blended fakes.")
+            n_blended_fakes_total = int(len(catalog) * self.config.fracBlendedFakes)
+            n_star_hosted_blended_fakes = int(n_blended_fakes_total * self.config.fracHostedBlendedFakes)
+            idx = rng.choice(
+                len(catalog), size=n_blended_fakes_total - n_star_hosted_blended_fakes, replace=False)
+            # striaghtforward blended fakes
+            blended_fakes = catalog[idx].copy()
+            n_blended_fakes = len(blended_fakes)
+            # blended fakes will be copies of randomly chosen fakes, with a small
+            # magnitude offset and a small positional offset, and will be flagged as blended.
+            # The original fakes will also be flagged as blended.
+            # The idea is to have two fakes in the same location, but with different
+            # magnitudes, to test the deblending capabilities of the pipeline.
+            # We work as if the original fake was a "host"of the blend
+            blended_fakes["delta_mag"] = rng.normal(
+                loc=0.0,
+                scale=self.config.blendedFakeMagOffset,
+                size=n_blended_fakes
+            )
+            blended_fakes["delta_ra"] = rng.uniform(
+                low=-self.config.blendedFakeMaxOffset,
+                high=self.config.blendedFakeMaxOffset,
+                size=n_blended_fakes
+            )
+            blended_fakes["delta_ra"] *= rng.choice([-1, 1], size=n_blended_fakes)
+
+            blended_fakes["delta_dec"] = np.sqrt(
+                self.config.blendedFakeMaxOffset**2 - blended_fakes["delta_ra"]**2
+            )
+            blended_fakes["delta_dec"] *= rng.choice([-1, 1], size=n_blended_fakes)
+
+            blended_fakes["host_mag"] = blended_fakes["mag"]
+            blended_fakes["mag"] += blended_fakes["delta_mag"]
+            blended_fakes["host_ra"] = blended_fakes["ra"]
+            blended_fakes["host_dec"] = blended_fakes["dec"]
+
+            blended_fakes["ra"] += blended_fakes["delta_ra"] / 3600.0
+            blended_fakes["dec"] += blended_fakes["delta_dec"] / 3600
+            blended_fakes["x"], blended_fakes["y"] = wcs.skyToPixelArray(
+                np.deg2rad(blended_fakes["ra"]), np.deg2rad(blended_fakes["dec"])
+            )
+
+            blended_fakes["source_type"] = "Star"
+            blended_fakes["host_id"] = blended_fakes["injection_id"]
+            blended_fakes["twin_id"] = blended_fakes["injection_id"]
+            blended_fakes["isBlended"] = True
+            blended_fakes["hosted_fake"] = True
+
+            if self.config.fracHostedBlendedFakes > 0:
+                hostcatalog = photoCalib.calibrateCatalog(sourceCat).asAstropy()
+                star_hosts = self.select_host_stars(hostcatalog)
+                # if len(star_hosts) is less than the blended fakes, then use replacement
+                idx = rng.choice(len(star_hosts), size=n_star_hosted_blended_fakes, replace=True)
+                hostcat = star_hosts[idx]
+
+                x_hosts = hostcat['slot_Centroid_x']
+                y_hosts = hostcat['slot_Centroid_y']
+                ra_hosts = np.rad2deg(hostcat['coord_ra'])
+                dec_hosts = np.rad2deg(hostcat['coord_dec'])
+                mag_hosts = hostcat['slot_PsfFlux_mag']
+
+                # retrieving the global ra dec position of the injection
+                delta_ra = rng.uniform(
+                        low=-self.config.blendedFakeMaxOffset,
+                        high=self.config.blendedFakeMaxOffset,
+                        size=n_star_hosted_blended_fakes
+                    )
+                delta_ra *= rng.choice([-1, 1], size=n_star_hosted_blended_fakes)
+
+                delta_dec = np.sqrt(
+                    self.config.blendedFakeMaxOffset**2 - delta_ra**2
+                )
+                delta_dec *= rng.choice([-1, 1], size=n_star_hosted_blended_fakes)
+
+                ra_ssi = ra_hosts + delta_ra / 3600.0
+                dec_ssi = dec_hosts + delta_dec / 3600.0
+
+                x_ssi, y_ssi = wcs.skyToPixelArray(np.deg2rad(ra_ssi), np.deg2rad(dec_ssi))
+
+                delta_mag = rng.normal(loc=1, scale=1, size=n_star_hosted_blended_fakes)
+                mags = mag_hosts + delta_mag
+
+                #  Create the table of hosted fakes
+                hosted_fakes = Table()
+                hosted_fakes["x"] = x_ssi
+                hosted_fakes["y"] = y_ssi
+                hosted_fakes["mag"] = mags
+                hosted_fakes["ra"] = ra_ssi
+                hosted_fakes["dec"] = dec_ssi
+                hosted_fakes["host_id"] = hostcat['id']
+                hosted_fakes["host_flux"] = hostcat['slot_PsfFlux_flux']
+                hosted_fakes["host_mag"] = hostcat['slot_PsfFlux_mag']
+                hosted_fakes["host_ra"] = ra_hosts
+                hosted_fakes["host_dec"] = dec_hosts
+                hosted_fakes["delta_ra"] = delta_ra
+                hosted_fakes["delta_dec"] = delta_dec
+                hosted_fakes["delta_mag"] = delta_mag
+                hosted_fakes["source_type"] = "Star"
+                hosted_fakes["hosted_fake"] = True
+                hosted_fakes["isVisitSource"] = True
+                hosted_fakes["isTemplateSource"] = False
+                hosted_fakes["isBlended"] = True
+
+                blended_fakes = vstack([blended_fakes, hosted_fakes])
+
+            blended_fakes["injection_id"] = self._make_unique_injection_ids(
+                len(blended_fakes),
+                used_ids=catalog["injection_id"],
+            )
+            catalog = vstack([catalog, blended_fakes])
 
         if len(catalog) > len(np.unique(catalog["injection_id"])):
             self.log.warning("Duplicate injection IDs detected after catalog assembly; reassigning them.")
@@ -680,6 +826,46 @@ class CreateVisitDetectorFakesTask(PipelineTask):
         hostCat = sourceCat[
             skySourceCut & flagCut & extendednessCut & snrCut].copy()
         return hostCat
+
+    def select_host_stars(self, sourceCat):
+        """
+        Selects host sources from a given source catalog based on a series of classification and flux cuts.
+        The selection criteria are:
+            - The 'base_ClassificationSizeExtendedness_flag' and
+                  'base_ClassificationExtendedness_flag' must both be False.
+            - The 'base_ClassificationSizeExtendedness_value' must be greater than 0.9.
+            - The 'base_ClassificationExtendedness_value' must be equal to 1.
+            - The 'base_PsfFlux_flux' must be greater than 0.
+        Parameters
+        ----------
+        sourceCat : SourceCatalog
+            The source catalog containing the columns required for selection.
+        *args, **kwargs
+            Additional arguments (not used).
+        Returns
+        -------
+        hostCat : ArrowAstropy
+            A deep copy of the subset of the source catalog that passes all selection criteria.
+        """
+
+        # Avoid calibration stars or psf stars; remove flagged sources sky_sources
+        skySourceCut = ~sourceCat['sky_source']
+
+        flagCut = ~sourceCat['base_ClassificationSizeExtendedness_flag']
+        flagCut &= ~sourceCat['base_ClassificationExtendedness_flag']
+        flagCut &= ~sourceCat['slot_Shape_flag']
+        flagCut &= ~sourceCat['slot_Centroid_flag']
+        flagCut &= ~sourceCat['base_PixelFlags_flag']
+
+        extendednessCut = sourceCat['base_ClassificationSizeExtendedness_value'] < 0.9
+        extendednessCut &= sourceCat['base_ClassificationExtendedness_value'] != 1
+
+        snrCut = sourceCat['slot_PsfFlux_flux']/sourceCat['slot_PsfFlux_fluxErr'] > 30
+
+        hostCat = sourceCat[
+            skySourceCut & flagCut & extendednessCut & snrCut].copy()
+        return hostCat
+
 
     def get_PA_and_axes(self, Ixx, Ixy, Iyy):
         '''
