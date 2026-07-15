@@ -417,12 +417,24 @@ class CreateVisitDetectorFakesConfig(
     blendedFakeMaxOffset = pexConfig.Field(
         doc="Maximum positional offset for blended fakes in arcseconds.",
         dtype=float,
-        default=5.0,
+        default=3.0,
     )
     blendedFakeMinOffset = pexConfig.Field(
         doc="Minimum positional offset for blended fakes in arcseconds.",
         dtype=float,
         default=0.2,
+    )
+    maxHostedBlendedFakesPerHost = pexConfig.RangeField(
+        doc="Maximum number of hosted blended fakes assigned to the same host in one detector.",
+        dtype=int,
+        default=2,
+        min=1,
+    )
+    maxHostedBlendedFakesTotal = pexConfig.RangeField(
+        doc="Hard cap on number of hosted blended fakes per detector. Set to -1 to disable.",
+        dtype=int,
+        default=-1,
+        min=-1,
     )
 
 class CreateVisitDetectorFakesTask(PipelineTask):
@@ -711,80 +723,102 @@ class CreateVisitDetectorFakesTask(PipelineTask):
                 hostcatalog = photoCalib.calibrateCatalog(sourceCat).asAstropy()
                 star_hosts = self.select_host_stars(hostcatalog)
                 # if len(star_hosts) is less than the blended fakes, then use replacement
-                idx = rng.choice(len(star_hosts), size=n_star_hosted_blended_fakes, replace=True)
-                hostcat = star_hosts[idx]
-
-                x_hosts = hostcat['slot_Centroid_x']
-                y_hosts = hostcat['slot_Centroid_y']
-                ra_hosts = np.rad2deg(hostcat['coord_ra'])
-                dec_hosts = np.rad2deg(hostcat['coord_dec'])
-                mag_hosts = hostcat['slot_PsfFlux_mag']
-
-                # retrieving the global ra dec position of the injection
-                delta_ra = rng.uniform(
-                        low=-self.config.blendedFakeMaxOffset,
-                        high=self.config.blendedFakeMaxOffset,
-                        size=n_star_hosted_blended_fakes
+                if len(star_hosts) == 0:
+                    self.log.warning(
+                        "Hosted blended fake generation requested, but no valid star hosts were selected."
                     )
-                delta_ra *= rng.choice([-1, 1], size=n_star_hosted_blended_fakes)
+                    n_star_hosted_blended_fakes = 0
+                else:
+                    requested = n_star_hosted_blended_fakes
+                    n_star_hosted_blended_fakes = self._cap_hosted_blended_count(
+                        requested, len(star_hosts)
+                    )
+                    if n_star_hosted_blended_fakes < requested:
+                        self.log.warning(
+                            "Reducing hosted blended fakes from %d to %d to respect host guard rails.",
+                            requested,
+                            n_star_hosted_blended_fakes,
+                        )
 
-                delta_dec = np.sqrt(
-                    self.config.blendedFakeMaxOffset**2 - delta_ra**2
+                if n_star_hosted_blended_fakes > 0:
+                    # Build a finite host pool so each host appears at most maxHostedBlendedFakesPerHost times.
+                    host_pool = np.repeat(
+                        np.arange(len(star_hosts), dtype=int),
+                        self.config.maxHostedBlendedFakesPerHost,
+                    )
+                    idx = rng.choice(host_pool, size=n_star_hosted_blended_fakes, replace=False)
+                    hostcat = star_hosts[idx]
+
+                    x_hosts = hostcat['slot_Centroid_x']
+                    y_hosts = hostcat['slot_Centroid_y']
+                    ra_hosts = np.rad2deg(hostcat['coord_ra'])
+                    dec_hosts = np.rad2deg(hostcat['coord_dec'])
+                    mag_hosts = hostcat['slot_PsfFlux_mag']
+
+                    delta_ra, delta_dec = self._draw_offset_components_arcsec(
+                        rng, n_star_hosted_blended_fakes
+                    )
+
+                    ra_ssi = ra_hosts + delta_ra / 3600.0
+                    dec_ssi = dec_hosts + delta_dec / 3600.0
+
+                    x_ssi, y_ssi = wcs.skyToPixelArray(ra_ssi, dec_ssi, degrees=True)
+
+                    delta_mag = rng.normal(loc=1, scale=1, size=n_star_hosted_blended_fakes)
+                    mags = mag_hosts + delta_mag
+
+                    #  Create the table of hosted fakes
+                    hosted_fakes = Table()
+                    hosted_fakes["x"] = x_ssi
+                    hosted_fakes["y"] = y_ssi
+                    hosted_fakes["mag"] = mags
+                    hosted_fakes["ra"] = ra_ssi
+                    hosted_fakes["dec"] = dec_ssi
+                    hosted_fakes["host_id"] = hostcat['id']
+                    hosted_fakes["host_flux"] = hostcat['slot_PsfFlux_flux']
+                    hosted_fakes["host_mag"] = hostcat['slot_PsfFlux_mag']
+                    hosted_fakes["host_ra"] = ra_hosts
+                    hosted_fakes["host_dec"] = dec_hosts
+                    hosted_fakes["delta_ra"] = delta_ra
+                    hosted_fakes["delta_dec"] = delta_dec
+                    hosted_fakes["delta_mag"] = delta_mag
+                    hosted_fakes["source_type"] = "Star"
+                    hosted_fakes["hosted_fake"] = True
+                    hosted_fakes["isVisitSource"] = True
+                    hosted_fakes["isTemplateSource"] = False
+                    hosted_fakes["isBlended"] = True
+
+                    blended_fakes = vstack([blended_fakes, hosted_fakes])
+
+                blended_fakes["injection_id"] = self._make_unique_injection_ids(
+                    len(blended_fakes),
+                    used_ids=catalog["injection_id"],
                 )
-                delta_dec *= rng.choice([-1, 1], size=n_star_hosted_blended_fakes)
+                catalog = vstack([catalog, blended_fakes])
 
-                ra_ssi = ra_hosts + delta_ra / 3600.0
-                dec_ssi = dec_hosts + delta_dec / 3600.0
-
-                x_ssi, y_ssi = wcs.skyToPixelArray(np.deg2rad(ra_ssi), np.deg2rad(dec_ssi))
-
-                delta_mag = rng.normal(loc=1, scale=1, size=n_star_hosted_blended_fakes)
-                mags = mag_hosts + delta_mag
-
-                #  Create the table of hosted fakes
-                hosted_fakes = Table()
-                hosted_fakes["x"] = x_ssi
-                hosted_fakes["y"] = y_ssi
-                hosted_fakes["mag"] = mags
-                hosted_fakes["ra"] = ra_ssi
-                hosted_fakes["dec"] = dec_ssi
-                hosted_fakes["host_id"] = hostcat['id']
-                hosted_fakes["host_flux"] = hostcat['slot_PsfFlux_flux']
-                hosted_fakes["host_mag"] = hostcat['slot_PsfFlux_mag']
-                hosted_fakes["host_ra"] = ra_hosts
-                hosted_fakes["host_dec"] = dec_hosts
-                hosted_fakes["delta_ra"] = delta_ra
-                hosted_fakes["delta_dec"] = delta_dec
-                hosted_fakes["delta_mag"] = delta_mag
-                hosted_fakes["source_type"] = "Star"
-                hosted_fakes["hosted_fake"] = True
-                hosted_fakes["isVisitSource"] = True
-                hosted_fakes["isTemplateSource"] = False
-                hosted_fakes["isBlended"] = True
-
-                blended_fakes = vstack([blended_fakes, hosted_fakes])
-
-            blended_fakes["injection_id"] = self._make_unique_injection_ids(
-                len(blended_fakes),
-                used_ids=catalog["injection_id"],
-            )
-            catalog = vstack([catalog, blended_fakes])
-
-        if len(catalog) > len(np.unique(catalog["injection_id"])):
-            self.log.warning("Duplicate injection IDs detected after catalog assembly; reassigning them.")
-            old_injection_ids = np.asarray(catalog["injection_id"], dtype=np.int64)
-            new_injection_ids = self._make_unique_injection_ids(len(catalog))
-            # re-assign fresh injection ids
-            catalog["injection_id"] = new_injection_ids
-            if "twin_id" in catalog.colnames:
-                id_map = {old_id: new_id for old_id, new_id in zip(old_injection_ids, new_injection_ids)}
-                catalog["twin_id"] = np.asarray(
-                    [id_map.get(int(twin_id), int(twin_id)) for twin_id in catalog["twin_id"]],
-                    dtype=np.int64,
-                )
+            if len(catalog) > len(np.unique(catalog["injection_id"])):
+                self.log.warning("Duplicate injection IDs detected after catalog assembly; reassigning them.")
+                old_injection_ids = np.asarray(catalog["injection_id"], dtype=np.int64)
+                new_injection_ids = self._make_unique_injection_ids(len(catalog))
+                # re-assign fresh injection ids
+                catalog["injection_id"] = new_injection_ids
+                if "twin_id" in catalog.colnames:
+                    id_map = {old_id: new_id for old_id, new_id in zip(old_injection_ids, new_injection_ids)}
+                    catalog["twin_id"] = np.asarray(
+                        [id_map.get(int(twin_id), int(twin_id)) for twin_id in catalog["twin_id"]],
+                        dtype=np.int64,
+                    )
 
         catalog["visit"] = visitId
         catalog["detector"] = detId
+        if catalog["ra"].unit is not None:
+            catalog["ra"] = catalog["ra"].value
+            catalog["dec"] = catalog["dec"].value
+            catalog["delta_ra"] = catalog["delta_ra"].value
+            catalog["delta_dec"] = catalog["delta_dec"].value
+            catalog["host_ra"] = catalog["host_ra"].value
+            catalog["host_dec"] = catalog["host_dec"].value
+
 
         return Struct(outputCat=catalog)
 
