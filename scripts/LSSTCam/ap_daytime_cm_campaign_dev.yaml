@@ -1,0 +1,198 @@
+# [DEV] AP_DAYTIME CM Service Scheduled Campaign Definition
+# - Uses embargo_future
+# - Uses user collections
+# - Uses development db-auth file
+# - Uses a random component in collection names
+#
+# All env vars `${...}` must be fulfilled *at runtime* by stack setup, explicit environment
+# setting or by sourcing a file during launcher execution that does explicit environment setting
+# All CM template vars `${{ ... }}` are rendered when the schedule triggers the creation of new
+# campaign objects.
+# All CM manifest vars `{{ ... }}` are rendered when the campaign assembles a configuration
+# chain for each step-group.
+# All BPS variables `{...}` are fulfilled by BPS during workflow execution and must be
+# already known to BPS or added to BPS configuration.
+#
+# This YAML contains multiple documents of different "kinds" that are supported by the CM Service API
+# - `campaign`: the campaign namespace object
+# - `node`: one or more "steps" or other nodes available to a campaign graph
+# - `edge`: edges define the shape of the campaign graph/DAG
+# - configuration manifests `lsst`; `bps`; `wms`; `site`; `butler` provide campaign-level configuration
+# - `schedule`: Defines a repeatable schedule for the campaign and TURNS ALL OTHER MANIFESTS INTO TEMPLATES
+#
+# This YAML may be used with the IMPORT function of the CM Service Web UI (via New Campaign)
+# or with the CM cli tool: `cm schedules load <filename>.yaml`
+---
+apiVersion: io.lsst.cmservice/v1
+kind: campaign
+metadata:
+  name: ap_daytime_dev_${{ yesterday | as_day_obs }}
+  day_obs: ${{ yesterday | as_day_obs }}
+spec:
+  notification_labels:
+    - default
+    - kafka
+---
+apiVersion: io.lsst.cmservice/v1
+kind: node
+metadata:
+  kind: step
+  name: AP_PIPE
+  selectors:
+    butler:
+      compute-site: slac
+spec:
+  bps:
+    pipeline_yaml: "${AP_PIPE_DIR}/pipelines/LSSTCam/ApPipeDaytime.yaml"
+  groups: null
+---
+apiVersion: io.lsst.cmservice/v1
+kind: butler
+metadata:
+  name: embargo_future
+  default: true
+spec:
+  collections:
+    campaign_input:
+    - LSSTCam/defaults
+    - LSSTCam/templates
+    - LSSTCam/runs/prompt-${{ yesterday | as_day_obs }}
+    # The `campaign_public_output` is the base collection name from which all other
+    # collection names are derived, and it is also the name of the final chained collection
+    # available at the completion of the campaign.
+    campaign_public_output: "u/lsstsvc1/runs/daytimeAP/${{ yesterday | as_day_obs | random_n(8, sep='/') }}"
+    # TODO the following collection is redundant and deprecated in CM 0.9.1
+    campaign_output: "u/lsstsvc1/runs/daytimeAP/${{ yesterday | as_day_obs | random_n(8, sep='/') }}"
+  include_files: []
+  # The ${...} environment variables must be fulfilled externally.
+  # See the `custom_group_payload` attribute of the step configuration for the
+  # source of these values.
+  # The ${{...}} template expressions are fulfilled by the expressions defined
+  # on the "schedule" object.
+  predicates:
+  - instrument='LSSTCam'
+  - skymap='lsst_cells_v2'
+  - day_obs=${{ yesterday | as_day_obs }}
+  - detector not in (0,1,19,20,27,30,65,68,120,122,123,158,161,168,169,187,188,189,190,191,192,193,194,195,196,197,198,199,200,201,202,203,204)
+  - exposure.science_program in ('BLOCK-365','BLOCK-407','BLOCK-430','BLOCK-432','BLOCK-T698','BLOCK-T703','BLOCK-T704','BLOCK-T706')
+  repo: embargo_future
+---
+apiVersion: io.lsst.cmservice/v1
+kind: bps
+metadata:
+  name: daytime_apdb_dev
+  default: true
+spec:
+  # The ${{...}} template expressions are fulfilled by the expressions defined
+  # on the "schedule" object whenever a new campaign is created by that schedule.
+  # The {{...}} variable placeholders are fulfilled at runtime when CM builds
+  # a configuration chain and renders artifacts during each campaign execution.
+  extra_qgraph_options:
+    - "--skip-existing-in LSSTCam/runs/prompt-${{ yesterday | as_day_obs }}"
+    - "--retained-dataset-types ${AP_PIPE_DIR}/scripts/LSSTCam/retained_types.yaml"
+    - "--prune-unanchored-quanta getRegionTimeFromVisit:associateApdb"
+    - "-c parameters:release_id=1"
+    - "-c parameters:apdb_config=s3://prompt-processing-dev@rubin-pp-dev-users/apdb_config/cassandra/pp_apdb_lsstcam-dev.yaml"
+    - "-c associateApdb:doRunForcedMeasurement=False"
+    - "--dataset-query-constraint off"
+  extra_run_quantum_options:
+    - "--no-raise-on-partial-outputs"
+  extra_aggregate_options:
+    - "--worker-log-dir {submitPath}/jobs/finalJob"
+    - "--output {submitPath}/{uniqProcName}_prov.qg"
+  include_files:
+    - "${AP_PIPE_DIR}/bps/clustering/clustering_Daytime.yaml"
+  literals:
+    numberOfRetries: 3
+    retryUnlessExit:
+      - 2
+    finalJob:
+      command2: "${DAF_BUTLER_DIR}/bin/butler {finalPreCmdOpts} update-dimension-regions {butlerConfig} LSSTCam {outputRun} --batch-size 2000"
+      command3: "${DAF_BUTLER_DIR}/bin/butler provenance-report --format json '{submitPath}/{uniqProcName}_prov.qg' > '{submitPath}/{uniqProcName}_prov.json'"
+---
+apiVersion: io.lsst.cmservice/v1
+kind: lsst
+metadata:
+  name: slac_cvmfs_w44
+  default: true
+spec:
+  campaign: AP-daytime
+  description: Alert Production Daytime Catchup (Daily Batch)
+  environment:
+    DAX_APDB_MONITOR_CONFIG: logging:lsst.dax.apdb.monitor
+    MP_SKY_URL: http://usdf-mpsky.sdf.slac.stanford.edu/ephemerides/
+  lsst_distrib_dir: /cvmfs/sw.lsst.eu/almalinux-x86_64/lsst_distrib/w_2026_44
+  lsst_version: w_2026_44
+  project: ApPipe
+  ticket: DM-XXXXX
+---
+apiVersion: io.lsst.cmservice/v1
+kind: wms
+metadata:
+  name: htcondor_auto
+  default: true
+spec:
+  auto_provision: true
+  batch_system: htcondor
+  service_class: lsst.ctrl.bps.htcondor.HTCondorService
+  # These are WMS-specific provisioning options BPS uses for allocateNodes
+  provisioned_idle_time: 300
+  provisioned_max_wall_time: '2-0:0:0'
+  provisioned_node_count: 125
+  provisioned_extra_arguments:
+    - "--cpus 16"
+---
+apiVersion: io.lsst.cmservice/v1
+kind: site
+metadata:
+  name: slac_s3df
+  default: true
+  labels:
+    compute-site: slac
+    deployment: development
+spec:
+  facility: SLAC
+  # These are Site-specific provisioning options BPS uses for allocateNodes
+  provisioned_account_group: rubin:production
+  provisioned_platform: s3df
+  provisioned_queue: milano
+  # These temporary settings set up site-specific botocore/butler env vars
+  # and will be moved to a "library" so they are not user-managed
+  botocore_config_file: "${HOME}/.lsst/aws-config.cmservice-dev.ini"
+  botocore_credentials_file: "${HOME}/.lsst/aws-credentials.cmservice-dev.ini"
+  lsst_db_auth_file: "${HOME}/.lsst/db-auth.cmservice-dev.yaml"
+  lsst_data_repos_file: "${HOME}/.lsst/data-repos.cmservice-dev.yaml"
+---
+apiVersion: io.lsst.cmservice/v1
+kind: edge
+metadata:
+  name: START--STEP
+spec:
+  source: START
+  target: AP_PIPE
+---
+apiVersion: io.lsst.cmservice/v1
+kind: edge
+metadata:
+  name: STEP--END
+spec:
+  source: AP_PIPE
+  target: END
+---
+apiversion: io.lsst.cmservice/v1
+kind: schedule
+metadata:
+  owner: root
+spec:
+  auto_start: false
+  cron: "30 18 * * *"
+  # These expressions are available to other manifests as `${{...}}` variables
+  # where the result of the Python expression is the object. These examples are
+  # both `datetime.datetime` objects.
+  expressions:
+    yesterday: "datetime.now(timezone.utc) - timedelta(days=1)"
+  # This format string is used to identify the new campaign created by this
+  # schedule as `<campaign_name>_<suffix>`. Because campaign names must be unique
+  # in CM Service, this format string should more or less reflect the frequency
+  # of the schedule execution while keeping incidental one-shot runs in mind.
+  name_format: "%s"
