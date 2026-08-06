@@ -11,8 +11,10 @@ imports:
   - makeDirectWarp
   - makePsfMatchedWarp
   - assembleTemplateCoadd
-  - makeBinnedTemplateNImage
-  - makeWholeTractTemplateNImage
+  - makeBinnedTemplateCoaddImage
+  - makeBinnedTemplateCoaddNImage
+  - makeWholeTractTemplateCoaddImage
+  - makeWholeTractTemplateCoaddNImage
 - location: $ANALYSIS_TOOLS_DIR/pipelines/coaddDepthMetrics.yaml
   include:
   - analyzeCoaddDepthCore
@@ -48,8 +50,10 @@ subsets:
       Tasks to run to build template_coadds.
   makeMetrics:
     subset:
-      - makeBinnedTemplateNImage
-      - makeWholeTractTemplateNImage
+      - makeBinnedTemplateCoaddImage
+      - makeBinnedTemplateCoaddNImage
+      - makeWholeTractTemplateCoaddImage
+      - makeWholeTractTemplateCoaddNImage
       - analyzeCoaddDepthCore
       - coaddDepthMetricTract
     description: >
