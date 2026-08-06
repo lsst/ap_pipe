@@ -19,8 +19,17 @@ cluster:
     pipetasks: consolidateVisitSummary
     dimensions: visit
   makeWarp:
-    pipetasks: makeWarp
-    dimensions: tract,patch,visit
+    pipetasks: makeDirectWarp,makePsfMatchedWarp
+    dimensions: patch,visit
   selectAndAssemble:
-    pipetasks: selectGoodSeeingVisits,assembleCoadd
+    pipetasks: selectTemplateCoaddVisits,assembleTemplateCoadd
     dimensions: band,tract,patch
+  make_analysis_images:
+    pipetasks: makeBinnedTemplateCoaddNImage,makeBinnedTemplateCoaddImage
+    dimensions: tract,band
+  make_tract_analysis_images:
+    pipetasks: makeWholeTractTemplateCoaddNImage,makeWholeTractTemplateCoaddImage
+    dimensions: tract,band
+  make_metrics:
+    pipetasks: analyzeCoaddDepthCore,coaddDepthMetricTract
+    dimensions: tract

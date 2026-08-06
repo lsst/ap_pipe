@@ -26,3 +26,6 @@ cluster:
   make_tract_analysis_images:
     pipetasks: makeWholeTractTemplateCoaddNImage,makeWholeTractTemplateCoaddImage
     dimensions: tract,band
+  make_metrics:
+    pipetasks: analyzeCoaddDepthCore,coaddDepthMetricTract
+    dimensions: tract
