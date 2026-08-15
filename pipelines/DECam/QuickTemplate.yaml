@@ -11,3 +11,9 @@ tasks:
     config:
       connections.outputExposure: post_isr_image
       file: $AP_PIPE_DIR/config/DECam/runIsrWithCrosstalk.py
+  selectTemplateCoaddVisits:
+    class: lsst.pipe.tasks.selectImages.BestSeeingQuantileSelectVisitsTask
+    config:
+      maxPsfFwhm: 1.8
+      nVisitsMin: 8
+      qMax: 0.5

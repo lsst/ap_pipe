@@ -6,10 +6,23 @@ imports:
   - isr
   - calibrateImage
   - consolidateVisitSummary
-  - selectDeepCoaddVisits
+  - selectTemplateCoaddVisits
   - makeDirectWarp
   - makePsfMatchedWarp
   - assembleTemplateCoadd
+  - makeTemplateCoaddInputSummaryTract
+  - makeTemplateCoaddInputSummary
+  - makeBinnedTemplateCoaddImage
+  - makeBinnedTemplateCoaddNImage
+  - makeWholeTractTemplateCoaddImage
+  - makeWholeTractTemplateCoaddNImage
+  - aggregateTemplateCoaddMaskFractions
+  - makeAggregatedTemplateCoaddMaskFractionsTable
+  - aggregatedTemplateCoaddMaskFractionsWholeSkyPlot
+- location: $ANALYSIS_TOOLS_DIR/pipelines/coaddDepthMetrics.yaml
+  include:
+  - analyzeCoaddDepthCore
+  - coaddDepthMetricTract
 
 tasks:
   calibrateImage:
@@ -25,35 +38,53 @@ tasks:
       # take many 10s of seconds in crowded fields
       do_remeasure_star_background: False
       doMaskDiffractionSpikes: True
-  selectDeepCoaddVisits:
-    class: lsst.pipe.tasks.selectImages.BestSeeingSelectVisitsTask
-    config:
-      connections.visitSummaries: preliminary_visit_summary
   makeDirectWarp:
     class: lsst.drp.tasks.make_direct_warp.MakeDirectWarpTask
     config:
       connections.visit_summary: preliminary_visit_summary
       useVisitSummaryPsf: False
+  selectTemplateCoaddVisits:
+    class: lsst.pipe.tasks.selectImages.BestSeeingQuantileSelectVisitsTask
+    config:
+      connections.visitSummaries: preliminary_visit_summary
   assembleTemplateCoadd:
     class: lsst.drp.tasks.assemble_coadd.CompareWarpAssembleCoaddTask
     config:
-      connections.selectedVisits: deep_coadd_visit_selection
       maxFractionEpochsHigh: 0.2
       badMaskPlanes: ["NO_DATA", "BAD", "SAT", "EDGE", "SPIKE"]
       prefilterArtifactsMaskPlanes: ["NO_DATA", "BAD", "SUSPECT", "SPIKE"]
 
 subsets:
-  makeTemplate:
+  singleFrame:
     subset:
       - isr
       - calibrateImage
+    description: >
+      Tasks to run to get preliminary visit images.
+  makeTemplate:
+    subset:
       - consolidateVisitSummary
-      - selectDeepCoaddVisits
+      - selectTemplateCoaddVisits
       - makeDirectWarp
       - makePsfMatchedWarp
       - assembleTemplateCoadd
     description: >
       Tasks to run to build good seeing coadds for use as templates.
+  makeMetrics:
+    subset:
+      - makeTemplateCoaddInputSummaryTract
+      - makeTemplateCoaddInputSummary
+      - makeBinnedTemplateCoaddImage
+      - makeBinnedTemplateCoaddNImage
+      - makeWholeTractTemplateCoaddImage
+      - makeWholeTractTemplateCoaddNImage
+      - aggregateTemplateCoaddMaskFractions
+      - makeAggregatedTemplateCoaddMaskFractionsTable
+      - aggregatedTemplateCoaddMaskFractionsWholeSkyPlot
+      - analyzeCoaddDepthCore
+      - coaddDepthMetricTract
+    description: >
+      Metrics and plots to run on the templates.
 
 contracts:
   # Inputs and outputs must match. For consistency, contracts are written in execution order:
@@ -66,11 +97,11 @@ contracts:
               makeDirectWarp.connections.ConnectionsClass(config=makeDirectWarp).calexp_list.name
     msg: "calibrateImage.exposure != makeWarp.calexp_list"
   - contract: consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).visitSummary.name ==
-              selectDeepCoaddVisits.connections.ConnectionsClass(config=selectDeepCoaddVisits).visitSummaries.name
-    msg: "consolidateVisitSummary.visitSummary != selectDeepCoaddVisits.visitSummaries"
+              selectTemplateCoaddVisits.connections.ConnectionsClass(config=selectTemplateCoaddVisits).visitSummaries.name
+    msg: "consolidateVisitSummary.visitSummary != selectTemplateCoaddVisits.visitSummaries"
   - contract: consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).visitSummary.name ==
               makeDirectWarp.connections.ConnectionsClass(config=makeDirectWarp).visit_summary.name
     msg: "consolidateVisitSummary.visitSummary != makeDirectWarp.visit_summary"
-  - contract: selectDeepCoaddVisits.connections.ConnectionsClass(config=selectDeepCoaddVisits).goodVisits.name ==
+  - contract: selectTemplateCoaddVisits.connections.ConnectionsClass(config=selectTemplateCoaddVisits).goodVisits.name ==
               assembleTemplateCoadd.connections.ConnectionsClass(config=assembleTemplateCoadd).selectedVisits.name
-    msg: "selectDeepCoaddVisits.goodVisits != assembleTemplateCoadd.selectedVisits"
+    msg: "selectTemplateCoaddVisits.goodVisits != assembleTemplateCoadd.selectedVisits"
