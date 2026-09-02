@@ -29,7 +29,7 @@ cluster:
     dimensions: visit,detector
     equalDimensions: visit:exposure
   diffim:
-    pipetasks: buildTemplate,subtractImages,detectAndMeasureDiaSource,analyzeImageDifferenceMetrics,analyzeDiaSourceDetectionMetrics,filterDiaSource,computeReliability,filterDiaSourcePostReliability,standardizeDiaSource
+    pipetasks: buildTemplate,subtractImages,detectAndMeasureDiaSource,analyzeImageDifferenceMetrics,analyzeTemplateMetrics,analyzeDiaSourceDetectionMetrics,filterDiaSource,computeReliability,filterDiaSourcePostReliability,standardizeDiaSource
     dimensions: visit,detector
   association:
     pipetasks: associateApdb,analyzeDiaSourceAssociationMetrics,analyzeAssociateDiaSourceTiming

@@ -58,6 +58,7 @@ subsets:
       - analyzeAssociatedDiaSourceTable
       - analyzeTrailedDiaSourceTable
       - makeSampledImageSubtractionMetrics
+      - analyzeTemplateMetrics
       - analyzeImageDifferenceMetrics
       - analyzeDiaSourceDetectionMetrics
       - analyzeLoadDiaCatalogsMetrics
@@ -89,6 +90,7 @@ subsets:
       - associateApdb
       - analyzeAssociatedDiaSourceTable
       - analyzeTrailedDiaSourceTable
+      - analyzeTemplateMetrics
       - analyzeImageDifferenceMetrics
       - analyzeDiaSourceDetectionMetrics
       - analyzeDiaSourceAssociationMetrics
