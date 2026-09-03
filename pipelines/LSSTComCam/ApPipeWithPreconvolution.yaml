@@ -2,7 +2,7 @@ description: >-
   AP pipeline specialized for LSST ComCam.
 instrument: lsst.obs.lsst.LsstComCam
 imports:
-  - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithPreconvolution.yaml
+  - location: resource://lsst.ap.pipe/resources/pipelines/_ingredients/ApPipeWithPreconvolution.yaml
 contracts:
   # Add contracts for calibrateImage here since they are not valid for the Fakes pipeline
   - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
