@@ -2,4 +2,4 @@ description: >-
   Standalone single-frame pipeline, specialized for HSC.
 instrument: lsst.obs.subaru.HyperSuprimeCam
 imports:
-  - location: $AP_PIPE_DIR/pipelines/_ingredients/SingleFrame.yaml
+  - location: resource://lsst.ap.pipe/resources/pipelines/_ingredients/SingleFrame.yaml

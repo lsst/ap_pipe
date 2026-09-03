@@ -1,5 +1,5 @@
 description: End to end Alert Production pipeline.
-# Look in subdirectories of $AP_PIPE_DIR/pipelines to find customized pipelines
+# Look in subdirectories of resource://lsst.ap.pipe/resources/pipelines to find customized pipelines
 # for each camera. Those pipelines import this general AP pipeline.
 #
 # Per RFC-997, all variants of ApPipe must define three mutually exclusive subsets:
@@ -13,7 +13,7 @@ description: End to end Alert Production pipeline.
 # --connection_timeout 240
 
 imports:
-  - $ANALYSIS_TOOLS_DIR/pipelines/apDetectorVisitQualityCore.yaml
+  - resource://lsst.analysis.tools/resources/pipelines/apDetectorVisitQualityCore.yaml
 parameters:
   # Pipeline configurable to run on both goodSeeing and deep templates, depending on dataset.
   coaddName: goodSeeing
