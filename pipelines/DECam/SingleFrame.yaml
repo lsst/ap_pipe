@@ -2,7 +2,7 @@ description: >-
   Standalone single-frame pipeline, specialized for DECam.
 instrument: lsst.obs.decam.DarkEnergyCamera
 imports:
-  - location: $AP_PIPE_DIR/pipelines/_ingredients/SingleFrame.yaml
+  - location: resource://lsst.ap.pipe/resources/pipelines/_ingredients/SingleFrame.yaml
 tasks:
   isr:
     class: lsst.ip.isr.IsrTask

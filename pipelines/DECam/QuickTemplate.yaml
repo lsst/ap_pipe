@@ -3,7 +3,7 @@ description: The AP template building pipeline specialized for DECam
 instrument: lsst.obs.decam.DarkEnergyCamera
 
 imports:
-- location: $AP_PIPE_DIR/pipelines/_ingredients/QuickTemplate.yaml
+- location: resource://lsst.ap.pipe/resources/pipelines/_ingredients/QuickTemplate.yaml
 
 tasks:
   isr:

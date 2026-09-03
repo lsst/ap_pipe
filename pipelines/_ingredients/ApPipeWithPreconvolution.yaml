@@ -6,7 +6,7 @@ description: End to end Alert Production pipeline with preconvolution.
 # - afterburner is metrics and other non-essential tasks that are skipped by Prompt Processing
 
 imports:
-  - $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithIsrTaskLSST.yaml
+  - resource://lsst.ap.pipe/resources/pipelines/_ingredients/ApPipeWithIsrTaskLSST.yaml
 
 tasks:
   subtractImagesScore:

@@ -2,4 +2,4 @@ description: >-
   AP pipeline specialized for Simulated ComCam.
 instrument: lsst.obs.lsst.LsstComCamSim
 imports:
-  - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithIsrTaskLSST.yaml
+  - location: resource://lsst.ap.pipe/resources/pipelines/_ingredients/ApPipeWithIsrTaskLSST.yaml
