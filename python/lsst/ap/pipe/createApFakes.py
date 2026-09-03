@@ -437,6 +437,7 @@ class CreateVisitDetectorFakesConfig(
         min=-1,
     )
 
+
 class CreateVisitDetectorFakesTask(PipelineTask):
     """Create and store a set of visit detector fakes for use in AP processing.
     This task creates a catalog of fake sources that can be used to inject
@@ -449,6 +450,39 @@ class CreateVisitDetectorFakesTask(PipelineTask):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.log = logging.getLogger(__name__)
+        self._table_dtypes = (
+            [
+                ('x', '<f8'),
+                ('y', '<f8'),
+                ('mag', '<f8'),
+                ('ra', '<f8'),
+                ('dec', '<f8'),
+                ('source_type', '<U4'),
+                ('isVisitSource', '?'),
+                ('isTemplateSource', '?'),
+                ('host_id', '<i8'),
+                ('host_flux', '<f8'),
+                ('host_mag', '<f8'),
+                ('host_ra', '<f8'),
+                ('host_dec', '<f8'),
+                ('delta_ra', '<f8'),
+                ('delta_dec', '<f8'),
+                ('delta_mag', '<f8'),
+                ('host_a', '<f8'),
+                ('host_b', '<f8'),
+                ('host_pa', '<f8'),
+                ('hosted_fake', '?'),
+                ('injection_id', '<i8'),
+                ('isVariable', '?'),
+                ('mag_offset', '<f8'),
+                ('twin_id', '<i8'),
+                ('isBlended', 'bool'),
+                ('visit', '<i8'),
+                ('detector', '<i8'),
+                ('run', '<U62'),
+                ('band', '<U1')
+            ]
+        )
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         inputs = butlerQC.get(inputRefs)
@@ -469,6 +503,27 @@ class CreateVisitDetectorFakesTask(PipelineTask):
 
         return np.asarray(injection_ids, dtype=np.int64)
 
+    def _draw_offset_components_arcsec(self, rng, n_points):
+        """Draw isotropic offsets in arcseconds from an annulus."""
+        if n_points <= 0:
+            return np.zeros(0, dtype=float), np.zeros(0, dtype=float)
+
+        rmin = max(0.0, float(self.config.blendedFakeMinOffset))
+        rmax = max(rmin, float(self.config.blendedFakeMaxOffset))
+        radius = np.sqrt(rng.uniform(rmin**2, rmax**2, size=n_points))
+        theta = rng.uniform(0.0, 2.0 * np.pi, size=n_points)
+        return radius * np.cos(theta), radius * np.sin(theta)
+
+    def _cap_hosted_blended_count(self, requested, n_hosts):
+        """Apply configured limits to hosted blended fake counts."""
+        if requested <= 0 or n_hosts <= 0:
+            return 0
+
+        cap = n_hosts * self.config.maxHostedBlendedFakesPerHost
+        if self.config.maxHostedBlendedFakesTotal > 0:
+            cap = min(cap, self.config.maxHostedBlendedFakesTotal)
+        return min(requested, cap)
+
     def run(self, sourceCat, visit_image):
         """Create a set of visit detector fakes.
 
@@ -484,6 +539,8 @@ class CreateVisitDetectorFakesTask(PipelineTask):
         outputCat : `astropy.table.Table`
             Catalog of fake sources to draw inputs from.
         """
+        zero_table = Table(dtype=self._table_dtypes)
+
         # Use the visit+detector ids as the random seed.
         visitId = visit_image.getInfo().getVisitInfo().id
         detId = visit_image.detector.getId()
@@ -690,17 +747,9 @@ class CreateVisitDetectorFakesTask(PipelineTask):
                 scale=self.config.blendedFakeMagOffset,
                 size=n_blended_fakes
             )
-            blended_fakes["delta_ra"] = rng.uniform(
-                low=-self.config.blendedFakeMaxOffset,
-                high=self.config.blendedFakeMaxOffset,
-                size=n_blended_fakes
-            )
-            blended_fakes["delta_ra"] *= rng.choice([-1, 1], size=n_blended_fakes)
-
-            blended_fakes["delta_dec"] = np.sqrt(
-                self.config.blendedFakeMaxOffset**2 - blended_fakes["delta_ra"]**2
-            )
-            blended_fakes["delta_dec"] *= rng.choice([-1, 1], size=n_blended_fakes)
+            delta_ra, delta_dec = self._draw_offset_components_arcsec(rng, n_blended_fakes)
+            blended_fakes["delta_ra"] = delta_ra
+            blended_fakes["delta_dec"] = delta_dec
 
             blended_fakes["host_mag"] = blended_fakes["mag"]
             blended_fakes["mag"] += blended_fakes["delta_mag"]
@@ -741,7 +790,8 @@ class CreateVisitDetectorFakesTask(PipelineTask):
                         )
 
                 if n_star_hosted_blended_fakes > 0:
-                    # Build a finite host pool so each host appears at most maxHostedBlendedFakesPerHost times.
+                    # Build a finite host pool so each host appears at most
+                    # maxHostedBlendedFakesPerHost times.
                     host_pool = np.repeat(
                         np.arange(len(star_hosts), dtype=int),
                         self.config.maxHostedBlendedFakesPerHost,
@@ -819,8 +869,7 @@ class CreateVisitDetectorFakesTask(PipelineTask):
             catalog["host_ra"] = catalog["host_ra"].value
             catalog["host_dec"] = catalog["host_dec"].value
 
-
-        return Struct(outputCat=catalog)
+        return Struct(outputCat=vstack([zero_table, catalog]))
 
     def select_hosts(self, sourceCat):
         """
@@ -899,7 +948,6 @@ class CreateVisitDetectorFakesTask(PipelineTask):
         hostCat = sourceCat[
             skySourceCut & flagCut & extendednessCut & snrCut].copy()
         return hostCat
-
 
     def get_PA_and_axes(self, Ixx, Ixy, Iyy):
         '''
