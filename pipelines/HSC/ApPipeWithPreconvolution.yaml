@@ -6,7 +6,7 @@ description: End to end AP pipeline specialized for HSC
 
 instrument: lsst.obs.subaru.HyperSuprimeCam
 imports:
-  - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipeWithPreconvolution.yaml
+  - location: resource://lsst.ap.pipe/resources/pipelines/_ingredients/ApPipeWithPreconvolution.yaml
 tasks:
   # Override the class for `isr`, which is set to `IsrTaskLSST` in the base
   # pipeline in `_ingredients`

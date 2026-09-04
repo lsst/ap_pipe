@@ -4,7 +4,7 @@ description: Auxiliar Pipeline file with synthetic/fake sources tasks.
 # directly.
 
 imports:
-  - location: $ANALYSIS_TOOLS_DIR/pipelines/apDetectorVisitFakesCore.yaml
+  - location: resource://lsst.analysis.tools/resources/pipelines/apDetectorVisitFakesCore.yaml
 
 parameters:
   apdb_config: apdb_conf.py

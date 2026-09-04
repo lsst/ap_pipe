@@ -1,6 +1,6 @@
 description: Single-frame pipeline for the case in which no templates exist
 imports:
-  - location: $AP_PIPE_DIR/pipelines/_ingredients/ApPipe.yaml
+  - location: resource://lsst.ap.pipe/resources/pipelines/_ingredients/ApPipe.yaml
     include:
       - apPipeSingleFrame
 subsets:

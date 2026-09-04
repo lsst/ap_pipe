@@ -1,7 +1,7 @@
 description: The AP template building pipeline
 
 imports:
-- location: $DRP_PIPE_DIR/pipelines/_ingredients/base-v2.yaml
+- location: resource://lsst.drp.pipe/resources/pipelines/_ingredients/base-v2.yaml
   include:
   - isr
   - calibrateImage
@@ -19,7 +19,7 @@ imports:
   - aggregateTemplateCoaddMaskFractions
   - makeAggregatedTemplateCoaddMaskFractionsTable
   - aggregatedTemplateCoaddMaskFractionsWholeSkyPlot
-- location: $ANALYSIS_TOOLS_DIR/pipelines/coaddDepthMetrics.yaml
+- location: resource://lsst.analysis.tools/resources/pipelines/coaddDepthMetrics.yaml
   include:
   - analyzeCoaddDepthCore
   - coaddDepthMetricTract
