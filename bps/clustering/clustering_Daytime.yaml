@@ -49,6 +49,6 @@ ordering:
   associationOrder:
     ordering_type: sort
     findDependencyMethod: sink
-    labels: preloadApdb,association
+    labels: association
     dimensions: visit
     blocking: False
