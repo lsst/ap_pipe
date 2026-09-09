@@ -40,6 +40,7 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
         # Each pipeline file should have a subset that represents it in
         # higher-level pipelines.
         self.synonyms = {"ApPipe.yaml": "apPipe",
+                         "ApPipeDaytime.yaml": "apPipe",
                          "ApPipeWithIsrTaskLSST.yaml": "apPipe",
                          "ApPipeWithPreconvolution.yaml": "apPipe",
                          "ApPipeWithFakes.yaml": "apPipe",

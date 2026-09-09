@@ -21,9 +21,6 @@ cluster:
   preload:
     pipetasks: mpSkyEphemerisQuery,getRegionTimeFromVisit
     dimensions: group,detector
-  preloadApdb:
-    pipetasks: loadDiaCatalogs,analyzeLoadDiaCatalogsMetrics
-    dimensions: group,detector
   singleFrame:
     pipetasks: isr,calibrateImage,analyzePreliminarySummaryStats
     dimensions: visit,detector

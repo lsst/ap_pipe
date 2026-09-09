@@ -33,6 +33,11 @@ to verify the output.
 :doc:`ap_pipe <index>` is entirely written in Python. Key contents include:
 
 - :file:`ApPipe.yaml`: a `~lsst.pipe.base.Pipeline` configuration for running the entire AP Pipeline.
+- :file:`LSSTCam/ApPipeDaytime.yaml`: the variant used for daytime (non-real-time) LSSTCam processing.
+  It drops ``loadDiaCatalogs`` and has `~lsst.ap.association.DiaPipelineTask` read the DIAObject and
+  DIASource history from the APDB during association, so that the duplicate DIASource check sees rows
+  written by any earlier pass over the same image.
+  Prompt Processing must not use it; the preload is what keeps the APDB out of its latency-critical path.
 
 By default the pipeline is limited to running on data taken in filter bands whose names match those used by the Rubin Observatory LSST Camera (that is `ugrizy`).
 In order to run on bands outside of these filters, one must add the associated columns to the `~lsst.dax.apdb.Apdb` schema and add the band names to the config of `~lsst.ap.association.DiaPipelineTask`.
