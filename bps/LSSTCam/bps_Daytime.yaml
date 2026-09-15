@@ -1,4 +1,4 @@
-pipelineYaml: $AP_PIPE_DIR/pipelines/LSSTCam/ApPipe.yaml
+pipelineYaml: $AP_PIPE_DIR/pipelines/LSSTCam/ApPipeDaytime.yaml
 
 project: ApPipe
 campaign: AP-daytime

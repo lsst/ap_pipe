@@ -39,7 +39,7 @@ BLOCKS_SQL="($(printf "'%s'," $BLOCKS | sed 's/,$//'))"
 
 # Pipeline and butler config must mirror bps_Daytime.yaml — we replicate them
 # here because we build the quantum graph ourselves before calling BPS.
-PIPELINE_YAML="${AP_PIPE_DIR}/pipelines/LSSTCam/ApPipe.yaml"
+PIPELINE_YAML="${AP_PIPE_DIR}/pipelines/LSSTCam/ApPipeDaytime.yaml"
 APDB_CONFIG="s3://embargo@rubin-summit-users/apdb_config/cassandra/pp_apdb_lsstcam.yaml"
 BUTLER_CONFIG="embargo"
 INPUT_COLLECTIONS="LSSTCam/defaults,LSSTCam/templates,LSSTCam/runs/prompt-${DAY_OBS}"

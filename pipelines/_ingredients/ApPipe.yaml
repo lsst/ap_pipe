@@ -312,8 +312,14 @@ subsets:
       Requires prompt subset to be run first.
 contracts:
   - detectAndMeasureDiaSource.doSkySources == filterDiaSource.doRemoveSkySources
-  # Both loadDiaCatalogs and associateApdb connect to the APDB, so make sure they use the same configuration
-  - loadDiaCatalogs.apdb_config_url == associateApdb.apdb_config_url
+  # Both loadDiaCatalogs and associateApdb connect to the APDB, so make sure
+  # they use the same configuration. associateApdb must not also reload the
+  # full history, which would leave the preload unused; ApPipeDaytime.yaml
+  # drops loadDiaCatalogs instead.
+  - contract: loadDiaCatalogs.apdb_config_url == associateApdb.apdb_config_url
+              and not associateApdb.doReloadAllApdbCatalogs
+    msg: "loadDiaCatalogs and associateApdb must share an APDB config, and
+          associateApdb.doReloadAllApdbCatalogs must be False when loadDiaCatalogs runs"
   # to reduce latency, we need two calls to the sattle service when active
   - calibrateImage.run_sattle == detectAndMeasureDiaSource.run_sattle
   # Inputs and outputs must match. For consistency, contracts are written in execution order:

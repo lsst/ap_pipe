@@ -1,0 +1,50 @@
+description: >-
+  AP pipeline for daytime (non-real-time) processing of LSSTCam data.
+
+  Association reads the DiaObject, DiaSource, and DiaForcedSource history
+  directly from the APDB rather than consuming preloaded catalogs, so the
+  duplicate DiaSource check in associateApdb can see rows written by an
+  earlier pass over the same image. The preloaded catalogs are built before
+  the image is processed and so cannot contain those rows; reusing them let
+  a reprocessing run write duplicate diaSources to the APDB (DM-55633).
+  loadDiaCatalogs is therefore dropped from this pipeline entirely, which
+  also stops --skip-existing-in from reviving a stale preload.
+
+  Prompt Processing must not use this pipeline. Its preload exists to keep
+  the APDB out of the latency-critical path, and it guards its own retries
+  with Apdb.containsVisitDetector.
+instrument: lsst.obs.lsst.LsstCam
+imports:
+  - location: $AP_PIPE_DIR/pipelines/LSSTCam/ApPipe.yaml
+    exclude:
+      - loadDiaCatalogs
+      - analyzeLoadDiaCatalogsMetrics
+    # EDIT drops the excluded labels from the inherited subsets. The
+    # default, DROP, would delete preload and promptQaMetrics outright
+    # and force apPipe to be restated here.
+    labeledSubsetModifyMode: EDIT
+
+tasks:
+  associateApdb:
+    class: lsst.ap.association.DiaPipelineTask
+    config:
+      # Load all of the APDB catalogs in association, instead of relying on
+      # preloaded catalogs from loadDiaCatalogs
+      doReloadAllApdbCatalogs: True
+  analyzeDiaSourceAssociationMetrics:
+    class: lsst.analysis.tools.tasks.TaskMetadataAnalysisTask
+    config:
+      # Publish the APDB read timings that analyzeLoadDiaCatalogsMetrics used
+      # to provide. The metric names match the ones that task emitted, so
+      # they reach the same Sasquatch topics as in Prompt Processing; only
+      # the dataset type carrying them changes, since the timings now come
+      # from a visit-dimensioned quantum.
+      # Setting `metrics` replaces the dict, so the inherited entries are
+      # repeated here.
+      atools.associationMetadataMetrics.metrics:
+        numTotalSolarSystemObjects: ct
+        numAssociatedSsObjects: ct
+        writeToApdbDuration: s
+        loadDiaObjectsDuration: s
+        loadDiaSourcesDuration: s
+        loadDiaForcedSourcesDuration: s
