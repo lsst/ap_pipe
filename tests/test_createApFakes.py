@@ -30,6 +30,7 @@ from unittest.mock import MagicMock
 import lsst.daf.butler.tests as butlerTests
 import lsst.geom as geom
 from astropy.table import Table
+from astropy import units as u
 from lsst.pipe.base import testUtils
 import lsst.skymap as skyMap
 import lsst.utils.tests
@@ -162,7 +163,8 @@ class TestCreateApFakes(lsst.utils.tests.TestCase):
 
 def _make_mock_visit_image(visitId=2024111100094, detId=3,
                            xmin=0, xmax=4096, ymin=0, ymax=4096,
-                           magLim=25.0, ra_center=10.0, dec_center=-1.0):
+                           magLim=25.0, ra_center=10.0, dec_center=-1.0,
+                           return_quantity_angles=False):
     """Build a minimal MagicMock that satisfies CreateVisitDetectorFakesTask.run."""
     img = MagicMock()
 
@@ -195,14 +197,65 @@ def _make_mock_visit_image(visitId=2024111100094, detId=3,
     def _pix_to_sky(xs, ys, degrees=True):
         ra = ra_center + xs * 1e-4
         dec = dec_center + ys * 1e-4
+        if return_quantity_angles:
+            return np.asarray(ra) * u.deg, np.asarray(dec) * u.deg
         return np.asarray(ra), np.asarray(dec)
+
+    def _sky_to_pix(ra, dec, degrees=False):
+        ra_arr = np.asarray(ra)
+        dec_arr = np.asarray(dec)
+        if not degrees:
+            ra_arr = np.rad2deg(ra_arr)
+            dec_arr = np.rad2deg(dec_arr)
+        xs = (ra_arr - ra_center) / 1e-4
+        ys = (dec_arr - dec_center) / 1e-4
+        return np.asarray(xs), np.asarray(ys)
+
     wcs.pixelToSkyArray.side_effect = _pix_to_sky
+    wcs.skyToPixelArray.side_effect = _sky_to_pix
     img.getWcs.return_value = wcs
 
     # photoCalib — not used in non-hosted paths, but must exist
     img.getPhotoCalib.return_value = MagicMock()
 
     return img
+
+
+def _make_calibrated_source_table(n_sources, host_kind="galaxy", ra_deg=10.0, dec_deg=-1.0):
+    """Build a calibrated source table that can pass host selection cuts."""
+    if host_kind == "galaxy":
+        size_ext = np.ones(n_sources)
+        ext = np.ones(n_sources, dtype=int)
+    elif host_kind == "star":
+        size_ext = np.full(n_sources, 0.2)
+        ext = np.zeros(n_sources, dtype=int)
+    else:
+        raise ValueError(f"Unknown host_kind={host_kind}")
+
+    return Table({
+        "slot_Centroid_x": np.linspace(1000.0, 3000.0, n_sources),
+        "slot_Centroid_y": np.linspace(1100.0, 3100.0, n_sources),
+        "slot_ModelFlux_mag": np.full(n_sources, 20.0),
+        "slot_ModelFlux_flux": np.full(n_sources, 1e4),
+        "slot_ModelFlux_fluxErr": np.full(n_sources, 100.0),
+        "slot_PsfFlux_mag": np.full(n_sources, 20.0),
+        "slot_PsfFlux_flux": np.full(n_sources, 1e4),
+        "slot_PsfFlux_fluxErr": np.full(n_sources, 100.0),
+        "slot_Shape_xx": np.full(n_sources, 4.0),
+        "slot_Shape_xy": np.zeros(n_sources),
+        "slot_Shape_yy": np.full(n_sources, 4.0),
+        "id": np.arange(n_sources, dtype=np.int64),
+        "coord_ra": np.deg2rad(np.full(n_sources, ra_deg)),
+        "coord_dec": np.deg2rad(np.full(n_sources, dec_deg)),
+        "sky_source": np.zeros(n_sources, dtype=bool),
+        "base_ClassificationSizeExtendedness_flag": np.zeros(n_sources, dtype=bool),
+        "base_ClassificationExtendedness_flag": np.zeros(n_sources, dtype=bool),
+        "slot_Shape_flag": np.zeros(n_sources, dtype=bool),
+        "slot_Centroid_flag": np.zeros(n_sources, dtype=bool),
+        "base_PixelFlags_flag": np.zeros(n_sources, dtype=bool),
+        "base_ClassificationSizeExtendedness_value": size_ext,
+        "base_ClassificationExtendedness_value": ext,
+    })
 
 
 class TestCreateVisitDetectorFakesTask(lsst.utils.tests.TestCase):
@@ -313,27 +366,7 @@ class TestCreateVisitDetectorFakesTask(lsst.utils.tests.TestCase):
         task = CreateVisitDetectorFakesTask(config=cfg)
 
         n_hosts = 5
-        host_table = Table({
-            "slot_Centroid_x": np.full(n_hosts, 2048.0),
-            "slot_Centroid_y": np.full(n_hosts, 2048.0),
-            "slot_ModelFlux_mag": np.full(n_hosts, 20.0),
-            "slot_ModelFlux_flux": np.full(n_hosts, 1e4),
-            "slot_ModelFlux_fluxErr": np.full(n_hosts, 100.0),
-            "slot_Shape_xx": np.full(n_hosts, 4.0),
-            "slot_Shape_xy": np.zeros(n_hosts),
-            "slot_Shape_yy": np.full(n_hosts, 4.0),
-            "id": np.arange(n_hosts, dtype=np.int64),
-            "coord_ra": np.deg2rad(np.full(n_hosts, 10.0)),
-            "coord_dec": np.deg2rad(np.full(n_hosts, -1.0)),
-            "sky_source": np.zeros(n_hosts, dtype=bool),
-            "base_ClassificationSizeExtendedness_flag": np.zeros(n_hosts, dtype=bool),
-            "base_ClassificationExtendedness_flag": np.zeros(n_hosts, dtype=bool),
-            "slot_Shape_flag": np.zeros(n_hosts, dtype=bool),
-            "slot_Centroid_flag": np.zeros(n_hosts, dtype=bool),
-            "base_PixelFlags_flag": np.zeros(n_hosts, dtype=bool),
-            "base_ClassificationSizeExtendedness_value": np.ones(n_hosts),
-            "base_ClassificationExtendedness_value": np.ones(n_hosts, dtype=int),
-        })
+        host_table = _make_calibrated_source_table(n_hosts, host_kind="galaxy")
 
         # Patch photoCalib so calibrateCatalog().asAstropy() returns our table
         img = _make_mock_visit_image()
@@ -389,6 +422,74 @@ class TestCreateVisitDetectorFakesTask(lsst.utils.tests.TestCase):
         self.assertTrue(any("no valid hosts" in msg.lower() for msg in cm.output))
         # Random fakes still produced
         self.assertEqual(len(result.outputCat), 10)
+
+    def testHostedBlendedFakesPerHostCap(self):
+        task = self._make_task(
+            doAddRandomVisitFakes=True,
+            nRandomFakes=20,
+            doAddBlendedFakes=True,
+            fracBlendedFakes=0.999,
+            fracHostedBlendedFakes=0.999,
+            maxHostedBlendedFakesPerHost=2,
+            maxHostedBlendedFakesTotal=-1,
+        )
+        star_hosts = _make_calibrated_source_table(3, host_kind="star")
+        self.visit_image.getPhotoCalib().calibrateCatalog.return_value.asAstropy.return_value = star_hosts
+
+        cat = task.run(self.source_cat, self.visit_image).outputCat
+        hosted_blended = cat[cat["isBlended"]]
+        hosted_mask = ~np.ma.getmaskarray(hosted_blended["host_flux"])
+        hosted_star_blended = hosted_blended[hosted_mask]
+
+        # Requested 20, capped to n_hosts * per_host = 3 * 2 = 6.
+        self.assertEqual(len(hosted_star_blended), 6)
+        host_ids, counts = np.unique(hosted_star_blended["host_id"], return_counts=True)
+        self.assertEqual(len(host_ids), 3)
+        self.assertTrue(np.all(counts <= 2))
+
+    def testHostedBlendedFakesTotalCap(self):
+        task = self._make_task(
+            doAddRandomVisitFakes=True,
+            nRandomFakes=20,
+            doAddBlendedFakes=True,
+            fracBlendedFakes=0.999,
+            fracHostedBlendedFakes=0.999,
+            maxHostedBlendedFakesPerHost=10,
+            maxHostedBlendedFakesTotal=4,
+        )
+        star_hosts = _make_calibrated_source_table(10, host_kind="star")
+        self.visit_image.getPhotoCalib().calibrateCatalog.return_value.asAstropy.return_value = star_hosts
+
+        cat = task.run(self.source_cat, self.visit_image).outputCat
+        hosted_blended = cat[cat["isBlended"]]
+        hosted_mask = ~np.ma.getmaskarray(hosted_blended["host_flux"])
+        hosted_star_blended = hosted_blended[hosted_mask]
+
+        self.assertEqual(len(hosted_star_blended), 4)
+
+    def testAngleColumnsAreUnitless(self):
+        cfg = CreateVisitDetectorFakesConfig()
+        cfg.doAddRandomVisitFakes = False
+        cfg.doAddRandomTemplateFakes = False
+        cfg.doAddHostedFakes = True
+        cfg.doAddVariableFakes = False
+        cfg.doAddModelFakes = False
+        cfg.fracHostedFakes = 0.999
+        cfg.minHostedFakes = 5
+        task = CreateVisitDetectorFakesTask(config=cfg)
+
+        img = _make_mock_visit_image()
+        host_table = _make_calibrated_source_table(5, host_kind="galaxy")
+        img.getPhotoCalib().calibrateCatalog.return_value.asAstropy.return_value = host_table
+
+        cat = task.run(self.source_cat, img).outputCat
+        for col in ("ra", "dec", "delta_ra", "delta_dec", "host_ra", "host_dec"):
+            self.assertIn(col, cat.colnames)
+            self.assertIsNone(cat[col].unit)
+
+        # Sanity check that RA values are in degrees-like scale, not radians.
+        self.assertTrue(np.all(np.asarray(cat["ra"], dtype=float) > 2.0 * np.pi))
+        self.assertTrue(np.all(np.asarray(cat["host_ra"], dtype=float) > 2.0 * np.pi))
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
