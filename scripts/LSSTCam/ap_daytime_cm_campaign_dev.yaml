@@ -1,0 +1,201 @@
+# [DEV]AP_DAYTIME CM Service Scheduled Campaign Definition
+# - Uses development cassandra config file for apdb
+# - Uses development db-auth file
+# - Uses a random component in collection names
+# - Uses development accounting group for resource allocation
+#
+# All env vars `${...}` must be fulfilled *at runtime* by stack setup, explicit environment
+# setting or by sourcing a file during launcher execution that does explicit environment setting
+# All CM template vars `${{ ... }}` are rendered when the schedule triggers the creation of new
+# campaign objects.
+# All CM manifest vars `{{ ... }}` are rendered when the campaign assembles a configuration
+# chain for each step-group.
+# All BPS variables `{...}` are fulfilled by BPS during workflow execution and must be
+# already known to BPS or added to BPS configuration.
+#
+# This YAML contains multiple documents of different "kinds" that are supported by the CM Service API
+# - `campaign`: the campaign namespace object
+# - `node`: one or more "steps" or other nodes available to a campaign graph
+# - `edge`: edges define the shape of the campaign graph/DAG
+# - configuration manifests `lsst`; `bps`; `wms`; `site`; `butler` provide campaign-level configuration
+# - `schedule`: Defines a repeatable schedule for the campaign and TURNS ALL OTHER MANIFESTS INTO TEMPLATES
+#
+# This YAML may be used with the IMPORT function of the CM Service Web UI (via New Campaign)
+# or with the CM cli tool: `cm schedules load <filename>.yaml`
+---
+apiVersion: io.lsst.cmservice/v1
+kind: campaign
+metadata:
+  name: ap_daytime_dev
+spec: {}
+---
+apiVersion: io.lsst.cmservice/v1
+kind: node
+metadata:
+  kind: step
+  name: AP_PIPE
+spec:
+  bps:
+    pipeline_yaml: "${AP_PIPE_DIR}/pipelines/LSSTCam/ApPipe.yaml"
+  lsst:
+    # These commands are added to the launch script for any groups created by this step
+    # These commands are designed to generate a qg and manipulate it before the
+    # implicit `bps` payload of the group is executed.
+    # In turn, bps should recognize that the qg file already exists and use it
+    # in place, since `{{bps.uniq_proc_name}}` should resolve to the same name
+    # bps expects, i.e., the outputRun collection as snake_case.
+    custom_group_payload:
+      - "source ${AP_PIPE_DIR}/scripts/LSSTCam/ap_daytime_env.sh"
+      - ["bps", "--log-file", "{{ bps.uniq_proc_name }}_log.json", "--no-log-tty", "acquire", "{{ bps.submit_yaml }}"]
+      - ["mv", "submit", "acquire"]
+      -
+        - "export"
+        - "BPS_SUBMIT_OPTIONS=--qgraph {{ metadata.artifact_path }}/acquire/{{ bps.uniq_proc_name }}.qg"
+  groups: null
+---
+apiVersion: io.lsst.cmservice/v1
+kind: butler
+metadata:
+  name: embargo
+  default: true
+spec:
+  collections:
+    campaign_input:
+    - LSSTCam/defaults
+    - LSSTCam/templates
+    - LSSTCam/runs/prompt-${{ yesterday | as_day_obs }}
+    # The `campaign_public_output` is the base collection name from which all other
+    # collection names are derived, and it is also the name of the final chained collection
+    # available at the completion of the campaign.
+    campaign_public_output: u/lsstsvc1/runs/daytimeAP/${{ yesterday | as_day_obs | random_n(8, sep='/') }}
+    campaign_output: u/lsstsvc1/runs/daytimeAP/${{ yesterday | as_day_obs | random_n(8, sep='/') }}/output
+  include_files: []
+  # The ${...} environment variables must be fulfilled externally.
+  # See the `custom_group_payload` attribute of the step configuration for the
+  # source of these values.
+  # The ${{...}} template expressions are fulfilled by the expressions defined
+  # on the "schedule" object.
+  predicates:
+  - instrument='LSSTCam'
+  - skymap='lsst_cells_v2'
+  - day_obs=${{ yesterday | as_day_obs }}
+  - detector not in ${BAD_DETECTORS_SQL}
+  - exposure.science_program in ${BLOCKS_SQL}
+  repo: embargo
+---
+apiVersion: io.lsst.cmservice/v1
+kind: bps
+metadata:
+  name: ap_catchup
+  default: true
+spec:
+  # The ${{...}} template expressions are fulfilled by the expressions defined
+  # on the "schedule" object whenever a new campaign is created by that schedule.
+  # The {{...}} variable placeholders are fulfilled at runtime when CM builds
+  # a configuration chain and renders artifacts during each campaign execution.
+  extra_qgraph_options:
+    - "--skip-existing-in LSSTCam/runs/prompt-${{ yesterday | as_day_obs }}"
+    - "--retained-dataset-types ${AP_PIPE_DIR}/scripts/LSSTCam/retained_types.yaml"
+    - "--prune-unanchored-quanta getRegionTimeFromVisit:associateApdb"
+    - "-c parameters:release_id=1"
+    - "-c parameters:apdb_config=s3://embargo@rubin-summit-users/apdb_config/cassandra/cm_dev_apdb.yaml"
+    - "-c associateApdb:doRunForcedMeasurement=False"
+    - "--dataset-query-constraint off"
+  extra_run_quantum_options:
+    - "--no-raise-on-partial-outputs"
+  extra_aggregate_options:
+    - "--worker-log-dir {submitPath}/jobs/finalJob"
+    - "--output {submitPath}/{uniqProcName}_prov.qg"
+  include_files:
+    - "${AP_PIPE_DIR}/bps/clustering/clustering_Daytime.yaml"
+  literals:
+    finalJob:
+      command2: "${DAF_BUTLER_DIR}/bin/butler {finalPreCmdOpts} update-dimension-regions {butlerConfig} LSSTCam {outputRun} --batch-size 2000"
+      command3: "${DAF_BUTLER_DIR}/bin/butler provenance-report --format json '{submitPath}/{uniqProcName}_prov.qg' > '{submitPath}/{uniqProcName}_prov.json'"
+---
+apiVersion: io.lsst.cmservice/v1
+kind: lsst
+metadata:
+  name: cvmfs_current
+  default: true
+spec:
+  campaign: AP-daytime
+  description: Alert Production Daytime Catchup (Daily Batch)
+  environment:
+    DAX_APDB_MONITOR_CONFIG: logging:lsst.dax.apdb.monitor
+  lsst_distrib_dir: /cvmfs/sw.lsst.eu/almalinux-x86_64/lsst_distrib/w_2026_34
+  lsst_version: w_2026_34
+  project: ApPipe
+  ticket: DM-XXXXX
+  custom_lsst_setup:
+  -
+    - "setup"
+    - "--just"
+    - "--root=/sdf/group/rubin/shared/campaigns/users/usdf-cm-dev/lsst/ap_pipe"
+---
+apiVersion: io.lsst.cmservice/v1
+kind: wms
+metadata:
+  name: htcondor
+  default: true
+spec:
+  auto_provision: true
+  batch_system: htcondor
+  service_class: lsst.ctrl.bps.htcondor.HTCondorService
+  # These are WMS-specific provisioning options BPS uses for allocateNodes
+  provisioned_idle_time: 300
+  provisioned_max_wall_time: '2-0:0:0'
+  provisioned_node_count: 25
+---
+apiVersion: io.lsst.cmservice/v1
+kind: site
+metadata:
+  name: slac_s3df
+  default: true
+spec:
+  facility: SLAC
+  literals:
+    site:
+      SLAC:
+        profile:
+          condor:
+            +Walltime: 43200
+  # These are Site-specific provisioning options BPS uses for allocateNodes
+  provisioned_account_group: rubin:production
+  provisioned_platform: s3df
+  provisioned_queue: milano
+---
+apiVersion: io.lsst.cmservice/v1
+kind: edge
+metadata:
+  name: START--STEP
+spec:
+  source: START
+  target: AP_PIPE
+---
+apiVersion: io.lsst.cmservice/v1
+kind: edge
+metadata:
+  name: STEP--END
+spec:
+  source: AP_PIPE
+  target: END
+---
+apiversion: io.lsst.cmservice/v1
+kind: schedule
+metadata:
+  owner: root
+spec:
+  auto_start: false
+  cron: 0 12 * * *
+  # These expressions are available to other manifests as `${{...}}` variables
+  # where the result of the Python expression is the object. These examples are
+  # both `datetime.datetime` objects.
+  expressions:
+#     yesterday: "datetime(year=2026, month=6, day=13)"
+    yesterday: "datetime.now(timezone.utc) - timedelta(days=1)"
+  # This format string is used to identify the new campaign created by this
+  # schedule as `<campaign_name>_<suffix>`. Because campaign names must be unique
+  # in CM Service, this format string should more or less reflect the frequency
+  # of the schedule execution while keeping incidental one-shot runs in mind.
+  name_format: "%Y%m%d_%s"
