@@ -4,7 +4,7 @@ description: The LSSTCam AP template building pipeline with preliminary_visit_im
 instrument: lsst.obs.lsst.LsstCam
 
 imports:
-- location: $AP_PIPE_DIR/pipelines/_ingredients/QuickTemplate.yaml
+- location: resource://lsst.ap.pipe/resources/pipelines/_ingredients/QuickTemplate.yaml
   exclude:
   - isr
   - calibrateImage

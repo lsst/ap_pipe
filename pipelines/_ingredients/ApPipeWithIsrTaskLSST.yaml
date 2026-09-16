@@ -6,7 +6,7 @@ description: End to end Alert Production pipeline with IsrTaskLSST.
 # - afterburner is metrics and other non-essential tasks that are skipped by Prompt Processing
 
 imports:
-  - $AP_PIPE_DIR/pipelines/_ingredients/ApPipe.yaml
+  - resource://lsst.ap.pipe/resources/pipelines/_ingredients/ApPipe.yaml
 
 tasks:
   isr:

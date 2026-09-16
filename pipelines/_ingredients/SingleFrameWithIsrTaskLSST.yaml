@@ -1,7 +1,7 @@
 description: Single-frame pipeline with IsrTaskLSST
 
 imports:
-  - location: $AP_PIPE_DIR/pipelines/_ingredients/SingleFrame.yaml
+  - location: resource://lsst.ap.pipe/resources/pipelines/_ingredients/SingleFrame.yaml
 
 tasks:
   isr:
