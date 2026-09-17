@@ -18,8 +18,12 @@ site:
     profile:
       condor:
         +Walltime: 43200
+
+# Include BPS clustering to group compatible pipeline tasks for more efficient batch
+# processing. 
 includeConfigs:
   - ${AP_PIPE_DIR}/bps/clustering/clustering_QuickTemplate.yaml
+
 # if you are running on data that needs skyCorr, such as HSC, comment out the previous line
 # and use this one instead:
 #  - ${AP_PIPE_DIR}/bps/clustering/clustering_HSC_QuickTemplate.yaml
@@ -45,7 +49,7 @@ payload:
 # Various things for bps to customize about each pipeline task
 pipetask:
   # Option to list other pipeline tasks being run here with default overrides
-  makeWarp:
+  makeDirectWarp:
     requestMemory: 8192
 
 # Set the appropriate wms service class for the batch system

@@ -18,8 +18,11 @@ site:
     profile:
       condor:
         +Walltime: 43200
+
+# Include BPS clustering to group compatible pipeline tasks for more efficient batch
+# processing. Use QuickTemplate's clustering file.
 includeConfigs:
-  - ${AP_PIPE_DIR}/bps/clustering/clustering_PromptTemplate.yaml
+  - ${AP_PIPE_DIR}/bps/clustering/clustering_QuickTemplate.yaml
 
 # Memory allocated for each quantum, in MBs; can be overridden on a per-task basis.
 # The bps default is 2048 MB, the same as this example, but it's kept here as a reminder.
@@ -37,12 +40,12 @@ payload:
   # The operator variable is used at facilities beyond bps and it defaults to the value of USER.
   output : 'u/{operator}/{payloadName}'
   # UPDATE THIS to specify what data to process
-  dataQuery: "instrument='LSSTCam' AND skymap='lsst_cells_v1 AND band='g'"
+  dataQuery: "instrument='LSSTCam' AND skymap='lsst_cells_v2 AND band='g'"
 
 # Various things for bps to customize about each pipeline task
 pipetask:
   # Option to list other pipeline tasks being run here with default overrides
-  makeWarp:
+  makeDirectWarp:
     requestMemory: 8192
 
 # Set the appropriate wms service class for the batch system

@@ -1,5 +1,5 @@
 description: The LSSTCam AP template building pipeline with preliminary_visit_images as inputs.
-# Important Note: Use corresponding BPS clustering file when running with BPS.
+# Important Note: Use QuickTemplate BPS clustering file when running with BPS.
 
 instrument: lsst.obs.lsst.LsstCam
 
@@ -8,13 +8,13 @@ imports:
   exclude:
   - isr
   - calibrateImage
-  - selectTemplateCoaddVisits
+  labeledSubsetModifyMode: EDIT
+
+parameters:
+  image_type: future
+  use_cell_coadds: true
 
 tasks:
-  consolidateVisitSummary:
-    class: lsst.pipe.tasks.postprocess.ConsolidateVisitSummaryTask
-    config:
-      full: True
   selectTemplateCoaddVisits:
     # Class changed from BestSeeingQuantileSelectVisitsTask due to different template
     # expectations for incremental templates.

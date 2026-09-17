@@ -18,14 +18,14 @@ cluster:
     pipetasks: makeDirectWarp,makePsfMatchedWarp
     dimensions: patch,visit
   selectAndAssemble:
-    pipetasks: selectTemplateCoaddVisits,assembleTemplateCoadd
+    pipetasks: selectTemplateCoaddVisits,assembleTemplateCoadd,assembleCellCoadd
     dimensions: band,tract,patch
-  make_analysis_images:
-    pipetasks: makeBinnedTemplateCoaddNImage,makeBinnedTemplateCoaddImage
+  tract_band_analysis:
+    pipetasks: makeTemplateCoaddInputSummaryTract,aggregateTemplateCoaddMaskFractions,makeBinnedTemplateCoaddNImage,makeBinnedTemplateCoaddImage,makeWholeTractTemplateCoaddNImage,makeWholeTractTemplateCoaddImage
     dimensions: tract,band
-  make_tract_analysis_images:
-    pipetasks: makeWholeTractTemplateCoaddNImage,makeWholeTractTemplateCoaddImage
-    dimensions: tract,band
+  mask_fraction_global:
+    pipetasks: makeAggregatedTemplateCoaddMaskFractionsTable,aggregatedTemplateCoaddMaskFractionsWholeSkyPlot
+    dimensions: band
   make_metrics:
     pipetasks: analyzeCoaddDepthCore,coaddDepthMetricTract
     dimensions: tract

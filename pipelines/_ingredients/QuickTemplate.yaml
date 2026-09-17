@@ -10,6 +10,7 @@ imports:
   - makeDirectWarp
   - makePsfMatchedWarp
   - assembleTemplateCoadd
+  - assembleCellCoadd
   - makeTemplateCoaddInputSummaryTract
   - makeTemplateCoaddInputSummary
   - makeBinnedTemplateCoaddImage
@@ -53,6 +54,17 @@ tasks:
       maxFractionEpochsHigh: 0.2
       badMaskPlanes: ["NO_DATA", "BAD", "SAT", "EDGE", "SPIKE"]
       prefilterArtifactsMaskPlanes: ["NO_DATA", "BAD", "SUSPECT", "SPIKE"]
+      doWriteArtifactMasks: true
+      python: |
+        config.doInputMap = not parameters.use_cell_coadds
+  assembleCellCoadd:
+    class: lsst.drp.tasks.assemble_cell_coadd.AssembleCellCoaddTask
+    config:
+      connections.inputWarps: direct_warp
+      connections.maskedFractionWarps: direct_warp_masked_fraction
+      connections.visitSummaryList: preliminary_visit_summary
+      connections.multipleCellCoadd: template_coadd_cell
+      connections.inputMap: template_coadd_input_map
 
 subsets:
   singleFrame:
@@ -68,6 +80,7 @@ subsets:
       - makeDirectWarp
       - makePsfMatchedWarp
       - assembleTemplateCoadd
+      - assembleCellCoadd
     description: >
       Tasks to run to build good seeing coadds for use as templates.
   makeMetrics:
