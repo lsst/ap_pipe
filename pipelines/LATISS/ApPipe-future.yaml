@@ -1,0 +1,19 @@
+description: >
+  LATISS specialization of the AP pipeline with support for the 'future'
+  image storage classes in the `lsst.images` package.
+instrument: lsst.obs.lsst.Latiss
+imports:
+  - location: $AP_PIPE_DIR/pipelines/LATISS/ApPipe.yaml
+parameters:
+  image_type: future
+tasks:
+  # The components of an lsst.images type have their own names, so the
+  # connections that read one have to be re-pointed along with the parameter.
+  buildTemplate:
+    class: lsst.ip.diffim.getTemplate.GetTemplateTask
+    config:
+      connections.wcs: preliminary_visit_image.sky_projection
+  filterDiaSource:
+    class: lsst.ap.association.FilterDiaSourceCatalogTask
+    config:
+      connections.diffImVisitInfo: difference_image.obs_info
