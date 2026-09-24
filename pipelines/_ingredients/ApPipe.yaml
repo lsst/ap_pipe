@@ -21,6 +21,10 @@ parameters:
   apdb_config:
   # Use release_id=0 for development, 1 for production, and 2 or 3 for reprocessing production data
   release_id: 0
+  # Whether image datasets are legacy afw Exposures or the new lsst.images
+  # types. This value is also used by the imported analysis_tools pipeline.
+  # The ApPipe-future.yaml pipelines set this to 'future'.
+  image_type: legacy
 tasks:
   loadDiaCatalogs:
     class: lsst.ap.association.LoadDiaCatalogsTask
@@ -60,6 +64,7 @@ tasks:
       # Disable refining the background level after star detection, which can
       # take many 10s of seconds in crowded fields
       do_remeasure_star_background: False
+      output_image_type: parameters.image_type
   consolidateVisitSummary:
     class: lsst.pipe.tasks.postprocess.ConsolidateVisitSummaryTask
     config:
@@ -70,10 +75,11 @@ tasks:
     class: lsst.ip.diffim.getTemplate.GetTemplateTask
     config:
       connections.coaddName: parameters.coaddName
-      connections.bbox: preliminary_visit_image.bbox
+      connections.detector: preliminary_visit_image.detector
       connections.wcs: preliminary_visit_image.wcs
       connections.coaddExposures: template_coadd
       connections.template: template_detector
+      output_image_type: parameters.image_type
   subtractImages:
     class: lsst.ip.diffim.subtractImages.AlardLuptonSubtractTask
     config:
@@ -86,6 +92,7 @@ tasks:
       connections.psfMatchingKernel: difference_kernel
       connections.kernelSources: difference_kernel_sources
       doApplyExternalCalibrations: False
+      image_type: parameters.image_type
   detectAndMeasureDiaSource:
     class: lsst.ip.diffim.detectAndMeasure.DetectAndMeasureTask
     config:
@@ -100,6 +107,7 @@ tasks:
       connections.maskedStreaks: goodSeeingDiff_streaks
       idGenerator.release_id: parameters.release_id
       doSkySources: True
+      image_type: parameters.image_type
   filterDiaSource:
     class: lsst.ap.association.FilterDiaSourceCatalogTask
     config:
@@ -197,10 +205,12 @@ tasks:
     config:
       connections.exposure: preliminary_visit_image
       connections.input_background: preliminary_visit_image_background
+      connections.output_exposure: visit_image
       connections.sources: single_visit_star_reprocessed_unstandardized
       connections.sources_footprints: single_visit_star_reprocessed_footprints
       connections.background: preliminary_visit_image_reprocessed_background
       id_generator.release_id: parameters.release_id
+      image_type: parameters.image_type
   standardizePromptSource:
     class: lsst.pipe.tasks.postprocess.TransformSourceTableTask
     config:

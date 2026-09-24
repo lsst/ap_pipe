@@ -69,6 +69,11 @@ ingredients_ap_pipe_with_fakes = env.Command(
             f"--config injectVisit:external_psf=False ",
             f"--config injectVisit:external_photo_calib=False ",
             f"--config injectVisit:external_wcs=False ",
+            # injectVisit writes a legacy Exposure whatever image type the
+            # rest of the pipeline uses, so the injected image's summary
+            # statistics are always read in legacy form.
+            f"--config analyzePreliminarySummaryStats:input_image_type=legacy ",
+            f"--config buildTemplate:connections.wcs=preliminary_visit_image.wcs ",
             f"--prefix 'fakes_' -c parameters:apdb_config='-' --overwrite ",
         ]
     ),
