@@ -23,8 +23,8 @@ parameters:
   release_id: 0
   # Whether image datasets are legacy afw Exposures or the new lsst.images
   # types. This value is also used by the imported analysis_tools pipeline.
-  # The ApPipe-future.yaml pipelines set this to 'future'.
-  image_type: legacy
+  # The ApPipe-legacy.yaml pipelines set this to 'legacy'.
+  image_type: future
 tasks:
   loadDiaCatalogs:
     class: lsst.ap.association.LoadDiaCatalogsTask
@@ -76,7 +76,7 @@ tasks:
     config:
       connections.coaddName: parameters.coaddName
       connections.detector: preliminary_visit_image.detector
-      connections.wcs: preliminary_visit_image.wcs
+      connections.wcs: preliminary_visit_image.sky_projection
       connections.coaddExposures: template_coadd
       connections.template: template_detector
       output_image_type: parameters.image_type
@@ -115,7 +115,7 @@ tasks:
       connections.diaSourceCat: dia_source_unfiltered
       connections.filteredDiaSourceCat: dia_source_unstandardized
       connections.rejectedDiaSources: rejected_dia_source
-      connections.diffImVisitInfo: difference_image.visitInfo
+      connections.diffImVisitInfo: difference_image.obs_info
       connections.longTrailedSources: long_trailed_source_detector
       doRemoveSkySources: True
   computeReliability:
