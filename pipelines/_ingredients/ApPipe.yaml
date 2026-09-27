@@ -76,6 +76,7 @@ tasks:
     config:
       connections.coaddName: parameters.coaddName
       connections.detector: preliminary_visit_image.detector
+      connections.obs_info: preliminary_visit_image.obs_info
       connections.wcs: preliminary_visit_image.sky_projection
       connections.coaddExposures: template_coadd
       connections.template: template_detector
