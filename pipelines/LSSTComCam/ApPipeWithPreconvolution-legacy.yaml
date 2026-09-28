@@ -1,5 +1,5 @@
 description: >
-  LSSTComCam specialization of the AP pipeline with preconvolution using the 
+  LSSTComCam specialization of the AP pipeline with preconvolution using the
   `legacy` afw Exposure storage classes for images.
 instrument: lsst.obs.lsst.LsstComCam
 imports:
