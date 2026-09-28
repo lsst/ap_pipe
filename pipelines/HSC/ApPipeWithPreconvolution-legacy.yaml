@@ -1,5 +1,5 @@
 description: >
-  HSC specialization of the AP pipeline with preconvolution using the 
+  HSC specialization of the AP pipeline with preconvolution using the
   `legacy` afw Exposure storage classes for images.
 instrument: lsst.obs.subaru.HyperSuprimeCam
 imports:

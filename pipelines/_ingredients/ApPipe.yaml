@@ -21,9 +21,13 @@ parameters:
   apdb_config:
   # Use release_id=0 for development, 1 for production, and 2 or 3 for reprocessing production data
   release_id: 0
-  # Whether image datasets are legacy afw Exposures or the new lsst.images
-  # types. This value is also used by the imported analysis_tools pipeline.
-  # The ApPipe-legacy.yaml pipelines set this to 'legacy'.
+  # Whether image datasets are legacy afw Exposures ('legacy') or lsst.images
+  # types ('future'). This value overrides the one declared by the imported
+  # analysis_tools pipeline. The ApPipe-legacy.yaml and
+  # ApPipeWithPreconvolution-legacy.yaml pipelines set it to 'legacy' and also
+  # override buildTemplate:connections.wcs and
+  # filterDiaSource:connections.diffImVisitInfo, which name image components
+  # that this parameter cannot switch.
   image_type: future
 tasks:
   loadDiaCatalogs:

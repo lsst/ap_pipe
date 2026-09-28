@@ -1,5 +1,5 @@
 description: >
-  DECam specialization of the AP pipeline with preconvolution using the 
+  DECam specialization of the AP pipeline with preconvolution using the
   `legacy` afw Exposure storage classes for images.
 instrument: lsst.obs.decam.DarkEnergyCamera
 imports:

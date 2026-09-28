@@ -99,9 +99,12 @@ For example, in python
    import lsst.daf.butler as dafButler
    butler = dafButler.Butler('repo', collections="processed")  # collections keyword is optional
    dataId = {'instrument': 'DECam', 'visit': 123456, 'detector': 42}
-   calexp = butler.get('calexp', dataId=dataId)
-   diffim = butler.get('deepDiff_differenceExp', dataId=dataId)
-   diaSourceTable = butler.get('deepDiff_diaSrc', dataId=dataId)
+   visitImage = butler.get('preliminary_visit_image', dataId=dataId)
+   diffim = butler.get('difference_image', dataId=dataId)
+   diaSourceTable = butler.get('dia_source_detector', dataId=dataId)
+
+By default the images are ``lsst.images`` ``VisitImage`` and ``DifferenceImage`` objects.
+See :ref:`section-ap-pipe-legacy-images` to write afw ``ExposureF`` datasets.
 
 
 .. _section-ap-pipe-supplemental-info:
@@ -115,6 +118,31 @@ Running on other cameras
 Running ap_pipe on cameras other than DECam works much the same way.
 You need to provide a repository containing raws, calibs, and templates appropriate for the camera.
 There are versions of the AP pipeline for DECam, HSC, LATISS, and ImSim.
+
+.. _section-ap-pipe-legacy-images:
+
+Writing legacy afw images
+-------------------------
+
+To write afw ``ExposureF`` datasets instead of ``lsst.images`` types, run the ``-legacy`` variant of the pipeline:
+
+.. prompt:: bash
+
+   pipetask run -p ${AP_PIPE_DIR}/pipelines/DECam/ApPipe-legacy.yaml \
+       --register-dataset-types -c parameters:coaddName=deep \
+       -c isr:connections.bias=cpBias -c isr:connections.flat=cpFlat \
+       -c parameters:apdb_config=apdb_config.yaml -b repo/ \
+       -i "DECam/defaults,DECam/raw/all" -o processed \
+       -d "visit in (411420, 419802) and detector=10"
+
+Setting ``-c parameters:image_type=legacy`` on :file:`ApPipe.yaml` is not enough, because two connections name image components whose names differ between the two types (see :ref:`pipeline-overview-image-types`).
+For a pipeline with no legacy variant, such as :file:`LSSTCam/ApPipeDaytime.yaml`, override the parameter and both connections:
+
+.. code-block:: bash
+
+   -c parameters:image_type=legacy \
+   -c buildTemplate:connections.wcs=preliminary_visit_image.wcs \
+   -c filterDiaSource:connections.diffImVisitInfo=difference_image.visitInfo
 
 Common errors
 -------------
