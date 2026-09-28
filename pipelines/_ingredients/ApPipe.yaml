@@ -75,6 +75,7 @@ tasks:
       connections.calexp: preliminary_visit_image
       connections.visitSummary: preliminary_visit_summary
       connections.visitSummarySchema: preliminary_visit_summary_schema
+      input_image_type: parameters.image_type
   buildTemplate:
     class: lsst.ip.diffim.getTemplate.GetTemplateTask
     config:
