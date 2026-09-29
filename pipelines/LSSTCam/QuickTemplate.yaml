@@ -1,6 +1,11 @@
 description: The LSSTCam AP template building pipeline
+# Important Note: Use QuickTemplate BPS clustering file when running with BPS.
 
 instrument: lsst.obs.lsst.LsstCam
 
 imports:
 - location: $AP_PIPE_DIR/pipelines/_ingredients/QuickTemplate.yaml
+
+parameters:
+  image_type: future
+  use_cell_coadds: true
