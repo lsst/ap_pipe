@@ -332,7 +332,8 @@ class CreateVisitDetectorFakesConfig(
         dtype=float,
         default=0.25,
         min=0,
-        max=0.5001,
+        max=0.5,
+        inclusiveMax=True
     )
     doAddVariableFakes = pexConfig.Field(
         doc="Whether to add variable fakes to the visit detector.",
@@ -345,7 +346,8 @@ class CreateVisitDetectorFakesConfig(
         dtype=float,
         default=0.1,
         min=0,
-        max=0.2501,
+        max=0.25,
+        inclusiveMax=True
     )
     variableFakeMean = pexConfig.RangeField(
         doc="Mean magnitude variation for variable fakes.",
@@ -373,17 +375,6 @@ class CreateVisitDetectorFakesConfig(
         min=0,
         max=1,
     )
-    minHostedFakes = pexConfig.RangeField(
-        doc="Minimum number of hosted fakes to add to the visit detector.",
-        dtype=int,
-        default=20,
-        min=1,
-    )
-    doAddModelFakes = pexConfig.Field(
-        doc="Whether to add model fakes to the visit detector.",
-        dtype=bool,
-        default=False,
-    )
     magMin = pexConfig.Field(
         doc="Minimum magnitude for the fake sources.",
         dtype=float,
@@ -404,14 +395,16 @@ class CreateVisitDetectorFakesConfig(
         dtype=float,
         default=0.1,
         min=0,
-        max=0.2501,
+        max=0.25,
+        inclusiveMax=True
     )
     fracHostedBlendedFakes = pexConfig.RangeField(
         doc="Fraction of blended fakes that are hosted by stars.",
         dtype=float,
         default=0.1,
         min=0,
-        max=0.5001,
+        max=0.5,
+        inclusiveMax=True
     )
     blendedFakeMagOffset = pexConfig.Field(
         doc="Standard deviation of magnitude offset for blended fakes.",
@@ -584,7 +577,7 @@ class CreateVisitDetectorFakesTask(PipelineTask):
             # make the twins for variable sources
             twins = self._generate_variable_twins(random_variable_cat, rng)
             twins["injection_id"] = self._make_unique_injection_ids(
-                    len(twins), used_ids=[cat["injection_id"] for cat in populations + [random_variable_cat]]
+                len(twins), used_ids=[cat["injection_id"] for cat in populations + [random_variable_cat]]
             )
             # reciprocate the injection_id for the twins so they can be linked
             random_variable_cat["twin_id"] = twins["injection_id"]
@@ -708,7 +701,6 @@ class CreateVisitDetectorFakesTask(PipelineTask):
             plan.n_science = n_science
 
         if self.config.doAddHostedFakes:
-            plan.n_hosted = int(n_total * self.config.fracHostedFakes)
             plan.n_hosted_science = int(plan.n_science * self.config.fracHostedFakes)
             plan.n_science = plan.n_science - plan.n_hosted_science
             plan.n_hosted_template = int(plan.n_template * self.config.fracHostedFakes)
@@ -718,7 +710,6 @@ class CreateVisitDetectorFakesTask(PipelineTask):
 
         if self.config.fracHostedBlendedFakes > 0:
             plan.n_hosted_blended = int(plan.n_blended * self.config.fracHostedBlendedFakes)
-            plan.n_hosted_blended = plan.n_hosted_blended
             plan.n_blended = plan.n_blended - plan.n_hosted_blended
 
         return plan
@@ -862,16 +853,13 @@ class CreateVisitDetectorFakesTask(PipelineTask):
             scale=self.config.blendedFakeMagOffset,
             size=n_twins
         )
-        # we are reusing the delta_ra and delta_dec columns to store the offsets for the twins
-        # original host information will be in the entry for the parent blend source
-        # stored in the blend_parent_id column
         delta_ra, delta_dec = self._draw_offset_components_arcsec(rng, n_twins)
         twins["delta_ra"] = delta_ra
         twins["delta_dec"] = delta_dec
         twins["mag"] += twins["mag_offset"]
 
-        twins["ra"] += twins["delta_ra"] * np.cos(np.deg2rad(twins["dec"])) / 3600
-        twins["dec"] += twins["delta_dec"] / 3600
+        twins["ra"] += (twins["delta_ra"] / 3600.0) / np.cos(np.deg2rad(twins["dec"]))
+        twins["dec"] += twins["delta_dec"] / 3600.0
         twins["x"], twins["y"] = wcs.skyToPixelArray(twins["ra"], twins["dec"], degrees=True)
 
         twins["blend_twin_id"] = twins["injection_id"]
@@ -988,12 +976,13 @@ class CreateVisitDetectorFakesTask(PipelineTask):
                 row_ids = np.where(hosted_fakes["host_id"] == host_id)
                 row_ids_to_remove = row_ids[0][self.config.maxHostedBlendedFakesPerHost:]
                 hosted_fakes.remove_rows(row_ids_to_remove)
-        if len(hosted_fakes) > self.config.maxHostedBlendedFakesTotal:
-            self.log.warning(
-                "Capping total hosted blended fakes from %d to %d.",
-                len(hosted_fakes), self.config.maxHostedBlendedFakesTotal
-            )
-            hosted_fakes = hosted_fakes[:self.config.maxHostedBlendedFakesTotal]
+        if self.config.maxHostedBlendedFakesTotal > 0:
+            if len(hosted_fakes) > self.config.maxHostedBlendedFakesTotal:
+                self.log.warning(
+                    "Capping total hosted blended fakes from %d to %d.",
+                    len(hosted_fakes), self.config.maxHostedBlendedFakesTotal
+                )
+                hosted_fakes = hosted_fakes[:self.config.maxHostedBlendedFakesTotal]
         return hosted_fakes, hosts
 
     def _draw_offset_components_arcsec(self, rng, n_points):
@@ -1014,7 +1003,7 @@ class CreateVisitDetectorFakesTask(PipelineTask):
     def _make_unique_injection_ids(self, n_ids, used_ids=None):
         """Generate unique 24-bit IDs for a catalog considering IDs already in use."""
         new_ids = set()
-        if used_ids is not None:
+        if used_ids:
             # compile used ids from the existing catalog to avoid collisions
             if isinstance(used_ids, list):
                 used_ids = np.concatenate(used_ids)
@@ -1024,7 +1013,7 @@ class CreateVisitDetectorFakesTask(PipelineTask):
         # check that the new ids are not in the used set already
         while len(new_ids) < n_ids:
             candidate_id = uuid.uuid4().int & ((1 << 24) - 1)
-            if candidate_id not in used_ids.union(new_ids):
+            if candidate_id > 0 and candidate_id not in used_ids.union(new_ids):
                 new_ids.add(candidate_id)
 
         return np.asarray(list(new_ids), dtype=np.int64)
