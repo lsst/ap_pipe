@@ -584,7 +584,7 @@ class CreateVisitDetectorFakesTask(PipelineTask):
             # make the twins for variable sources
             twins = self._generate_variable_twins(random_variable_cat, rng)
             twins["injection_id"] = self._make_unique_injection_ids(
-                    len(twins), used_ids=[cat["injection_id"] for cat in populations + [random_variable_cat]]
+                len(twins), used_ids=[cat["injection_id"] for cat in populations + [random_variable_cat]]
             )
             # reciprocate the injection_id for the twins so they can be linked
             random_variable_cat["twin_id"] = twins["injection_id"]
