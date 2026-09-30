@@ -16,11 +16,13 @@ tasks:
       templateFakeFraction: 0.20
       doAddHostedFakes: True
       fracHostedFakes: 0.1
-      minHostedFakes: 20
       doAddVariableFakes: True
       variableFakeFraction: 0.1
       variableFakeMean: 0.0
       variableFakeStd: 0.5
+      doAddBlendedFakes: False
+      fracBlendedFakes: 0.1
+      fracHostedBlendedFakes: 0.2
       magMin: 20
       magMax: 25
 subsets:
