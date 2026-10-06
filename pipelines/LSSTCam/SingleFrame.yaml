@@ -2,4 +2,4 @@ description: >-
   Standalone single-frame pipeline, specialized for LSSTCam.
 instrument: lsst.obs.lsst.LsstCam
 imports:
-  - location: $AP_PIPE_DIR/pipelines/_ingredients/SingleFrameWithIsrTaskLSST.yaml
+  - location: resource://lsst.ap.pipe/resources/pipelines/_ingredients/SingleFrameWithIsrTaskLSST.yaml
