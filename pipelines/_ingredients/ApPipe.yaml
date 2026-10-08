@@ -206,6 +206,7 @@ tasks:
       connections.diaSources: dia_source_detector
       connections.psfMatchingKernel: difference_kernel
       connections.spatiallySampledMetrics: difference_image_metrics
+      image_type: parameters.image_type
   singleFrameDetectAndMeasure:
     class: lsst.drp.tasks.single_frame_detect_and_measure.SingleFrameDetectAndMeasureTask
     config:
