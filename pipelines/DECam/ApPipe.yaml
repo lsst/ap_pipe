@@ -27,8 +27,8 @@ contracts:
   - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
               makeSampledImageSubtractionMetrics.connections.ConnectionsClass(config=makeSampledImageSubtractionMetrics).science.name
     msg: "calibrateImage.exposure != makeSampledImageSubtractionMetrics.science"
-  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name + ".summaryStats" ==
-              analyzePreliminarySummaryStats.connections.ConnectionsClass(config=analyzePreliminarySummaryStats).data.name
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
+              analyzePreliminarySummaryStats.connections.ConnectionsClass(config=analyzePreliminarySummaryStats).data.name.split(".")[0]
     msg: "calibrateImage.exposure != analyzePreliminarySummaryStats.data"
   - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).stars_footprints.name ==
               getRegionTimeFromVisit.connections.ConnectionsClass(config=getRegionTimeFromVisit).dummy_visit.name

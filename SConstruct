@@ -69,6 +69,16 @@ ingredients_ap_pipe_with_fakes = env.Command(
             f"--config injectVisit:external_psf=False ",
             f"--config injectVisit:external_photo_calib=False ",
             f"--config injectVisit:external_wcs=False ",
+            # injectVisit writes a legacy Exposure whatever image type the
+            # rest of the pipeline uses, and an Exposure carries no
+            # observation info for buildTemplate to record on a converted
+            # template, so the fakes pipeline runs in legacy mode until
+            # source_injection is converted.
+            f"-c parameters:image_type=legacy ",
+            # These two connections name a component of an lsst.images type
+            # directly, so the parameter cannot switch them.
+            f"--config buildTemplate:connections.wcs=preliminary_visit_image.wcs ",
+            f"--config filterDiaSource:connections.diffImVisitInfo=difference_image.visitInfo ",
             f"--prefix 'fakes_' -c parameters:apdb_config='-' --overwrite ",
         ]
     ),

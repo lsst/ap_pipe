@@ -20,6 +20,7 @@ tasks:
       connections.kernelSources: score_kernel_sources
       connections.scoreExposure: score_image_predetection
       doApplyExternalCalibrations: False
+      image_type: parameters.image_type
   detectAndMeasureDiaSource:
     class: lsst.ip.diffim.detectAndMeasure.DetectAndMeasureScoreTask
     config:
@@ -36,6 +37,7 @@ tasks:
       connections.maskedStreaks: goodSeeingDiff_streaks
       idGenerator.release_id: parameters.release_id
       doSkySources: True
+      image_type: parameters.image_type
 
 subsets:
   # apPipeSingleFrame, preload, and afterburner subsets are inherited unchanged 
