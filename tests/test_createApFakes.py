@@ -270,7 +270,6 @@ class TestCreateVisitDetectorFakesTask(lsst.utils.tests.TestCase):
         cfg.doAddRandomTemplateFakes = False
         cfg.doAddHostedFakes = False
         cfg.doAddVariableFakes = False
-        cfg.doAddModelFakes = False
         cfg.nRandomFakes = 50
         for k, v in config_overrides.items():
             setattr(cfg, k, v)
@@ -345,7 +344,6 @@ class TestCreateVisitDetectorFakesTask(lsst.utils.tests.TestCase):
         task = self._make_task(
             doAddRandomVisitFakes=False,
             doAddHostedFakes=False,
-            doAddModelFakes=False,
         )
         with self.assertRaises(RuntimeError):
             task.run(self.source_cat, self.visit_image)
@@ -443,9 +441,7 @@ class TestCreateVisitDetectorFakesTask(lsst.utils.tests.TestCase):
         cfg.doAddRandomTemplateFakes = False
         cfg.doAddHostedFakes = True
         cfg.doAddVariableFakes = False
-        cfg.doAddModelFakes = False
         cfg.fracHostedFakes = 0.5
-        cfg.minHostedFakes = 5
         task = CreateVisitDetectorFakesTask(config=cfg)
 
         img = _make_mock_visit_image()
