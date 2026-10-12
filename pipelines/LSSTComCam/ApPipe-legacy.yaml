@@ -1,0 +1,19 @@
+description: >
+  LSSTComCam specialization of the AP pipeline using the `legacy` afw Exposure
+  storage classes for images.
+instrument: lsst.obs.lsst.LsstComCam
+imports:
+  - location: $AP_PIPE_DIR/pipelines/LSSTComCam/ApPipe.yaml
+parameters:
+  image_type: legacy
+tasks:
+  # The components of an lsst.images type have different names than the
+  # equivalent component of an afw Exposure.
+  buildTemplate:
+    class: lsst.ip.diffim.getTemplate.GetTemplateTask
+    config:
+      connections.wcs: preliminary_visit_image.wcs
+  filterDiaSource:
+    class: lsst.ap.association.FilterDiaSourceCatalogTask
+    config:
+      connections.diffImVisitInfo: difference_image.visitInfo

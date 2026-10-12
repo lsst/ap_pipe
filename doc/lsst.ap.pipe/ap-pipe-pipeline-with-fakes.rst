@@ -39,6 +39,9 @@ The generated ``ApPipeWithFakes.yaml`` file should **not** be manually edited, i
 * The ``_ingredients/injection/PostInjectedTasksApPipe.yaml`` injection-specific and metrics tasks
 * The ``SConstruct`` build configuration
 
+The generated pipeline always writes legacy afw ``ExposureF`` images, whatever ``image_type`` the base pipeline declares.
+:lsst-task:`lsst.source.injection.VisitInjectTask` writes a legacy ``Exposure``, so ``SConstruct`` sets ``parameters:image_type=legacy`` and overrides the two connections that name image components (see :ref:`pipeline-overview-image-types`).
+
 Running the Pipeline
 ====================
 
