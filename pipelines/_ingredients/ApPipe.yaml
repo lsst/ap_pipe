@@ -128,9 +128,9 @@ tasks:
     class: lsst.meas.transiNet.RBTransiNetTask
     config:
       connections.coaddName: parameters.coaddName
-      connections.science: preliminary_visit_image
-      connections.template: template_detector
-      connections.difference: difference_image
+      connections.science: preliminary_visit_image.image
+      connections.template: template_detector.image
+      connections.difference: difference_image.image
       connections.diaSources: dia_source_unstandardized
       connections.classifications: dia_source_reliability
       modelPackageStorageMode: butler
@@ -156,6 +156,7 @@ tasks:
       doRemoveSkySources: True
       doUseSchema: True  # Force the table columns to match the APDB definition in sdm_schemas
       schemaFile: "apdb.yaml"
+      input_image_type: parameters.image_type
   consolidateDiaSourceTable:
     class: lsst.pipe.tasks.postprocess.ConsolidateSourceTableTask
     config:
@@ -196,6 +197,7 @@ tasks:
       apdb_config_url: parameters.apdb_config
       doPackageAlerts: True  # Test alert generation, but don't output
       alertPackager.useAveragePsf: True  # Speed up production processing; don't want as default or in ApPipeWithFakes
+      input_image_type: parameters.image_type
   makeSampledImageSubtractionMetrics:
     class: lsst.ip.diffim.SpatiallySampledMetricsTask
     config:
@@ -373,7 +375,7 @@ contracts:
               filterDiaSource.connections.ConnectionsClass(config=filterDiaSource).diaSourceCat.name
     msg: "detectAndMeasureDiaSource.diaSources != filterDiaSource.diaSourceCat"
   - contract: detectAndMeasureDiaSource.connections.ConnectionsClass(config=detectAndMeasureDiaSource).subtractedMeasuredExposure.name ==
-              computeReliability.connections.ConnectionsClass(config=computeReliability).difference.name
+              computeReliability.connections.ConnectionsClass(config=computeReliability).difference.name.split(".")[0]
     msg: "detectAndMeasureDiaSource.subtractedMeasuredExposure != computeReliability.difference"
   - contract: detectAndMeasureDiaSource.connections.ConnectionsClass(config=detectAndMeasureDiaSource).subtractedMeasuredExposure.name ==
               standardizeDiaSource.connections.ConnectionsClass(config=standardizeDiaSource).diffIm.name
