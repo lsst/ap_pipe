@@ -69,13 +69,6 @@ tasks:
       # take many 10s of seconds in crowded fields
       do_remeasure_star_background: False
       output_image_type: parameters.image_type
-  consolidateVisitSummary:
-    class: lsst.pipe.tasks.postprocess.ConsolidateVisitSummaryTask
-    config:
-      connections.calexp: preliminary_visit_image
-      connections.visitSummary: preliminary_visit_summary
-      connections.visitSummarySchema: preliminary_visit_summary_schema
-      input_image_type: parameters.image_type
   buildTemplate:
     class: lsst.ip.diffim.getTemplate.GetTemplateTask
     config:
@@ -220,6 +213,15 @@ tasks:
       connections.background: preliminary_visit_image_reprocessed_background
       id_generator.release_id: parameters.release_id
       image_type: parameters.image_type
+  consolidateVisitSummary:
+    class: lsst.pipe.tasks.postprocess.ConsolidateVisitSummaryTask
+    config:
+      connections.calexp: visit_image
+      # Even though DRP writes a `preliminary_visit_summary from this task,
+      # use just visit_summary here since it is the final version.
+      connections.visitSummary: visit_summary
+      connections.visitSummarySchema: visit_summary_schema
+      input_image_type: parameters.image_type
   standardizePromptSource:
     class: lsst.pipe.tasks.postprocess.TransformSourceTableTask
     config:
