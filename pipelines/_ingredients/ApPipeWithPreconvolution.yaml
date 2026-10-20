@@ -71,6 +71,8 @@ subsets:
       - consolidateVisitSummary
       - consolidateDiaSourceTable
       - analyzeVisitSampledImageSubtractionMetrics
+      - aggregateVisitSummary
+      - makeMetricTableAggregateVisitSummary
       - singleFrameDetectAndMeasure
       - standardizePromptSource
       - consolidatePromptSource

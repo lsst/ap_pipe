@@ -282,6 +282,8 @@ subsets:
       - consolidateVisitSummary
       - consolidateDiaSourceTable
       - analyzeVisitSampledImageSubtractionMetrics
+      - aggregateVisitSummary
+      - makeMetricTableAggregateVisitSummary
       - singleFrameDetectAndMeasure
       - standardizePromptSource
       - consolidatePromptSource
@@ -324,6 +326,8 @@ subsets:
       - makeSampledImageSubtractionMetrics
       - analyzeSampledImageSubtractionMetrics
       - analyzeVisitSampledImageSubtractionMetrics
+      - aggregateVisitSummary
+      - makeMetricTableAggregateVisitSummary
       - singleFrameDetectAndMeasure
       - standardizePromptSource
       - consolidatePromptSource
