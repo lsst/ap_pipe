@@ -24,7 +24,7 @@ contracts:
               subtractImages.connections.ConnectionsClass(config=subtractImages).sources.name
     msg: "calibrateImage.footprints_stars != subtractImages.sources"
   - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
-              computeReliability.connections.ConnectionsClass(config=computeReliability).science.name
+              computeReliability.connections.ConnectionsClass(config=computeReliability).science.name.split(".")[0]
     msg: "calibrateImage.exposure != computeReliability.science"
   - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
               makeSampledImageSubtractionMetrics.connections.ConnectionsClass(config=makeSampledImageSubtractionMetrics).science.name
