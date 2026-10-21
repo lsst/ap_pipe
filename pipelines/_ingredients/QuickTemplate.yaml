@@ -42,6 +42,7 @@ tasks:
   makeDirectWarp:
     class: lsst.drp.tasks.make_direct_warp.MakeDirectWarpTask
     config:
+      # Note that DRP consolidateVisitSummary writes preliminary_visit_summary
       connections.visit_summary: preliminary_visit_summary
       useVisitSummaryPsf: False
   selectTemplateCoaddVisits:
