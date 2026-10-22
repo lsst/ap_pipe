@@ -4,3 +4,11 @@ instrument: lsst.obs.lsst.LsstComCam
 
 imports:
 - location: resource://lsst.ap.pipe/resources/pipelines/_ingredients/QuickTemplate.yaml
+
+tasks:
+  isr:
+    class: lsst.ip.isr.IsrTaskLSST
+    config:
+      # obs_lsst applies the amp offset correction for LSSTComCam. Leave it
+      # unapplied, as for LSSTCam, so templates match the AP science images.
+      ampOffset.doApplyAmpOffset: False
