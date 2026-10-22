@@ -40,7 +40,7 @@ tasks:
       image_type: parameters.image_type
 
 subsets:
-  # apPipeSingleFrame, preload, and afterburner subsets are inherited unchanged 
+  # apPipeSingleFrame, preload, and afterburner subsets are inherited unchanged
   apPipe:
     subset:
       - loadDiaCatalogs
@@ -71,6 +71,8 @@ subsets:
       - consolidateVisitSummary
       - consolidateDiaSourceTable
       - analyzeVisitSampledImageSubtractionMetrics
+      - aggregateVisitSummary
+      - makeMetricTableAggregateVisitSummary
       - singleFrameDetectAndMeasure
       - standardizePromptSource
       - consolidatePromptSource

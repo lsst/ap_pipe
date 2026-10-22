@@ -15,7 +15,7 @@ description: >-
   with Apdb.containsVisitDetector.
 instrument: lsst.obs.lsst.LsstCam
 imports:
-  - location: $AP_PIPE_DIR/pipelines/LSSTCam/ApPipe.yaml
+  - location: resource://lsst.ap.pipe/resources/pipelines/LSSTCam/ApPipe.yaml
     exclude:
       - loadDiaCatalogs
       - analyzeLoadDiaCatalogsMetrics
