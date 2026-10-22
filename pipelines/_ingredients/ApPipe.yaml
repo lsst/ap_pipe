@@ -355,6 +355,24 @@ contracts:
   - contract: loadDiaCatalogs.connections.ConnectionsClass(config=loadDiaCatalogs).diaForcedSources.name ==
               associateApdb.connections.ConnectionsClass(config=associateApdb).preloadedDiaForcedSources.name
     msg: "loadDiaCatalogs.diaForcedSources != associateApdb.preloadedDiaForcedSources"
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
+              subtractImages.connections.ConnectionsClass(config=subtractImages).science.name
+    msg: "calibrateImage.exposure != subtractImages.science"
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).stars_footprints.name ==
+              subtractImages.connections.ConnectionsClass(config=subtractImages).sources.name
+    msg: "calibrateImage.footprints_stars != subtractImages.sources"
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
+              computeReliability.connections.ConnectionsClass(config=computeReliability).science.name.split(".")[0]
+    msg: "calibrateImage.exposure != computeReliability.science"
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
+              makeSampledImageSubtractionMetrics.connections.ConnectionsClass(config=makeSampledImageSubtractionMetrics).science.name
+    msg: "calibrateImage.exposure != makeSampledImageSubtractionMetrics.science"
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
+              analyzePreliminarySummaryStats.connections.ConnectionsClass(config=analyzePreliminarySummaryStats).data.name.split(".")[0]
+    msg: "calibrateImage.exposure != analyzePreliminarySummaryStats.data"
+  - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).stars_footprints.name ==
+              getRegionTimeFromVisit.connections.ConnectionsClass(config=getRegionTimeFromVisit).dummy_visit.name
+    msg: "calibrateImage.stars_footprints != getRegionTimeFromVisit.dummy_visit"
   - contract: buildTemplate.connections.ConnectionsClass(config=buildTemplate).template.name ==
               subtractImages.connections.ConnectionsClass(config=subtractImages).template.name
     msg: "buildTemplate.template != subtractImages.template"
