@@ -1,0 +1,19 @@
+description: >-
+  AP pipeline for daytime (non-real-time) processing of LSSTCam data using
+  templates built from DECam coadds.
+
+  Reads the template coadds from template_coadd_decam; the per-detector
+  template and all downstream datasets keep their standard names.
+instrument: lsst.obs.lsst.LsstCam
+imports:
+  - location: $AP_PIPE_DIR/pipelines/LSSTCam/ApPipeDaytime.yaml
+
+tasks:
+  buildTemplate:
+    class: lsst.ip.diffim.getTemplate.GetTemplateTask
+    config:
+      connections.coaddExposures: template_coadd_decam
+  filterDiaSourcePostReliability:
+    class: lsst.ap.association.FilterDiaSourceReliabilityTask
+    config:
+      minReliability: 0.8
