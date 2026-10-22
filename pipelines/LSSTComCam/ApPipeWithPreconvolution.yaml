@@ -1,5 +1,5 @@
 description: >-
-  AP pipeline specialized for LSST ComCam.
+  AP pipeline with preconvolution specialized for LSST ComCam.
 instrument: lsst.obs.lsst.LsstComCam
 imports:
   - location: resource://lsst.ap.pipe/resources/pipelines/_ingredients/ApPipeWithPreconvolution.yaml

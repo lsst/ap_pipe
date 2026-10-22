@@ -1,4 +1,4 @@
-description: End to end AP pipeline specialized for DECam
+description: End to end AP pipeline with preconvolution specialized for DECam
 # (1) Run resource://lsst.ap.pipe/resources/pipelines/DECam/RunIsrForCrosstalkSources.yaml
 # (2) Execute `apdb-cli create-sql`, e.g.,
 #     apdb-cli create-sql "sqlite:////project/user/association.db" apdb_config.yaml
