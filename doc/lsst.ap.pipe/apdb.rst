@@ -44,7 +44,7 @@ To create an SQLite database from scratch, run the following (see the :ref:`dax_
 
    apdb-cli create-sql sqlite:///databases/apdb.db apdb_config.yaml
    apdb-cli metadata set apdb_config.yaml instrument MY_INSTRUMENT
-   pipetask run -p ApPipe.yaml -c parameters:apdb_config=apdb_config.yaml differencer:coaddName=dcr -b repo -o myrun
+   pipetask run -p ApPipe.yaml -c parameters:apdb_config=apdb_config.yaml -b repo -o myrun
 
 The ``apdb_config.yaml`` argument to |apdb-cli| specifies the name of the created configuration file that will contain a serialized `~lsst.dax.apdb.ApdbConfig` for the new database.
 Note that ``MY_INSTRUMENT`` should be the short name of the instrument whose data will populate this APDB instance (e.g. ``DECam`` or ``HSC``).

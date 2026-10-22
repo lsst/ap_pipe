@@ -15,8 +15,6 @@ description: End to end Alert Production pipeline.
 imports:
   - resource://lsst.analysis.tools/resources/pipelines/apDetectorVisitQualityCore.yaml
 parameters:
-  # Pipeline configurable to run on both goodSeeing and deep templates, depending on dataset.
-  coaddName: goodSeeing
   # APDB config file must be user-specified
   apdb_config:
   # Use release_id=0 for development, 1 for production, and 2 or 3 for reprocessing production data
@@ -72,7 +70,6 @@ tasks:
   buildTemplate:
     class: lsst.ip.diffim.getTemplate.GetTemplateTask
     config:
-      connections.coaddName: parameters.coaddName
       connections.detector: preliminary_visit_image.detector
       connections.obs_info: preliminary_visit_image.obs_info
       connections.wcs: preliminary_visit_image.sky_projection
@@ -82,7 +79,6 @@ tasks:
   subtractImages:
     class: lsst.ip.diffim.subtractImages.AlardLuptonSubtractTask
     config:
-      connections.coaddName: parameters.coaddName
       connections.science: preliminary_visit_image
       connections.sources: single_visit_star_footprints
       connections.template: template_detector
@@ -95,7 +91,6 @@ tasks:
   detectAndMeasureDiaSource:
     class: lsst.ip.diffim.detectAndMeasure.DetectAndMeasureTask
     config:
-      connections.coaddName: parameters.coaddName
       connections.science: preliminary_visit_image
       connections.matchedTemplate: template_matched
       connections.difference:  difference_image_predetection
@@ -110,7 +105,6 @@ tasks:
   filterDiaSource:
     class: lsst.ap.association.FilterDiaSourceCatalogTask
     config:
-      connections.coaddName: parameters.coaddName
       connections.diaSourceCat: dia_source_unfiltered
       connections.filteredDiaSourceCat: dia_source_unstandardized
       connections.rejectedDiaSources: rejected_dia_source
@@ -120,7 +114,6 @@ tasks:
   computeReliability:
     class: lsst.meas.transiNet.RBTransiNetTask
     config:
-      connections.coaddName: parameters.coaddName
       connections.science: preliminary_visit_image.image
       connections.template: template_detector.image
       connections.difference: difference_image.image
@@ -130,7 +123,6 @@ tasks:
   filterDiaSourcePostReliability:
     class: lsst.ap.association.FilterDiaSourceReliabilityTask
     config:
-      connections.coaddName: parameters.coaddName
       connections.diaSourceCat: dia_source_unstandardized
       connections.reliability: dia_source_reliability
       connections.filteredDiaSources: dia_source_high_reliability
@@ -140,7 +132,6 @@ tasks:
   standardizeDiaSource:
     class: lsst.ap.association.TransformDiaSourceCatalogTask
     config:
-      connections.coaddName: parameters.coaddName
       connections.diaSourceSchema: dia_source_schema
       connections.diaSourceCat: dia_source_high_reliability
       connections.diffIm: difference_image
@@ -158,7 +149,6 @@ tasks:
   getRegionTimeFromVisit:
     class: lsst.pipe.tasks.getRegionTimeFromVisit.GetRegionTimeFromVisitTask
     config:
-      connections.coaddName: parameters.coaddName
       connections.dummy_visit: single_visit_star_footprints
       connections.output: regionTimeInfo
   mpSkyEphemerisQuery:
@@ -169,7 +159,6 @@ tasks:
   associateApdb:
     class: lsst.ap.association.DiaPipelineTask
     config:
-      connections.coaddName: parameters.coaddName
       connections.exposure: preliminary_visit_image
       connections.diaSourceTable: dia_source_detector
       connections.solarSystemObjectTable: preloaded_ss_object
@@ -194,7 +183,6 @@ tasks:
   makeSampledImageSubtractionMetrics:
     class: lsst.ip.diffim.SpatiallySampledMetricsTask
     config:
-      connections.coaddName: parameters.coaddName
       connections.science: preliminary_visit_image
       connections.template: template_detector
       connections.difference: difference_image

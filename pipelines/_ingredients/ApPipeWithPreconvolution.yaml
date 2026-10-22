@@ -12,7 +12,6 @@ tasks:
   subtractImagesScore:
     class: lsst.ip.diffim.subtractImages.AlardLuptonPreconvolveSubtractTask
     config:
-      connections.coaddName: parameters.coaddName
       connections.science: preliminary_visit_image
       connections.sources: single_visit_star_footprints
       connections.template: template_detector
@@ -24,7 +23,6 @@ tasks:
   detectAndMeasureDiaSource:
     class: lsst.ip.diffim.detectAndMeasure.DetectAndMeasureScoreTask
     config:
-      connections.coaddName: parameters.coaddName
       connections.science: preliminary_visit_image
       connections.matchedTemplate: template_matched
       connections.scoreExposure: score_image_predetection

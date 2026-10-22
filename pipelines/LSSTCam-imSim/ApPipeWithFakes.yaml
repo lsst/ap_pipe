@@ -12,6 +12,5 @@ imports:
   - location: resource://lsst.ap.pipe/resources/pipelines/_ingredients/ApPipeWithFakes.yaml
 
 parameters:
-  coaddName: goodSeeing
   # APDB config file must be user-specified
   apdb_config:
