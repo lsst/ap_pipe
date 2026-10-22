@@ -13,8 +13,7 @@ tasks:
   injectedMatchDiaSrc:
     class: lsst.pipe.tasks.matchDiffimSourceInjected.MatchInjectedToDiaSourceTask
     config:
-      connections.coaddName: parameters.coaddName
-      connections.matchDiaSources: fakes_{coaddName}Diff_matchDiaSrc
+      connections.matchDiaSources: fakes_goodSeeingDiff_matchDiaSrc
       connections.injectionCat: VisitDetectorFakeSourceCat
       connections.diffIm: difference_image
       connections.diaSources: dia_source_unfiltered
@@ -23,21 +22,16 @@ tasks:
   injectedMatchAssocDiaSrc:
     class: lsst.pipe.tasks.matchDiffimSourceInjected.MatchInjectedToAssocDiaSourceTask
     config:
-      connections.coaddName: parameters.coaddName
       connections.assocDiaSources: dia_source_apdb
-      connections.matchDiaSources: fakes_{coaddName}Diff_matchDiaSrc
-      connections.matchAssocDiaSources: fakes_{coaddName}Diff_matchAssocDiaSrc
+      connections.matchDiaSources: fakes_goodSeeingDiff_matchDiaSrc
+      connections.matchAssocDiaSources: fakes_goodSeeingDiff_matchAssocDiaSrc
   consolidateMatchDiaSrc:
     class: lsst.pipe.tasks.postprocess.ConsolidateSourceTableTask
     config:
-      # Task doesn't support coaddName, so coopt catalogType instead.
-      connections.catalogType: parameters.coaddName
-      connections.inputCatalogs: "fakes_{catalogType}Diff_matchDiaSrc"
-      connections.outputCatalog: "fakes_{catalogType}Diff_matchDiaSourceTable"
+      connections.inputCatalogs: fakes_goodSeeingDiff_matchDiaSrc
+      connections.outputCatalog: fakes_goodSeeingDiff_matchDiaSourceTable
   consolidateMatchAssocDiaSrc:
     class: lsst.pipe.tasks.postprocess.ConsolidateSourceTableTask
     config:
-      # Task doesn't support coaddName, so coopt catalogType instead.
-      connections.catalogType: parameters.coaddName
-      connections.inputCatalogs: "fakes_{catalogType}Diff_matchAssocDiaSrc"
-      connections.outputCatalog: "fakes_{catalogType}Diff_matchAssocDiaSourceTable"
+      connections.inputCatalogs: fakes_goodSeeingDiff_matchAssocDiaSrc
+      connections.outputCatalog: fakes_goodSeeingDiff_matchAssocDiaSourceTable
