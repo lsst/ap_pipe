@@ -1,4 +1,4 @@
-description: End to end AP pipeline specialized for HSC
+description: End to end AP pipeline with preconvolution specialized for HSC
 # (1) Execute `apdb-cli create-sql`, e.g.,
 #     apdb-cli create-sql "sqlite:////project/user/association.db" apdb_config.yaml
 #     apdb-cli metadata set apdb_config.yaml instrument HSC

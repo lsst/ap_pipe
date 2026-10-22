@@ -1,4 +1,4 @@
-description: AP pipeline with synthetic/fakes sources specialized for ImSim
+description: AP pipeline with synthetic/fake sources specialized for ImSim
 # (1) Execute `apdb-cli create-sql`, e.g.,
 #     apdb-cli create-sql "sqlite:////project/user/association.db" apdb_config.yaml
 #     apdb-cli metadata set apdb_config.yaml instrument LSSTCam-imSim

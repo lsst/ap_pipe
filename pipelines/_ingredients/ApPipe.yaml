@@ -135,7 +135,6 @@ tasks:
       connections.diaSourceSchema: dia_source_schema
       connections.diaSourceCat: dia_source_high_reliability
       connections.diffIm: difference_image
-
       connections.diaSourceTable: dia_source_detector
       doRemoveSkySources: True
       doUseSchema: True  # Force the table columns to match the APDB definition in sdm_schemas
@@ -178,7 +177,7 @@ tasks:
       maxNewDiaObjects: 1000
       apdb_config_url: parameters.apdb_config
       doPackageAlerts: True  # Test alert generation, but don't output
-      alertPackager.useAveragePsf: True  # Speed up production processing; don't want as default or in ApPipeWithFakes
+      alertPackager.useAveragePsf: True  # Speed up production processing; not the task default
       input_image_type: parameters.image_type
   makeSampledImageSubtractionMetrics:
     class: lsst.ip.diffim.SpatiallySampledMetricsTask
@@ -205,7 +204,7 @@ tasks:
     class: lsst.pipe.tasks.postprocess.ConsolidateVisitSummaryTask
     config:
       connections.calexp: visit_image
-      # Even though DRP writes a `preliminary_visit_summary from this task,
+      # Even though DRP writes a `preliminary_visit_summary` from this task,
       # use just visit_summary here since it is the final version.
       connections.visitSummary: visit_summary
       connections.visitSummarySchema: visit_summary_schema
@@ -320,7 +319,8 @@ subsets:
       Tasks for QA and other non-real-time processing.
       Requires prompt subset to be run first.
 contracts:
-  - detectAndMeasureDiaSource.doSkySources == filterDiaSource.doRemoveSkySources
+  - contract: detectAndMeasureDiaSource.doSkySources == filterDiaSource.doRemoveSkySources
+    msg: "detectAndMeasureDiaSource.doSkySources != filterDiaSource.doRemoveSkySources"
   # Both loadDiaCatalogs and associateApdb connect to the APDB, so make sure
   # they use the same configuration. associateApdb must not also reload the
   # full history, which would leave the preload unused; ApPipeDaytime.yaml
@@ -348,7 +348,7 @@ contracts:
     msg: "calibrateImage.exposure != subtractImages.science"
   - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).stars_footprints.name ==
               subtractImages.connections.ConnectionsClass(config=subtractImages).sources.name
-    msg: "calibrateImage.footprints_stars != subtractImages.sources"
+    msg: "calibrateImage.stars_footprints != subtractImages.sources"
   - contract: calibrateImage.connections.ConnectionsClass(config=calibrateImage).exposure.name ==
               computeReliability.connections.ConnectionsClass(config=computeReliability).science.name.split(".")[0]
     msg: "calibrateImage.exposure != computeReliability.science"
