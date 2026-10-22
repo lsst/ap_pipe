@@ -15,7 +15,6 @@ imports:
   - location: resource://lsst.ap.pipe/resources/pipelines/_ingredients/ApPipeWithFakes.yaml
 
 parameters:
-  coaddName: goodSeeing
   # APDB config file must be user-specified
   apdb_config:
 
@@ -24,4 +23,3 @@ tasks:
     class: lsst.ip.isr.IsrTask
     config:
       file: $AP_PIPE_DIR/config/DECam/runIsrWithCrosstalk.py
-      connections.outputExposure: post_isr_image

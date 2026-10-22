@@ -40,7 +40,7 @@ To process your ingested data, run
    apdb-cli create-sql "sqlite:///apdb.db" apdb_config.yaml
    apdb-cli metadata set apdb_config.yaml instrument DECam
    pipetask run -p ${AP_PIPE_DIR}/pipelines/DECam/ApPipe.yaml \
-       --register-dataset-types -c parameters:coaddName=deep \
+       --register-dataset-types \
        -c isr:connections.bias=cpBias -c isr:connections.flat=cpFlat \
        -c parameters:apdb_config=apdb_config.yaml -b repo/ \
        -i "DECam/defaults,DECam/raw/all" -o processed \
@@ -58,7 +58,7 @@ If you prefer to have a standalone output collection, you may instead run
 .. prompt:: bash
 
    pipetask run -p ${AP_PIPE_DIR}/pipelines/DECam/ApPipe.yaml \
-       --register-dataset-types -c parameters:coaddName=deep \
+       --register-dataset-types \
        -c isr:connections.bias=cpBias -c isr:connections.flat=cpFlat \
        -c parameters:apdb_config=apdb_config.yaml -b repo/ \
        -i "DECam/defaults,DECam/raw/all" --output-run processed \
@@ -129,7 +129,7 @@ To write afw ``ExposureF`` datasets instead of ``lsst.images`` types, run the ``
 .. prompt:: bash
 
    pipetask run -p ${AP_PIPE_DIR}/pipelines/DECam/ApPipe-legacy.yaml \
-       --register-dataset-types -c parameters:coaddName=deep \
+       --register-dataset-types \
        -c isr:connections.bias=cpBias -c isr:connections.flat=cpFlat \
        -c parameters:apdb_config=apdb_config.yaml -b repo/ \
        -i "DECam/defaults,DECam/raw/all" -o processed \

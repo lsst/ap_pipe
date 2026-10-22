@@ -1,16 +1,14 @@
 description: Single-frame pipeline with IsrTaskLSST
 
 imports:
-  - location: resource://lsst.ap.pipe/resources/pipelines/_ingredients/SingleFrame.yaml
-
-tasks:
-  isr:
-    class: lsst.ip.isr.IsrTaskLSST
-    config:
-      connections.outputExposure: post_isr_image
-      # Some instruments have this already in obs_lsst.
-      # Here we turn if off for AP generally.
-      doBrighterFatter: False
-      # Turn off the amp offset calculation.
-      # It is only used to compute metrics, and takes several seconds.
-      doAmpOffset: False
+  - location: resource://lsst.ap.pipe/resources/pipelines/_ingredients/ApPipeWithIsrTaskLSST.yaml
+    include:
+      - apPipeSingleFrame
+subsets:
+  singleFrame:
+    subset:
+      - isr
+      - calibrateImage
+      - analyzePreliminarySummaryStats
+    description: >
+      An alias of SingleFrameWithIsrTaskLSST to use in higher-level pipelines.

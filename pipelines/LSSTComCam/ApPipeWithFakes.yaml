@@ -16,7 +16,6 @@ imports:
   - location: resource://lsst.ap.pipe/resources/pipelines/_ingredients/ApPipeWithFakes.yaml
 
 parameters:
-  coaddName: goodSeeing
   # APDB config file must be user-specified
   apdb_config:
 
@@ -25,8 +24,8 @@ tasks:
     class: lsst.ip.isr.IsrTaskLSST
     config:
       connections.outputExposure: post_isr_image
-      # Some instruments have this already in obs_lsst.
-      # Here we turn it off for AP generally.
+      # Brighter-fatter correction is off for AP, overriding the IsrTaskLSST
+      # default.
       doBrighterFatter: False
       # Turn off the amp offset calculation.
       # It is only used to compute metrics, and takes several seconds.
