@@ -53,11 +53,15 @@ tasks:
     class: lsst.drp.tasks.assemble_coadd.CompareWarpAssembleCoaddTask
     config:
       maxFractionEpochsHigh: 0.2
-      badMaskPlanes: ["NO_DATA", "BAD", "SAT", "EDGE", "SPIKE"]
-      prefilterArtifactsMaskPlanes: ["NO_DATA", "BAD", "SUSPECT", "SPIKE"]
       doWriteArtifactMasks: true
+      # Extend the mask planes so that obs package additions are kept.
       python: |
         config.doInputMap = not parameters.use_cell_coadds
+        for plane in ["EDGE", "SPIKE"]:
+            if plane not in config.badMaskPlanes:
+                config.badMaskPlanes.append(plane)
+        if "SPIKE" not in config.prefilterArtifactsMaskPlanes:
+            config.prefilterArtifactsMaskPlanes.append("SPIKE")
   assembleCellCoadd:
     class: lsst.drp.tasks.assemble_cell_coadd.AssembleCellCoaddTask
     config:
