@@ -96,7 +96,7 @@ targetList = (
 ) + scripts.DEFAULT_TARGETS
 
 scripts.BasicSConstruct(
-    "ap_pipe", disableCc=True, noCfgFile=False, defaultTargets=targetList,
+    "ap_pipe", disableCc=True, noCfgFile=True, defaultTargets=targetList,
 )
 
 env.Depends(ap_pipe_with_fakes_path, targets["version"])
