@@ -50,9 +50,6 @@ intermediate_ap_pipe_with_fakes = env.Command(
             f"make_injection_pipeline  -t template_detector -r $SOURCE -f $TARGET ",
             f"-i {template_injection_stub} ",
             " ".join(f"-s {subset_name}" for subset_name in subset_names),
-            f"--config injectTemplate:external_psf=False ",
-            f"--config injectTemplate:external_photo_calib=False ",
-            f"--config injectTemplate:external_wcs=False ",
             f"--prefix 'injectedTemplate_' -c parameters:apdb_config='-' --overwrite ",
         ]
     ),

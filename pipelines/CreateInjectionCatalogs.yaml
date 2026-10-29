@@ -1,11 +1,5 @@
 description: Standard catalog creation pipeline for generating fake source catalogs
 
-parameters:
-  # Template for fake source types
-  fakesType: ""
-  # Sky map parameters
-  skymap: "lsst_cells_v2"  # Adjust based on your survey's sky map
-
 tasks:
   createFakesVisitDetector:
     class: lsst.ap.pipe.createApFakes.CreateVisitDetectorFakesTask

@@ -1,8 +1,6 @@
 description: >-
   AP pipeline to export catalogs from the APDB and re-run association.
 parameters:
-  # Pipeline configurable to run on both goodSeeing and deep templates, depending on dataset.
-  coaddName: goodSeeing
   # APDB config file must be user-specified
   apdb_config:
   # Use release_id=0 for development, 1 for production, and 2 or 3 for reprocessing production data

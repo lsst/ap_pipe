@@ -273,7 +273,6 @@ class CreateRandomApFakesTask(PipelineTask):
 
 class CreateVisitDetectorFakesConnections(
     PipelineTaskConnections,
-    defaultTemplates={"coaddName": "deep"},
     dimensions=("instrument",
                 "visit",
                 "detector")):
