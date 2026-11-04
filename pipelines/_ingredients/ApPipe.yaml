@@ -209,6 +209,11 @@ tasks:
       connections.visitSummary: visit_summary
       connections.visitSummarySchema: visit_summary_schema
       input_image_type: parameters.image_type
+  makeVisitTable:
+    class: lsst.pipe.tasks.postprocess.MakeVisitTableTask
+    config:
+      connections.visitSummaries: visit_summary
+      connections.outputCatalog: visit_table
   standardizePromptSource:
     class: lsst.pipe.tasks.postprocess.TransformSourceTableTask
     config:
@@ -267,6 +272,7 @@ subsets:
       - analyzeSampledImageSubtractionMetrics
       - analyzePreliminarySummaryStats
       - consolidateVisitSummary
+      - makeVisitTable
       - consolidateDiaSourceTable
       - analyzeVisitSampledImageSubtractionMetrics
       - aggregateVisitSummary
@@ -309,6 +315,7 @@ subsets:
   afterburner:
     subset:
       - consolidateVisitSummary
+      - makeVisitTable
       - consolidateDiaSourceTable
       - makeSampledImageSubtractionMetrics
       - analyzeSampledImageSubtractionMetrics
@@ -432,3 +439,6 @@ contracts:
   - contract: consolidateDiaSourceTable.connections.ConnectionsClass(config=consolidateDiaSourceTable).inputCatalogs.name ==
         standardizeDiaSource.connections.ConnectionsClass(config=standardizeDiaSource).diaSourceTable.name
     msg: "consolidateDiaSourceTable.inputCatalogs != standardizeDiaSource.diaSourceTable"
+  - contract: consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).visitSummary.name ==
+              makeVisitTable.connections.ConnectionsClass(config=makeVisitTable).visitSummaries.name
+    msg: "consolidateVisitSummary.visitSummary != makeVisitTable.visitSummaries"
