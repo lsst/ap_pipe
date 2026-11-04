@@ -67,6 +67,7 @@ subsets:
       - analyzeSampledImageSubtractionMetrics
       - analyzePreliminarySummaryStats
       - consolidateVisitSummary
+      - makeVisitTable
       - consolidateDiaSourceTable
       - analyzeVisitSampledImageSubtractionMetrics
       - aggregateVisitSummary
@@ -130,3 +131,6 @@ contracts:
   - contract: subtractImagesScore.connections.ConnectionsClass(config=subtractImagesScore).scoreExposure.name ==
               detectAndMeasureDiaSource.connections.ConnectionsClass(config=detectAndMeasureDiaSource).scoreExposure.name
     msg: "subtractImagesScore.scoreExposure != detectAndMeasureDiaSource.scoreExposure"
+  - contract: consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).visitSummary.name ==
+              makeVisitTable.connections.ConnectionsClass(config=makeVisitTable).visitSummaries.name
+    msg: "consolidateVisitSummary.visitSummary != makeVisitTable.visitSummaries"
