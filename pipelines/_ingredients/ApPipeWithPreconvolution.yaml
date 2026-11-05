@@ -68,6 +68,7 @@ subsets:
       - analyzePreliminarySummaryStats
       - consolidateVisitSummary
       - makeVisitTable
+      - makeVisitDetectorTable
       - consolidateDiaSourceTable
       - analyzeVisitSampledImageSubtractionMetrics
       - aggregateVisitSummary
@@ -134,3 +135,6 @@ contracts:
   - contract: consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).visitSummary.name ==
               makeVisitTable.connections.ConnectionsClass(config=makeVisitTable).visitSummaries.name
     msg: "consolidateVisitSummary.visitSummary != makeVisitTable.visitSummaries"
+  - contract: consolidateVisitSummary.connections.ConnectionsClass(config=consolidateVisitSummary).visitSummary.name ==
+              makeVisitDetectorTable.connections.ConnectionsClass(config=makeVisitDetectorTable).visitSummaryRefs.name
+    msg: "consolidateVisitSummary.visitSummary != makeVisitDetectorTable.visitSummaryRefs"
