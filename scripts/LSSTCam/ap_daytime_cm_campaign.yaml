@@ -110,7 +110,7 @@ spec:
 apiVersion: io.lsst.cmservice/v1
 kind: lsst
 metadata:
-  name: slac_cvmfs_w44
+  name: slac_cvmfs_w45
   default: true
 spec:
   campaign: AP-daytime
@@ -118,8 +118,8 @@ spec:
   environment:
     DAX_APDB_MONITOR_CONFIG: logging:lsst.dax.apdb.monitor
     MP_SKY_URL: http://usdf-mpsky.sdf.slac.stanford.edu/ephemerides/
-  lsst_distrib_dir: /cvmfs/sw.lsst.eu/almalinux-x86_64/lsst_distrib/w_2026_44
-  lsst_version: w_2026_44
+  lsst_distrib_dir: /cvmfs/sw.lsst.eu/almalinux-x86_64/lsst_distrib/w_2026_45
+  lsst_version: w_2026_45
   project: ApPipe
   ticket: DM-XXXXX
 ---
