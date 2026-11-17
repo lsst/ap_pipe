@@ -25,3 +25,9 @@
 - "preloaded_dia_object"
 - "preloaded_dia_source"
 - "preloaded_ss_object"
+# Daytime-only datasets, not exported by Prompt Processing. The AP_PIPE_DECAM
+# step of the Daytime campaign runs visit-level tasks that read them; if they
+# were not retained, it would rerun their producers (and through
+# consolidateVisitSummary, singleFrameDetectAndMeasure) for every visit.
+- "visit_summary"
+- "difference_image_metrics"

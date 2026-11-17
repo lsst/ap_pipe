@@ -39,8 +39,44 @@ metadata:
     butler:
       compute-site: slac
 spec:
+  # First of two steps: process every detector that has an LSSTCam template.
+  # The visit-level tasks that combine difference imaging outputs run in the
+  # AP_PIPE_DECAM step, after all detectors are done.
   bps:
-    pipeline_yaml: "${AP_PIPE_DIR}/pipelines/LSSTCam/ApPipeDaytime.yaml"
+    pipeline_yaml: "${AP_PIPE_DIR}/pipelines/LSSTCam/ApPipeDaytime-LSSTCam-templates.yaml"
+  butler:
+    collections:
+      prepend_runs_to: "LSSTCam/runs/prompt-${{ day_obs }}"
+  groups: null
+---
+apiVersion: io.lsst.cmservice/v1
+kind: node
+metadata:
+  kind: step
+  name: AP_PIPE_DECAM
+  selectors:
+    butler:
+      compute-site: slac
+spec:
+  # Second step: process the detectors that only have DECam templates, then
+  # run the visit-level tasks over all detectors. The step input chains the
+  # AP_PIPE outputs with the campaign input, so skipping existing outputs in
+  # it skips everything AP_PIPE and Prompt Processing completed. A detector
+  # with any LSSTCam template therefore uses it, as in Prompt Processing.
+  bps:
+    pipeline_yaml: "${AP_PIPE_DIR}/pipelines/LSSTCam/ApPipeDaytime-DECam-templates.yaml"
+    # Replaces the campaign list. With the retained dataset types, a task
+    # that must run also reruns the producers of any of its inputs that are
+    # not retained, even if those inputs exist; retained_types.yaml lists the
+    # inputs of the visit-level tasks so that AP_PIPE's outputs are reused.
+    extra_qgraph_options:
+      - "--skip-existing-in {{ butler.collections.step_input }}"
+      - "--retained-dataset-types ${AP_PIPE_DIR}/scripts/LSSTCam/retained_types.yaml"
+      - "--prune-unanchored-quanta getRegionTimeFromVisit:associateApdb"
+      - "-c parameters:release_id=1"
+      - "-c parameters:apdb_config={apdbConfig}"
+      - "-c associateApdb:doRunForcedMeasurement=False"
+      - "--dataset-query-constraint off"
   butler:
     collections:
       prepend_runs_to: "LSSTCam/runs/prompt-${{ day_obs }}"
@@ -55,8 +91,10 @@ spec:
   collections:
     campaign_input:
     - LSSTCam/defaults
-    - LSSTCam/templates
-    - LSSTCam/runs/prompt-${{ day_obs }}
+    # Chains LSSTCam/templates and DECam/templates; each step's pipeline
+    # reads only its own template dataset type.
+    - Prompt/templates
+    - LSSTCam/runs/prompt-${{ as_day_obs }}
     # The `campaign_public_output` is the base collection name from which all other
     # collection names are derived, and it is also the name of the final chained collection
     # available at the completion of the campaign.
@@ -84,12 +122,16 @@ spec:
   # on the "schedule" manifest whenever a new campaign is created by that schedule.
   # The `{{...}}` variable placeholders are fulfilled at runtime when CM builds
   # a configuration chain and renders artifacts during each campaign execution.
+  # BPS variables, which BPS fills in wherever `{name}` appears, including the
+  # extra_qgraph_options of every step.
+  variables:
+    apdbConfig: "s3://embargo@rubin-summit-users/apdb_config/cassandra/pp_apdb_lsstcam.yaml"
   extra_qgraph_options:
     - "--skip-existing-in LSSTCam/runs/prompt-${{ day_obs }}"
     - "--retained-dataset-types ${AP_PIPE_DIR}/scripts/LSSTCam/retained_types.yaml"
     - "--prune-unanchored-quanta getRegionTimeFromVisit:associateApdb"
     - "-c parameters:release_id=1"
-    - "-c parameters:apdb_config=s3://embargo@rubin-summit-users/apdb_config/cassandra/pp_apdb_lsstcam.yaml"
+    - "-c parameters:apdb_config={apdbConfig}"
     - "-c associateApdb:doRunForcedMeasurement=False"
     - "--dataset-query-constraint off"
   extra_run_quantum_options:
@@ -170,9 +212,17 @@ spec:
 apiVersion: io.lsst.cmservice/v1
 kind: edge
 metadata:
-  name: STEP--END
+  name: LSST--DECAM
 spec:
   source: AP_PIPE
+  target: AP_PIPE_DECAM
+---
+apiVersion: io.lsst.cmservice/v1
+kind: edge
+metadata:
+  name: STEP--END
+spec:
+  source: AP_PIPE_DECAM
   target: END
 ---
 apiversion: io.lsst.cmservice/v1

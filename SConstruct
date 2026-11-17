@@ -81,17 +81,24 @@ ingredients_ap_pipe_with_fakes = env.Command(
     ),
 )
 
-# Paths are relative to the package root so that the generated file's header
-# names them as a user would find them under $AP_PIPE_DIR.
-daytime_bps_path = os.path.join("bps", "LSSTCam", "bps_Daytime.yaml")
-daytime_bps = env.Command(
-    target=daytime_bps_path,
-    source=os.path.join("scripts", "LSSTCam", "ap_daytime_cm_campaign.yaml"),
-    action=f"{libraryLoaderEnvironment()} python -m lsst.ap.pipe.cmCampaignToBps $SOURCE $TARGET",
-)
+# One BPS submission per step of the Daytime campaign. Paths are relative to
+# the package root so that the generated file's header names them as a user
+# would find them under $AP_PIPE_DIR.
+daytime_bps_steps = {
+    os.path.join("bps", "LSSTCam", "bps_Daytime.yaml"): "AP_PIPE",
+    os.path.join("bps", "LSSTCam", "bps_Daytime-DECam-templates.yaml"): "AP_PIPE_DECAM",
+}
+daytime_bps = []
+for daytime_bps_path, step in daytime_bps_steps.items():
+    daytime_bps += env.Command(
+        target=daytime_bps_path,
+        source=os.path.join("scripts", "LSSTCam", "ap_daytime_cm_campaign.yaml"),
+        action=f"{libraryLoaderEnvironment()} python -m lsst.ap.pipe.cmCampaignToBps $SOURCE $TARGET "
+        f"--step {step}",
+    )
 env.Depends(daytime_bps, os.path.join("python", "lsst", "ap", "pipe", "cmCampaignToBps.py"))
 
-Default([ingredients_ap_pipe_with_fakes, daytime_bps])
+Default([ingredients_ap_pipe_with_fakes] + daytime_bps)
 # Delete intermediate after final is successfully built
 env.Clean(ingredients_ap_pipe_with_fakes, intermediate_ap_pipe_with_fakes_path)
 AddPostAction(ingredients_ap_pipe_with_fakes, Delete(intermediate_ap_pipe_with_fakes_path))
@@ -101,7 +108,7 @@ targetList = (
     "shebang",
     "policy",
     ap_pipe_with_fakes_path,
-    daytime_bps_path,
+    *daytime_bps_steps,
 ) + scripts.DEFAULT_TARGETS
 
 scripts.BasicSConstruct(
