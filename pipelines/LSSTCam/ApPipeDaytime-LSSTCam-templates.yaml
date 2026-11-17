@@ -1,0 +1,18 @@
+description: >-
+  First stage of a daytime AP run over LSSTCam data that uses both LSSTCam
+  and DECam templates. This is ApPipeDaytime.yaml without the visit-level
+  tasks that combine difference imaging outputs from all detectors.
+
+  The second stage, ApPipeDaytime-DECam-templates.yaml, skips everything this
+  stage completed, processes the detectors that have only DECam templates,
+  and then runs the visit-level tasks over all detectors. Running this stage
+  first means a detector with any LSSTCam template coverage uses it, as in
+  Prompt Processing.
+instrument: lsst.obs.lsst.LsstCam
+imports:
+  - location: $AP_PIPE_DIR/pipelines/LSSTCam/ApPipeDaytime.yaml
+    exclude:
+      - consolidateDiaSourceTable
+      - analyzeVisitSampledImageSubtractionMetrics
+    # Keep the inherited subsets; see ApPipeDaytime.yaml.
+    labeledSubsetModifyMode: EDIT
