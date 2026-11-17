@@ -44,6 +44,9 @@ metadata:
 spec:
   bps:
     pipeline_yaml: "${AP_PIPE_DIR}/pipelines/LSSTCam/ApPipeDaytime.yaml"
+  butler:
+    collections:
+      prepend_runs_to: "LSSTCam/runs/prompt-${{ day_obs }}"
   groups: null
 ---
 apiVersion: io.lsst.cmservice/v1
@@ -64,11 +67,8 @@ spec:
     # TODO the following collection is redundant and deprecated in CM 0.9.1
     campaign_output: "u/lsstsvc1/runs/daytimeAP/${{ day_obs | random_n(8, sep='/') }}"
   include_files: []
-  # The ${...} environment variables must be fulfilled externally.
-  # See the `custom_group_payload` attribute of the step configuration for the
-  # source of these values.
-  # The ${{...}} template expressions are fulfilled by the expressions defined
-  # on the "schedule" object.
+  # The `${{...}}` template expressions are fulfilled by the expressions defined
+  # on the "schedule" manifest.
   predicates:
   - instrument='LSSTCam'
   - skymap='lsst_cells_v2'
@@ -83,9 +83,9 @@ metadata:
   name: daytime_apdb_dev
   default: true
 spec:
-  # The ${{...}} template expressions are fulfilled by the expressions defined
-  # on the "schedule" object whenever a new campaign is created by that schedule.
-  # The {{...}} variable placeholders are fulfilled at runtime when CM builds
+  # The `${{...}}` template expressions are fulfilled by the expressions defined
+  # on the "schedule" manifest whenever a new campaign is created by that schedule.
+  # The `{{...}}` variable placeholders are fulfilled at runtime when CM builds
   # a configuration chain and renders artifacts during each campaign execution.
   extra_qgraph_options:
     - "--skip-existing-in LSSTCam/runs/prompt-${{ day_obs }}"
@@ -113,7 +113,7 @@ spec:
 apiVersion: io.lsst.cmservice/v1
 kind: lsst
 metadata:
-  name: slac_cvmfs_w45
+  name: slac_cvmfs_w46
   default: true
 spec:
   campaign: AP-daytime
@@ -121,8 +121,8 @@ spec:
   environment:
     DAX_APDB_MONITOR_CONFIG: logging:lsst.dax.apdb.monitor
     MP_SKY_URL: http://usdf-mpsky.sdf.slac.stanford.edu/ephemerides/
-  lsst_distrib_dir: /cvmfs/sw.lsst.eu/almalinux-x86_64/lsst_distrib/w_2026_45
-  lsst_version: w_2026_45
+  lsst_distrib_dir: /cvmfs/sw.lsst.eu/almalinux-x86_64/lsst_distrib/w_2026_46
+  lsst_version: w_2026_46
   project: ApPipe
   ticket: DM-XXXXX
 ---
@@ -139,8 +139,7 @@ spec:
   provisioned_idle_time: 300
   provisioned_max_wall_time: '2-0:0:0'
   provisioned_node_count: 125
-  provisioned_extra_arguments:
-    - "--cpus 16"
+  provisioned_cpu_count: 16
 ---
 apiVersion: io.lsst.cmservice/v1
 kind: site

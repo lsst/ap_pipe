@@ -24,8 +24,8 @@
 apiVersion: io.lsst.cmservice/v1
 kind: campaign
 metadata:
-  name: ap_daytime_${{ yesterday | as_day_obs }}
-  day_obs: ${{ yesterday | as_day_obs }}
+  name: ap_daytime_${{ day_obs }}
+  day_obs: ${{ day_obs }}
 spec:
   notification_labels:
     - daytime-slack
@@ -41,6 +41,9 @@ metadata:
 spec:
   bps:
     pipeline_yaml: "${AP_PIPE_DIR}/pipelines/LSSTCam/ApPipeDaytime.yaml"
+  butler:
+    collections:
+      prepend_runs_to: "LSSTCam/runs/prompt-${{ day_obs }}"
   groups: null
 ---
 apiVersion: io.lsst.cmservice/v1
@@ -53,23 +56,20 @@ spec:
     campaign_input:
     - LSSTCam/defaults
     - LSSTCam/templates
-    - LSSTCam/runs/prompt-${{ yesterday | as_day_obs }}
+    - LSSTCam/runs/prompt-${{ day_obs }}
     # The `campaign_public_output` is the base collection name from which all other
     # collection names are derived, and it is also the name of the final chained collection
     # available at the completion of the campaign.
-    campaign_public_output: "LSSTCam/runs/daytimeAP/${{ yesterday | as_day_obs }}"
+    campaign_public_output: "LSSTCam/runs/daytimeAP/${{ day_obs }}"
     # TODO the following collection is redundant and deprecated in CM 0.9.1
-    campaign_output: "LSSTCam/runs/daytimeAP/${{ yesterday | as_day_obs }}"
+    campaign_output: "LSSTCam/runs/daytimeAP/${{ day_obs }}"
   include_files: []
-  # The ${...} environment variables must be fulfilled externally.
-  # See the `custom_group_payload` attribute of the step configuration for the
-  # source of these values.
-  # The ${{...}} template expressions are fulfilled by the expressions defined
-  # on the "schedule" object.
+  # The `${{...}}` template expressions are fulfilled by the expressions defined
+  # on the "schedule" manifest.
   predicates:
   - instrument='LSSTCam'
   - skymap='lsst_cells_v2'
-  - day_obs=${{ yesterday | as_day_obs }}
+  - day_obs=${{ day_obs }}
   - detector not in (0,1,19,20,27,30,65,68,81,82,83,120,122,123,158,161,168,169,187,188,189,190,191,192,193,194,195,196,197,198,199,200,201,202,203,204)
   - exposure.science_program in ('BLOCK-365','BLOCK-407','BLOCK-430','BLOCK-432','BLOCK-T698','BLOCK-T703','BLOCK-T704','BLOCK-T706')
   repo: embargo_future
@@ -80,12 +80,12 @@ metadata:
   name: daytime_apdb
   default: true
 spec:
-  # The ${{...}} template expressions are fulfilled by the expressions defined
-  # on the "schedule" object whenever a new campaign is created by that schedule.
-  # The {{...}} variable placeholders are fulfilled at runtime when CM builds
+  # The `${{...}}` template expressions are fulfilled by the expressions defined
+  # on the "schedule" manifest whenever a new campaign is created by that schedule.
+  # The `{{...}}` variable placeholders are fulfilled at runtime when CM builds
   # a configuration chain and renders artifacts during each campaign execution.
   extra_qgraph_options:
-    - "--skip-existing-in LSSTCam/runs/prompt-${{ yesterday | as_day_obs }}"
+    - "--skip-existing-in LSSTCam/runs/prompt-${{ day_obs }}"
     - "--retained-dataset-types ${AP_PIPE_DIR}/scripts/LSSTCam/retained_types.yaml"
     - "--prune-unanchored-quanta getRegionTimeFromVisit:associateApdb"
     - "-c parameters:release_id=1"
@@ -136,8 +136,7 @@ spec:
   provisioned_idle_time: 300
   provisioned_max_wall_time: '2-0:0:0'
   provisioned_node_count: 125
-  provisioned_extra_arguments:
-    - "--cpus 16"
+  provisioned_cpu_count: 16
 ---
 apiVersion: io.lsst.cmservice/v1
 kind: site
@@ -184,10 +183,10 @@ spec:
   auto_start: false
   cron: "30 18 * * *"
   # These expressions are available to other manifests as `${{...}}` variables
-  # where the result of the Python expression is the object. These examples are
-  # both `datetime.datetime` objects.
+  # where the result of the Python expression is the object.
   expressions:
     yesterday: "datetime.now(timezone.utc) - timedelta(days=1)"
+    day_obs: "(datetime.now(timezone.utc) - timedelta(days=1)).strftime('%Y%m%d')"
   # This format string is used to identify the new campaign created by this
   # schedule as `<campaign_name>_<suffix>`. Because campaign names must be unique
   # in CM Service, this format string should more or less reflect the frequency
