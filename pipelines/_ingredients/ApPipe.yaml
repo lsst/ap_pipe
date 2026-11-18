@@ -76,6 +76,7 @@ tasks:
       connections.coaddExposures: template_coadd
       connections.template: template_detector
       output_image_type: parameters.image_type
+      doCheckPsfDiscontinuity: True
   subtractImages:
     class: lsst.ip.diffim.subtractImages.AlardLuptonSubtractTask
     config:
