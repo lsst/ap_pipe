@@ -75,7 +75,6 @@ spec:
       - "--prune-unanchored-quanta getRegionTimeFromVisit:associateApdb"
       - "-c parameters:release_id=1"
       - "-c parameters:apdb_config={apdbConfig}"
-      - "-c associateApdb:doRunForcedMeasurement=False"
       - "--dataset-query-constraint off"
   butler:
     collections:
@@ -132,7 +131,6 @@ spec:
     - "--prune-unanchored-quanta getRegionTimeFromVisit:associateApdb"
     - "-c parameters:release_id=1"
     - "-c parameters:apdb_config={apdbConfig}"
-    - "-c associateApdb:doRunForcedMeasurement=False"
     - "--dataset-query-constraint off"
   extra_run_quantum_options:
     - "--no-raise-on-partial-outputs"
