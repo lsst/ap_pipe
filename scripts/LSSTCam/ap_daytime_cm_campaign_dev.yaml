@@ -47,9 +47,6 @@ spec:
   # AP_PIPE_DECAM step, after all detectors are done.
   bps:
     pipeline_yaml: "${AP_PIPE_DIR}/pipelines/LSSTCam/ApPipeDaytime-LSSTCam-templates.yaml"
-  butler:
-    collections:
-      prepend_runs_to: "LSSTCam/runs/prompt-${{ day_obs }}"
   groups: null
 ---
 apiVersion: io.lsst.cmservice/v1
@@ -80,9 +77,6 @@ spec:
       - "-c parameters:apdb_config={apdbConfig}"
       - "-c associateApdb:doRunForcedMeasurement=False"
       - "--dataset-query-constraint off"
-  butler:
-    collections:
-      prepend_runs_to: "LSSTCam/runs/prompt-${{ day_obs }}"
   groups: null
 ---
 apiVersion: io.lsst.cmservice/v1

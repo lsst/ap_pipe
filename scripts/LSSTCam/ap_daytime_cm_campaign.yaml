@@ -94,7 +94,7 @@ spec:
     # Chains LSSTCam/templates and DECam/templates; each step's pipeline
     # reads only its own template dataset type.
     - Prompt/templates
-    - LSSTCam/runs/prompt-${{ as_day_obs }}
+    - LSSTCam/runs/prompt-${{ day_obs }}
     # The `campaign_public_output` is the base collection name from which all other
     # collection names are derived, and it is also the name of the final chained collection
     # available at the completion of the campaign.
