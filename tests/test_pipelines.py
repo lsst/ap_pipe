@@ -187,6 +187,36 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                 self.assertEqual(subsetted, set(pipeline.task_labels) - no_subset_wanted,
                                  msg=f"These tasks are not in any of the subsets {required_subsets}.")
 
+    def test_daytime_stage_subsets(self):
+        """Test that each apPipe task is in exactly one daytime stage.
+        """
+        files = ResourcePath.findFileResources([self.path], file_filter=r"^ApPipe.*\.yaml$")
+        stages = ("DiffimAndSingleFrame", "AssociationAndConsolidation")
+        # Daytime runs read the APDB directly at association and never run
+        # the preload tasks.
+        not_staged = {"loadDiaCatalogs", "analyzeLoadDiaCatalogsMetrics"}
+
+        for file in files:
+            if "injection/" in file.path:
+                # PostInjectedTasksApPipe is not actually an AP pipeline
+                continue
+            if "WithFakes" in file.path:
+                # Daytime runs never inject fakes, and the generated fakes
+                # pipelines add the injection tasks only to apPipe and prompt.
+                continue
+            with self.subTest(file=str(file)):
+                pipeline = lsst.pipe.base.Pipeline.from_uri(file)
+                self.assertGreaterEqual(pipeline.subsets.keys(), set(stages),
+                                        msg="An AP pipeline is missing daytime stage subsets.")
+                stage1, stage2 = (pipeline.subsets[stage] for stage in stages)
+                self.assertTrue(stage1.isdisjoint(stage2),
+                                msg=f"Daytime stages share tasks {stage1 & stage2}.")
+                self.assertTrue((stage1 | stage2).isdisjoint(not_staged),
+                                msg=f"Daytime stages include tasks {(stage1 | stage2) & not_staged} "
+                                    "that daytime runs should not run.")
+                self.assertEqual(stage1 | stage2, pipeline.subsets["apPipe"] - not_staged,
+                                 msg="Daytime stages do not match the apPipe subset.")
+
     def test_injection_ingredient(self):
         """Test the source-injection post-processing ingredient pipeline.
 
