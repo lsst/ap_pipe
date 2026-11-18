@@ -142,10 +142,37 @@ class CmCampaignToBpsTestCase(lsst.utils.tests.TestCase):
         extra["metadata"]["default"] = True
         self.assertEqual(makeBpsConfig(self.documents + [extra])["campaign"], "Other")
 
-    def testOneStep(self):
-        step = next(doc for doc in self.documents if doc["kind"] == "node")
+    def _addSecondStep(self):
+        second = {
+            "kind": "node",
+            "metadata": {"kind": "step", "name": "SECOND"},
+            "spec": {"bps": {
+                "pipeline_yaml": "${AP_PIPE_DIR}/pipelines/second.yaml",
+                "extra_qgraph_options": ["--skip-existing-in {{ butler.collections.step_input }}"],
+            }},
+        }
+        self.documents.append(second)
+
+    def testStepSelection(self):
+        self._addSecondStep()
+        # With several steps, one must be named.
         with self.assertRaises(ValueError):
-            makeBpsConfig(self.documents + [step])
+            makeBpsConfig(self.documents)
+        with self.assertRaises(ValueError):
+            makeBpsConfig(self.documents, "MISSING")
+        self.assertEqual(makeBpsConfig(self.documents, "STEP")["pipelineYaml"],
+                         "${AP_PIPE_DIR}/pipelines/step.yaml")
+        second = makeBpsConfig(self.documents, "SECOND")
+        self.assertEqual(second["pipelineYaml"], "${AP_PIPE_DIR}/pipelines/second.yaml")
+        # The step's options replace the campaign list, and the step input is
+        # the shared output collection.
+        self.assertEqual(second["extraQgraphOptions"], "--skip-existing-in u/test/{dayObs}")
+
+    def testUnsupportedManifestVariable(self):
+        bps = next(doc for doc in self.documents if doc["kind"] == "bps")
+        bps["spec"]["extra_qgraph_options"].append("--skip-existing-in {{ butler.collections.run }}")
+        with self.assertRaises(ValueError):
+            makeBpsConfig(self.documents)
 
     def testUnsupportedTemplate(self):
         self.documents[0]["metadata"]["name"] = "test_${{ day_obs | random_n(8) }}"
@@ -159,9 +186,11 @@ class CmCampaignToBpsTestCase(lsst.utils.tests.TestCase):
             with open(campaignPath, "w") as stream:
                 stream.write(CAMPAIGN)
             config = makeBpsConfig(readCampaign(campaignPath))
-            writeBpsConfig(config, bpsPath, campaignPath)
+            writeBpsConfig(config, bpsPath, campaignPath, "STEP")
             with open(bpsPath) as stream:
-                self.assertEqual(yaml.safe_load(stream), config)
+                text = stream.read()
+            self.assertIn("of the STEP step", text)
+            self.assertEqual(yaml.safe_load(text), config)
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):

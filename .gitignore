@@ -31,6 +31,7 @@ version.py
 pipelines/_ingredients/ApPipeWithFakes.yaml
 pipelines/_ingredients/intermediate_ApPipeWithFakes.yaml
 
-# BPS submission generated from the Daytime CM campaign
+# BPS submissions generated from the Daytime CM campaign
 bps/LSSTCam/bps_Daytime.yaml
+bps/LSSTCam/bps_Daytime-DECam-templates.yaml
 python/*.dist-info/

@@ -44,6 +44,7 @@ class PipelineDefintionsTestSuite(lsst.utils.tests.TestCase):
                          "ApPipeDaytime.yaml": "apPipe",
                          "ApPipe-DECam-templates.yaml": "apPipe",
                          "ApPipeDaytime-DECam-templates.yaml": "apPipe",
+                         "ApPipeDaytime-LSSTCam-templates.yaml": "apPipe",
                          "ApPipeWithIsrTaskLSST.yaml": "apPipe",
                          "ApPipeWithPreconvolution.yaml": "apPipe",
                          "ApPipeWithPreconvolution-legacy.yaml": "apPipe",
