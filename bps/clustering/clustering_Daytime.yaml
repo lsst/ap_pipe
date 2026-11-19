@@ -40,8 +40,13 @@ cluster:
   diffimMetrics:
     pipetasks: makeSampledImageSubtractionMetrics,analyzeSampledImageSubtractionMetrics
     dimensions: visit,detector
+  # Keep tasks that depend on difference imaging out of this cluster, so that
+  # a failed diffim job does not prune the visit summary.
   consolidateVisit:
-    pipetasks: consolidateVisitSummary,consolidateDiaSourceTable,analyzeVisitSampledImageSubtractionMetrics,consolidatePromptSource,splitPromptSource
+    pipetasks: consolidateVisitSummary,consolidatePromptSource,splitPromptSource
+    dimensions: visit
+  consolidateDiaVisit:
+    pipetasks: consolidateDiaSourceTable,analyzeVisitSampledImageSubtractionMetrics
     dimensions: visit
 
 

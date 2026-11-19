@@ -103,6 +103,34 @@ subsets:
     description: >
       Tasks necessary to turn raw images into APDB rows and alerts.
       Requires preload subset to be run first.
+  # AssociationAndConsolidation is inherited unchanged
+  DiffimAndSingleFrame:
+    subset:
+      - isr
+      - calibrateImage
+      - analyzePreliminarySummaryStats
+      - getRegionTimeFromVisit
+      - mpSkyEphemerisQuery
+      - buildTemplate
+      - analyzeTemplateMetrics
+      - subtractImages
+      - subtractImagesScore
+      - analyzeImageDifferenceMetrics
+      - detectAndMeasureDiaSource
+      - analyzeDiaSourceDetectionMetrics
+      - filterDiaSource
+      - analyzeTrailedDiaSourceTable
+      - computeReliability
+      - filterDiaSourcePostReliability
+      - standardizeDiaSource
+      - makeSampledImageSubtractionMetrics
+      - analyzeSampledImageSubtractionMetrics
+      - singleFrameDetectAndMeasure
+      - standardizePromptSource
+    description: >
+      First stage of a daytime run: the per-detector tasks that come before
+      association. Run AssociationAndConsolidation afterwards on this
+      stage's outputs.
 
 contracts:
   # Inputs and outputs must match. For consistency, contracts are written in execution order:

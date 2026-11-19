@@ -337,6 +337,55 @@ subsets:
     description: >
       Tasks for QA and other non-real-time processing.
       Requires prompt subset to be run first.
+  # The two stages of a daytime run, which does not run the preload tasks.
+  # Between them they hold every other task in apPipe exactly once.
+  DiffimAndSingleFrame:
+    subset:
+      - isr
+      - calibrateImage
+      - analyzePreliminarySummaryStats
+      - getRegionTimeFromVisit
+      - mpSkyEphemerisQuery
+      - buildTemplate
+      - analyzeTemplateMetrics
+      - subtractImages
+      - analyzeImageDifferenceMetrics
+      - detectAndMeasureDiaSource
+      - analyzeDiaSourceDetectionMetrics
+      - filterDiaSource
+      - analyzeTrailedDiaSourceTable
+      - computeReliability
+      - filterDiaSourcePostReliability
+      - standardizeDiaSource
+      - makeSampledImageSubtractionMetrics
+      - analyzeSampledImageSubtractionMetrics
+      - singleFrameDetectAndMeasure
+      - standardizePromptSource
+    description: >
+      First stage of a daytime run: the per-detector tasks that come before
+      association. Run AssociationAndConsolidation afterwards on this
+      stage's outputs.
+  AssociationAndConsolidation:
+    subset:
+      - associateApdb
+      - analyzeDiaSourceAssociationMetrics
+      - analyzeAssociateDiaSourceTiming
+      - analyzeAssociatedDiaSourceTable
+      - consolidateVisitSummary
+      - aggregateVisitSummary
+      - makeMetricTableAggregateVisitSummary
+      - makeVisitTable
+      - makeVisitDetectorTable
+      - consolidatePromptSource
+      - splitPromptSource
+      - consolidateDiaSourceTable
+      - analyzeVisitSampledImageSubtractionMetrics
+    description: >
+      Second stage of a daytime run: association, the tasks that depend on
+      it, and the tasks that combine outputs across detectors. Running these
+      separately from DiffimAndSingleFrame means a failure for one
+      image in that stage still allows these tasks to run on all of the images
+      that succeeded.
 contracts:
   - contract: detectAndMeasureDiaSource.doSkySources == filterDiaSource.doRemoveSkySources
     msg: "detectAndMeasureDiaSource.doSkySources != filterDiaSource.doRemoveSkySources"
