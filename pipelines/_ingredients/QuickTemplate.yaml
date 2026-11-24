@@ -46,9 +46,13 @@ tasks:
       connections.visit_summary: preliminary_visit_summary
       useVisitSummaryPsf: False
   selectTemplateCoaddVisits:
-    class: lsst.pipe.tasks.selectImages.BestSeeingQuantileSelectVisitsTask
+    class: lsst.pipe.tasks.selectImages.BestSeeingSelectVisitsTask
     config:
       connections.visitSummaries: preliminary_visit_summary
+      connections.goodVisits: template_coadd_visit_selection
+      maxPsfFwhm: 1.4
+      python: |
+        config.visitSummaryMinValues = {'effTimeZeroPointScale': 0.75}
   assembleTemplateCoadd:
     class: lsst.drp.tasks.assemble_coadd.CompareWarpAssembleCoaddTask
     config:
