@@ -29,12 +29,13 @@ metadata:
 spec:
   notification_labels:
     - daytime-slack
+    - daytime-kafka
 ---
 apiVersion: io.lsst.cmservice/v1
 kind: node
 metadata:
   kind: step
-  name: AP_PIPE
+  name: AP_PIPE_LSST_STAGE_1
   selectors:
     butler:
       compute-site: slac
@@ -43,7 +44,12 @@ spec:
   # The visit-level tasks that combine difference imaging outputs run in the
   # AP_PIPE_DECAM step, after all detectors are done.
   bps:
-    pipeline_yaml: "${AP_PIPE_DIR}/pipelines/LSSTCam/ApPipeDaytime-LSSTCam-templates.yaml"
+    pipeline_yaml: "${AP_PIPE_DIR}/pipelines/LSSTCam/ApPipeDaytime-LSSTCam-templates.yaml#DiffimAndSingleFrame"
+    extra_qgraph_options:
+      - "--skip-existing-in {{ butler.collections.step_input }}"
+      - "--retained-dataset-types ${AP_PIPE_DIR}/scripts/LSSTCam/retained_types.yaml"
+      - "-c parameters:release_id=1"
+      - "--dataset-query-constraint off"
   butler:
     collections:
       prepend_runs_to: "LSSTCam/runs/prompt-${{ day_obs }}"
@@ -72,13 +78,28 @@ spec:
     extra_qgraph_options:
       - "--skip-existing-in {{ butler.collections.step_input }}"
       - "--retained-dataset-types ${AP_PIPE_DIR}/scripts/LSSTCam/retained_types.yaml"
-      - "--prune-unanchored-quanta getRegionTimeFromVisit:associateApdb"
       - "-c parameters:release_id=1"
-      - "-c parameters:apdb_config={apdbConfig}"
       - "--dataset-query-constraint off"
   butler:
     collections:
       prepend_runs_to: "LSSTCam/runs/prompt-${{ day_obs }}"
+  groups: null
+---
+apiVersion: io.lsst.cmservice/v1
+kind: node
+metadata:
+  kind: step
+  name: AP_PIPE_STAGE_2
+spec:
+  bps:
+    pipeline_yaml: "${AP_PIPE_DIR}/pipelines/LSSTCam/ApPipeDaytime-LSSTCam-templates.yaml#AssociationAndConsolidation"
+    extra_qgraph_options:
+      - "--skip-existing-in {{ butler.collections.step_input }}"
+      - "--retained-dataset-types ${AP_PIPE_DIR}/scripts/LSSTCam/retained_types.yaml"
+      - "--prune-unanchored-quanta getRegionTimeFromVisit:associateApdb"
+      - "-c parameters:release_id=1"
+      - "-c parameters:apdb_config={apdbConfig}"
+      - "--dataset-query-constraint off"
   groups: null
 ---
 apiVersion: io.lsst.cmservice/v1
@@ -125,13 +146,6 @@ spec:
   # extra_qgraph_options of every step.
   variables:
     apdbConfig: "s3://embargo@rubin-summit-users/apdb_config/cassandra/pp_apdb_lsstcam.yaml"
-  extra_qgraph_options:
-    - "--skip-existing-in LSSTCam/runs/prompt-${{ day_obs }}"
-    - "--retained-dataset-types ${AP_PIPE_DIR}/scripts/LSSTCam/retained_types.yaml"
-    - "--prune-unanchored-quanta getRegionTimeFromVisit:associateApdb"
-    - "-c parameters:release_id=1"
-    - "-c parameters:apdb_config={apdbConfig}"
-    - "--dataset-query-constraint off"
   extra_run_quantum_options:
     - "--no-raise-on-partial-outputs"
   extra_aggregate_options:
@@ -158,8 +172,8 @@ spec:
   environment:
     DAX_APDB_MONITOR_CONFIG: logging:lsst.dax.apdb.monitor
     MP_SKY_URL: http://usdf-mpsky.sdf.slac.stanford.edu/ephemerides/
-  lsst_distrib_dir: /cvmfs/sw.lsst.eu/almalinux-x86_64/lsst_distrib/w_2026_46
-  lsst_version: w_2026_46
+  lsst_distrib_dir: /cvmfs/sw.lsst.eu/almalinux-x86_64/lsst_distrib/w_2026_47
+  lsst_version: w_2026_47
   project: ApPipe
   ticket: DM-XXXXX
 ---
@@ -202,25 +216,45 @@ spec:
 apiVersion: io.lsst.cmservice/v1
 kind: edge
 metadata:
-  name: START--STEP
+  name: START--L_STAGE1
 spec:
   source: START
-  target: AP_PIPE
+  target: AP_PIPE_LSST_STAGE_1
+# ===============================
+# OPTION A: Include DECAM
+# ---
+# apiVersion: io.lsst.cmservice/v1
+# kind: edge
+# metadata:
+#   name: L_STAGE1--D_STAGE1
+# spec:
+#   source: AP_PIPE_LSST_STAGE_1
+#   target: AP_PIPE_DECAM_STAGE_1
+# ---
+# apiVersion: io.lsst.cmservice/v1
+# kind: edge
+# metadata:
+#   name: D_STAGE1--STAGE2
+# spec:
+#   source: AP_PIPE_DECAM_STAGE_1
+#   target: AP_PIPE_STAGE_2
+# ===============================
+# OPTION B: Skip DECAM 
 ---
 apiVersion: io.lsst.cmservice/v1
 kind: edge
 metadata:
-  name: LSST--DECAM
+  name: L_STAGE1--L_STAGE2
 spec:
-  source: AP_PIPE
-  target: AP_PIPE_DECAM
+  source: AP_PIPE_LSST_STAGE_1
+  target: AP_PIPE_STAGE_2
 ---
 apiVersion: io.lsst.cmservice/v1
 kind: edge
 metadata:
-  name: STEP--END
+  name: L_STAGE2--END
 spec:
-  source: AP_PIPE_DECAM
+  source: AP_PIPE_STAGE_2
   target: END
 ---
 apiversion: io.lsst.cmservice/v1

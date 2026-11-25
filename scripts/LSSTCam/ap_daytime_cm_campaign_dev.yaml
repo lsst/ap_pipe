@@ -37,38 +37,40 @@ apiVersion: io.lsst.cmservice/v1
 kind: node
 metadata:
   kind: step
-  name: AP_PIPE
-  selectors:
-    butler:
-      compute-site: slac
+  name: AP_PIPE_LSST_STAGE_1
 spec:
-  # First of two steps: process every detector that has an LSSTCam template.
-  # The visit-level tasks that combine difference imaging outputs run in the
-  # AP_PIPE_DECAM step, after all detectors are done.
   bps:
-    pipeline_yaml: "${AP_PIPE_DIR}/pipelines/LSSTCam/ApPipeDaytime-LSSTCam-templates.yaml"
+    pipeline_yaml: "${AP_PIPE_DIR}/pipelines/LSSTCam/ApPipeDaytime-LSSTCam-templates.yaml#DiffimAndSingleFrame"
+    extra_qgraph_options:
+      - "--skip-existing-in {{ butler.collections.step_input }}"
+      - "--retained-dataset-types ${AP_PIPE_DIR}/scripts/LSSTCam/retained_types.yaml"
+      - "-c parameters:release_id=1"
+      - "--dataset-query-constraint off"
   groups: null
 ---
 apiVersion: io.lsst.cmservice/v1
 kind: node
 metadata:
   kind: step
-  name: AP_PIPE_DECAM
-  selectors:
-    butler:
-      compute-site: slac
+  name: AP_PIPE_DECAM_STAGE_1
 spec:
-  # Second step: process the detectors that only have DECam templates, then
-  # run the visit-level tasks over all detectors. The step input chains the
-  # AP_PIPE outputs with the campaign input, so skipping existing outputs in
-  # it skips everything AP_PIPE and Prompt Processing completed. A detector
-  # with any LSSTCam template therefore uses it, as in Prompt Processing.
   bps:
-    pipeline_yaml: "${AP_PIPE_DIR}/pipelines/LSSTCam/ApPipeDaytime-DECam-templates.yaml"
-    # Replaces the campaign list. With the retained dataset types, a task
-    # that must run also reruns the producers of any of its inputs that are
-    # not retained, even if those inputs exist; retained_types.yaml lists the
-    # inputs of the visit-level tasks so that AP_PIPE's outputs are reused.
+    pipeline_yaml: "${AP_PIPE_DIR}/pipelines/LSSTCam/ApPipeDaytime-DECam-templates.yaml#DiffimAndSingleFrame"
+    extra_qgraph_options:
+      - "--skip-existing-in {{ butler.collections.step_input }}"
+      - "--retained-dataset-types ${AP_PIPE_DIR}/scripts/LSSTCam/retained_types.yaml"
+      - "-c parameters:release_id=1"
+      - "--dataset-query-constraint off"
+  groups: null
+---
+apiVersion: io.lsst.cmservice/v1
+kind: node
+metadata:
+  kind: step
+  name: AP_PIPE_STAGE_2
+spec:
+  bps:
+    pipeline_yaml: "${AP_PIPE_DIR}/pipelines/LSSTCam/ApPipeDaytime-LSSTCam-templates.yaml#AssociationAndConsolidation"
     extra_qgraph_options:
       - "--skip-existing-in {{ butler.collections.step_input }}"
       - "--retained-dataset-types ${AP_PIPE_DIR}/scripts/LSSTCam/retained_types.yaml"
@@ -95,8 +97,6 @@ spec:
     # collection names are derived, and it is also the name of the final chained collection
     # available at the completion of the campaign.
     campaign_public_output: "u/lsstsvc1/runs/daytimeAP/${{ day_obs | random_n(8, sep='/') }}"
-    # TODO the following collection is redundant and deprecated in CM 0.9.1
-    campaign_output: "u/lsstsvc1/runs/daytimeAP/${{ day_obs | random_n(8, sep='/') }}"
   include_files: []
   # The `${{...}}` template expressions are fulfilled by the expressions defined
   # on the "schedule" manifest.
@@ -122,13 +122,6 @@ spec:
   # extra_qgraph_options of every step.
   variables:
     apdbConfig: "s3://prompt-processing-dev@rubin-pp-dev-users/apdb_config/cassandra/pp_apdb_lsstcam-dev.yaml"
-  extra_qgraph_options:
-    - "--skip-existing-in LSSTCam/runs/prompt-${{ day_obs }}"
-    - "--retained-dataset-types ${AP_PIPE_DIR}/scripts/LSSTCam/retained_types.yaml"
-    - "--prune-unanchored-quanta getRegionTimeFromVisit:associateApdb"
-    - "-c parameters:release_id=1"
-    - "-c parameters:apdb_config={apdbConfig}"
-    - "--dataset-query-constraint off"
   extra_run_quantum_options:
     - "--no-raise-on-partial-outputs"
   extra_aggregate_options:
@@ -147,7 +140,7 @@ spec:
 apiVersion: io.lsst.cmservice/v1
 kind: lsst
 metadata:
-  name: slac_cvmfs_w46
+  name: slac_cvmfs_w47
   default: true
 spec:
   campaign: AP-daytime
@@ -155,8 +148,8 @@ spec:
   environment:
     DAX_APDB_MONITOR_CONFIG: logging:lsst.dax.apdb.monitor
     MP_SKY_URL: http://usdf-mpsky.sdf.slac.stanford.edu/ephemerides/
-  lsst_distrib_dir: /cvmfs/sw.lsst.eu/almalinux-x86_64/lsst_distrib/w_2026_46
-  lsst_version: w_2026_46
+  lsst_distrib_dir: /cvmfs/sw.lsst.eu/almalinux-x86_64/lsst_distrib/w_2026_47
+  lsst_version: w_2026_47
   project: ApPipe
   ticket: DM-XXXXX
 ---
@@ -199,25 +192,33 @@ spec:
 apiVersion: io.lsst.cmservice/v1
 kind: edge
 metadata:
-  name: START--STEP
+  name: START--L_STAGE1
 spec:
   source: START
-  target: AP_PIPE
+  target: AP_PIPE_LSST_STAGE_1
 ---
 apiVersion: io.lsst.cmservice/v1
 kind: edge
 metadata:
-  name: LSST--DECAM
+  name: L_STAGE1--D_STAGE1
 spec:
-  source: AP_PIPE
-  target: AP_PIPE_DECAM
+  source: AP_PIPE_LSST_STAGE_1
+  target: AP_PIPE_DECAM_STAGE_1
 ---
 apiVersion: io.lsst.cmservice/v1
 kind: edge
 metadata:
-  name: STEP--END
+  name: D_STAGE1--STAGE2
 spec:
-  source: AP_PIPE_DECAM
+  source: AP_PIPE_DECAM_STAGE_1
+  target: AP_PIPE_STAGE_2
+---
+apiVersion: io.lsst.cmservice/v1
+kind: edge
+metadata:
+  name: STAGE2--END
+spec:
+  source: AP_PIPE_STAGE_2
   target: END
 ---
 apiversion: io.lsst.cmservice/v1
