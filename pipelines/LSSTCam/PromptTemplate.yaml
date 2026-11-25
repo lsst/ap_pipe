@@ -13,15 +13,3 @@ imports:
 parameters:
   image_type: future
   use_cell_coadds: true
-
-tasks:
-  selectTemplateCoaddVisits:
-    # Class changed from BestSeeingQuantileSelectVisitsTask due to different template
-    # expectations for incremental templates.
-    class: lsst.pipe.tasks.selectImages.BestSeeingSelectVisitsTask
-    config:
-      connections.visitSummaries: preliminary_visit_summary
-      connections.goodVisits: template_coadd_visit_selection
-      maxPsfFwhm: 1.4
-      python: |
-        config.visitSummaryMinValues = {'effTimeZeroPointScale': 0.75}
